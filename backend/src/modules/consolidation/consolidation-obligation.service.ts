@@ -199,7 +199,8 @@ export class ConsolidationObligationService {
       .limit(1)
       .single();
 
-    if (existingCheck?.has_unified_management !== null) {
+    // Check if existingCheck exists AND has_unified_management is not null
+    if (existingCheck && existingCheck.has_unified_management !== null) {
       return { hasUnifiedManagement: existingCheck.has_unified_management };
     }
 
@@ -228,7 +229,8 @@ export class ConsolidationObligationService {
       .limit(1)
       .single();
 
-    if (existingCheck?.has_control_agreement !== null) {
+    // Check if existingCheck exists AND has_control_agreement is not null
+    if (existingCheck && existingCheck.has_control_agreement !== null) {
       return { hasControlAgreement: existingCheck.has_control_agreement };
     }
 
