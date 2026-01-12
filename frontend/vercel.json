@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "bash vercel-build.sh || powershell -ExecutionPolicy Bypass -File vercel-build.ps1",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "framework": "vite",

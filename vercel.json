@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm ci && npm run build",
+  "buildCommand": "git config user.name 'Attendry' 2>/dev/null || true && git config user.email 'attendry@example.com' 2>/dev/null || true && cd frontend && npm ci && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "cd frontend && npm ci",
   "framework": "vite",

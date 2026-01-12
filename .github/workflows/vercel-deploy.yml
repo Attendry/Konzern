@@ -1,0 +1,25 @@
+name: Vercel Deployment
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Git
+        run: |
+          git config user.name "Attendry"
+          git config user.email "attendry@example.com"
+      
+      - name: Verify Git Config
+        run: |
+          echo "Git user: $(git config user.name)"
+          echo "Git email: $(git config user.email)"
