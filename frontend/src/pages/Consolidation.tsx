@@ -17,6 +17,8 @@ import ConsolidationImpactDashboard from '../components/ConsolidationImpactDashb
 import IncomeStatementVisualization from '../components/IncomeStatementVisualization';
 import { ManualEntryForm } from '../components/ManualEntryForm';
 import { ICReconciliation } from '../components/ICReconciliation';
+import { FirstConsolidationWizard } from '../components/FirstConsolidationWizard';
+import { MinorityInterestDashboard } from '../components/MinorityInterestDashboard';
 import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
 
@@ -41,6 +43,10 @@ function Consolidation() {
   const [activeTab, setActiveTab] = useState<EntryTab>('all');
   const [statusFilter, setStatusFilter] = useState<EntryStatus | ''>('');
   const [sourceFilter, setSourceFilter] = useState<EntrySource | ''>('');
+  
+  // Phase 2: First Consolidation & Minority Interests
+  const [showFirstConsolidationWizard, setShowFirstConsolidationWizard] = useState(false);
+  const [showMinorityDashboard, setShowMinorityDashboard] = useState(false);
 
   useEffect(() => {
     loadStatements();
@@ -269,15 +275,29 @@ function Consolidation() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <h1>Konsolidierung</h1>
-        {selectedStatementId && (
-          <Link
-            to={`/consolidated-notes/${selectedStatementId}`}
-            className="button button-primary"
-            style={{ textDecoration: 'none' }}
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+          <button
+            className="button button-secondary"
+            onClick={() => setShowFirstConsolidationWizard(true)}
           >
-            Konzernanhang anzeigen
-          </Link>
-        )}
+            Erstkonsolidierung
+          </button>
+          <button
+            className="button button-secondary"
+            onClick={() => setShowMinorityDashboard(!showMinorityDashboard)}
+          >
+            {showMinorityDashboard ? 'Minderheiten ausblenden' : 'Minderheitenanteile'}
+          </button>
+          {selectedStatementId && (
+            <Link
+              to={`/consolidated-notes/${selectedStatementId}`}
+              className="button button-primary"
+              style={{ textDecoration: 'none' }}
+            >
+              Konzernanhang anzeigen
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="card">
@@ -546,6 +566,16 @@ function Consolidation() {
         </div>
       )}
 
+      {/* Minority Interest Dashboard */}
+      {showMinorityDashboard && selectedStatementId && (
+        <div className="card" style={{ marginTop: 'var(--spacing-6)' }}>
+          <MinorityInterestDashboard
+            financialStatementId={selectedStatementId}
+            onRefresh={loadEntries}
+          />
+        </div>
+      )}
+
       {/* Manual Entry Form Modal */}
       <ManualEntryForm
         isOpen={showManualEntryForm}
@@ -558,6 +588,17 @@ function Consolidation() {
         accounts={accounts}
         companies={companies}
         editEntry={editingEntry}
+      />
+
+      {/* First Consolidation Wizard */}
+      <FirstConsolidationWizard
+        isOpen={showFirstConsolidationWizard}
+        onClose={() => setShowFirstConsolidationWizard(false)}
+        onComplete={() => {
+          setShowFirstConsolidationWizard(false);
+          loadEntries();
+          loadCompanies();
+        }}
       />
     </div>
   );

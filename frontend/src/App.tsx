@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard';
 import CompanyManagement from './pages/CompanyManagement';
 import DataImport from './pages/DataImport';
 import Consolidation from './pages/Consolidation';
+import ConsolidationCirclePage from './pages/ConsolidationCirclePage';
 import FinancialStatement from './pages/FinancialStatement';
 import ConsolidatedNotes from './pages/ConsolidatedNotes';
 import { ToastProvider } from './contexts/ToastContext';
@@ -30,6 +31,9 @@ function App() {
               <NavLink to="/import" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 Datenimport
               </NavLink>
+              <NavLink to="/consolidation-circle" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                Konsolidierungskreis
+              </NavLink>
               <NavLink to="/consolidation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 Konsolidierung
               </NavLink>
@@ -41,6 +45,7 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/companies" element={<CompanyManagement />} />
                 <Route path="/import" element={<DataImport />} />
+                <Route path="/consolidation-circle" element={<ConsolidationCirclePage />} />
                 <Route path="/consolidation" element={<Consolidation />} />
                 <Route path="/financial-statements/:id" element={<FinancialStatement />} />
                 <Route path="/consolidated-notes/:id" element={<ConsolidatedNotes />} />

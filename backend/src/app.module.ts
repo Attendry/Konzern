@@ -6,6 +6,7 @@ import { ConsolidationModule } from './modules/consolidation/consolidation.modul
 import { ImportModule } from './modules/import/import.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
 import { HealthModule } from './modules/health/health.module';
+import { ParticipationModule } from './modules/participation/participation.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { HealthModule } from './modules/health/health.module';
     FinancialStatementModule,
     ConsolidationModule,
     ImportModule,
+    ParticipationModule,
   ],
 })
 export class AppModule {}

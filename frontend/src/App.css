@@ -2578,3 +2578,463 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* ============================================
+   COMPANY HIERARCHY TREE - MODERN DESIGN
+   ============================================ */
+
+.hierarchy-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hierarchy-card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.hierarchy-header {
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hierarchy-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-4);
+}
+
+.hierarchy-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.hierarchy-title::before {
+  content: '🏛️';
+  font-size: 1.2em;
+}
+
+.hierarchy-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.hierarchy-selector label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.hierarchy-select {
+  padding: var(--spacing-2) var(--spacing-4);
+  padding-right: var(--spacing-8);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23787774' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: all var(--transition-fast);
+  min-width: 180px;
+}
+
+.hierarchy-select:hover {
+  border-color: var(--color-border-hover);
+  background-color: var(--color-bg-hover);
+}
+
+.hierarchy-select:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(11, 140, 238, 0.1);
+}
+
+/* Tree Container */
+.hierarchy-tree-container {
+  padding: var(--spacing-4);
+  background: linear-gradient(135deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 100%);
+  border-radius: var(--radius-lg);
+  min-height: 200px;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.hierarchy-tree-branch {
+  position: relative;
+  padding-left: calc(var(--level) * 32px);
+}
+
+/* Tree Node */
+.hierarchy-node {
+  position: relative;
+  margin: var(--spacing-2) 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hierarchy-node-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.hierarchy-node:hover .hierarchy-node-content,
+.hierarchy-node.hovered .hierarchy-node-content {
+  border-color: var(--color-accent-blue);
+  box-shadow: var(--shadow-md);
+  transform: translateX(4px);
+}
+
+.hierarchy-node.selected .hierarchy-node-content {
+  border-color: var(--color-accent-blue);
+  background: rgba(11, 140, 238, 0.08);
+  box-shadow: 0 0 0 3px rgba(11, 140, 238, 0.15);
+}
+
+/* Connector Lines */
+.hierarchy-connector {
+  position: absolute;
+  left: -24px;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+}
+
+.hierarchy-connector-line {
+  position: absolute;
+  background: var(--color-border);
+}
+
+.hierarchy-connector-vertical {
+  left: 12px;
+  top: -8px;
+  width: 2px;
+  height: calc(50% + 8px);
+  border-radius: 1px;
+}
+
+.hierarchy-connector-horizontal {
+  left: 12px;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* Toggle Button */
+.hierarchy-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.hierarchy-toggle svg {
+  transition: transform var(--transition-fast);
+}
+
+.hierarchy-toggle.expanded svg {
+  transform: rotate(90deg);
+}
+
+.hierarchy-toggle:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+/* Node Badge */
+.hierarchy-node-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-lg);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.hierarchy-node-badge.parent {
+  background: linear-gradient(135deg, rgba(144, 101, 176, 0.2) 0%, rgba(144, 101, 176, 0.1) 100%);
+  color: var(--color-accent-purple);
+}
+
+.hierarchy-node-badge.subsidiary {
+  background: linear-gradient(135deg, rgba(11, 140, 238, 0.2) 0%, rgba(11, 140, 238, 0.1) 100%);
+  color: var(--color-accent-blue);
+}
+
+.hierarchy-node-badge.standalone {
+  background: linear-gradient(135deg, rgba(155, 154, 151, 0.2) 0%, rgba(155, 154, 151, 0.1) 100%);
+  color: var(--color-text-tertiary);
+}
+
+/* Node Info */
+.hierarchy-node-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: var(--spacing-1);
+}
+
+.hierarchy-node-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hierarchy-node-percentage {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.hierarchy-node-percentage::before {
+  content: 'Anteil:';
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Type Tag */
+.hierarchy-node-type-tag {
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  flex-shrink: 0;
+}
+
+.hierarchy-node.parent .hierarchy-node-type-tag {
+  background: rgba(144, 101, 176, 0.15);
+  color: var(--color-accent-purple);
+}
+
+.hierarchy-node.subsidiary .hierarchy-node-type-tag {
+  background: rgba(11, 140, 238, 0.15);
+  color: var(--color-accent-blue);
+}
+
+.hierarchy-node.standalone .hierarchy-node-type-tag {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+/* Children */
+.hierarchy-children {
+  margin-left: var(--spacing-4);
+  padding-left: var(--spacing-4);
+  border-left: 2px solid var(--color-border);
+  animation: slideDown 200ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Legend */
+.hierarchy-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-6);
+  margin-top: var(--spacing-5);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.hierarchy-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.hierarchy-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.hierarchy-legend-parent {
+  background: linear-gradient(135deg, var(--color-accent-purple) 0%, rgba(144, 101, 176, 0.6) 100%);
+}
+
+.hierarchy-legend-subsidiary {
+  background: linear-gradient(135deg, var(--color-accent-blue) 0%, rgba(11, 140, 238, 0.6) 100%);
+}
+
+.hierarchy-legend-standalone {
+  background: linear-gradient(135deg, var(--color-text-tertiary) 0%, rgba(155, 154, 151, 0.6) 100%);
+}
+
+/* Loading State */
+.hierarchy-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12);
+  gap: var(--spacing-4);
+  color: var(--color-text-secondary);
+}
+
+.hierarchy-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Error State */
+.hierarchy-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+  padding: var(--spacing-6);
+  background: rgba(225, 98, 89, 0.08);
+  border: 1px solid rgba(225, 98, 89, 0.3);
+  border-radius: var(--radius-lg);
+  color: var(--color-error);
+}
+
+.hierarchy-error-icon {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+}
+
+.hierarchy-error strong {
+  display: block;
+  margin-bottom: var(--spacing-1);
+  font-weight: var(--font-weight-semibold);
+}
+
+.hierarchy-error p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+
+/* Empty State */
+.hierarchy-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12) var(--spacing-8);
+  text-align: center;
+}
+
+.hierarchy-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-4);
+  opacity: 0.5;
+}
+
+.hierarchy-empty-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.hierarchy-empty-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  max-width: 360px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hierarchy-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hierarchy-selector {
+    width: 100%;
+  }
+
+  .hierarchy-select {
+    flex: 1;
+  }
+
+  .hierarchy-tree-container {
+    padding: var(--spacing-2);
+  }
+
+  .hierarchy-node-content {
+    padding: var(--spacing-2) var(--spacing-3);
+    gap: var(--spacing-2);
+  }
+
+  .hierarchy-node-badge {
+    width: 28px;
+    height: 28px;
+    font-size: var(--font-size-base);
+  }
+
+  .hierarchy-node-type-tag {
+    display: none;
+  }
+
+  .hierarchy-legend {
+    gap: var(--spacing-4);
+  }
+}
