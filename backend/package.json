@@ -10,8 +10,8 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "build": "nest build && ls -la dist/ || (echo 'Build failed or dist/ not found' && exit 1)",
-    "postbuild": "node -e \"const fs=require('fs'); const path=require('path'); const distPath='dist/main.js'; if(fs.existsSync(distPath)){console.log('✅ Build successful: dist/main.js exists');}else{console.error('❌ Build failed: dist/main.js not found'); console.error('Files in dist:', fs.existsSync('dist')?fs.readdirSync('dist').join(', '):'dist/ does not exist'); process.exit(1);}\"",
+    "build": "nest build --verbose",
+    "postbuild": "node -e \"const fs=require('fs'); console.log('Checking dist/...'); if(!fs.existsSync('dist')){console.error('❌ dist/ directory does not exist'); process.exit(1);} const files=fs.readdirSync('dist'); console.log('Files in dist:', files.join(', ')); if(!fs.existsSync('dist/main.js')){console.error('❌ dist/main.js not found'); process.exit(1);} console.log('✅ Build successful: dist/main.js exists');\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
