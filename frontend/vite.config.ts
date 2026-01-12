@@ -21,17 +21,14 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Optimize chunking to reduce memory usage during build
-          if (id.includes('node_modules')) {
-            if (id.includes('recharts')) {
-              return 'vendor-recharts';
-            }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            return 'vendor';
-          }
+        manualChunks: {
+          // Group all vendor dependencies together to avoid React initialization issues
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            'recharts',
+          ],
         },
       },
     },
