@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
-  "installCommand": "git config --global user.name 'Attendry' || true && git config --global user.email 'attendry@example.com' || true && if [ -f package-lock.json ]; then npm ci; else npm install; fi",
+  "installCommand": "git config --global user.name 'Attendry' || true && git config --global user.email 'attendry@example.com' || true && npm install",
   "framework": "vite",
   "rewrites": [
     {
