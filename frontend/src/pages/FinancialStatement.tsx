@@ -1,12 +1,10 @@
-import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement as FinancialStatementType, AccountBalance } from '../types';
+import BalanceSheetVisualization from '../components/BalanceSheetVisualization';
 import ErrorBoundary from '../components/ErrorBoundary';
 import '../App.css';
-
-// Lazy load BalanceSheetVisualization to avoid initialization issues
-const BalanceSheetVisualization = lazy(() => import('../components/BalanceSheetVisualization'));
 
 function FinancialStatement() {
   const { id } = useParams<{ id: string }>();
@@ -101,13 +99,11 @@ function FinancialStatement() {
       </div>
 
       <ErrorBoundary>
-        <Suspense fallback={<div className="card">Lade Visualisierung...</div>}>
-          <BalanceSheetVisualization 
-            financialStatementId={statement.id}
-            financialStatement={statement}
-            accountBalances={balances}
-          />
-        </Suspense>
+        <BalanceSheetVisualization 
+          financialStatementId={statement.id}
+          financialStatement={statement}
+          accountBalances={balances}
+        />
       </ErrorBoundary>
 
       <div className="card">
