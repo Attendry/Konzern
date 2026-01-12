@@ -4,6 +4,33 @@
 1. Vercel refuses to deploy
 2. Git pushes don't trigger new deployments
 
+## ⚠️ CRITICAL: Private Repository Issue
+
+**If your GitHub repository is PRIVATE, this is likely the root cause!**
+
+### Vercel Plan Limitations:
+- **Hobby Plan (Free)**: ❌ **DOES NOT support** deployments from private repositories in GitHub organizations
+- **Pro Plan**: ✅ Supports private repositories (commit author must be a team member)
+
+### Solutions for Private Repositories:
+
+#### Option 1: Make Repository Public (Free)
+1. Go to GitHub: `https://github.com/Attendry/Konzern`
+2. Click **Settings → General → Danger Zone**
+3. Click **Change visibility → Make public**
+4. Confirm the change
+5. Vercel deployments should work immediately
+
+#### Option 2: Upgrade to Vercel Pro Plan
+1. Go to Vercel Dashboard → Settings → Billing
+2. Upgrade to **Pro Plan** ($20/month per user)
+3. Private repository deployments will be enabled
+4. **Note**: Commit author must be a member of the Vercel Pro team
+
+#### Option 3: Use Personal Account (If Applicable)
+- If the repository is under a personal GitHub account (not organization), Hobby plan may work
+- Check if `Attendry` is an organization or personal account
+
 ## Step-by-Step Fix
 
 ### 1. Verify Vercel Project Connection to GitHub
@@ -188,6 +215,7 @@ git push origin --delete master
 
 ## Quick Diagnostic Checklist
 
+- [ ] **Repository is PUBLIC** OR you have **Vercel Pro Plan** (if private)
 - [ ] Vercel project exists and is connected to GitHub
 - [ ] Root Directory is set to `frontend` in Vercel settings
 - [ ] Build Command includes git config (or is empty to use vercel.json)
@@ -198,6 +226,7 @@ git push origin --delete master
 - [ ] Build logs show no errors
 - [ ] Environment variables are set (if needed)
 - [ ] Vercel usage limits not exceeded
+- [ ] Commit author email matches Vercel account email
 
 ## Still Not Working?
 

@@ -15,8 +15,13 @@ echo "Git config:"
 git config user.name || echo "WARNING: user.name not set"
 git config user.email || echo "WARNING: user.email not set"
 
-# Install dependencies
-npm ci
+# Install dependencies (use npm install if package-lock.json is missing)
+if [ -f "package-lock.json" ]; then
+  npm ci
+else
+  echo "Warning: package-lock.json not found, using npm install"
+  npm install
+fi
 
 # Build
 npm run build

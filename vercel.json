@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "cd frontend && npm run vercel-build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "git config --global user.name 'Attendry' || true && git config --global user.email 'attendry@example.com' || true && cd frontend && npm ci",
+  "installCommand": "git config --global user.name 'Attendry' || true && git config --global user.email 'attendry@example.com' || true && cd frontend && (npm ci || npm install)",
   "framework": "vite",
   "rootDirectory": "frontend",
   "rewrites": [
