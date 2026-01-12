@@ -15,9 +15,15 @@ echo "Git config:"
 git config user.name || echo "WARNING: user.name not set"
 git config user.email || echo "WARNING: user.email not set"
 
-# Install dependencies
-# Use npm install instead of npm ci for better compatibility
-npm install
+# Install dependencies with optional dependencies
+# This fixes the rollup native module issue on Vercel
+echo "Installing dependencies..."
+npm install --include=optional
+
+# Ensure rollup native dependencies are installed
+# This is a workaround for npm's optional dependency bug
+echo "Ensuring rollup native dependencies..."
+npm install @rollup/rollup-linux-x64-gnu --save-optional || true
 
 # Build
 npm run build
