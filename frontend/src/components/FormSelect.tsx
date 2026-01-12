@@ -7,13 +7,14 @@ interface SelectOption {
   disabled?: boolean;
 }
 
-interface FormSelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> {
+interface FormSelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children' | 'placeholder'> {
   label: string;
   options: SelectOption[];
   error?: string;
   helperText?: string;
   floatingLabel?: boolean;
   icon?: ReactNode;
+  placeholder?: string;
 }
 
 export function FormSelect({

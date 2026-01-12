@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import '../App.css';
 
@@ -21,13 +20,6 @@ export function Sparkline({
   strokeWidth = 2,
   className = '',
 }: SparklineProps) {
-  const chartData = useMemo(() => {
-    return data.map((value, index) => ({
-      index,
-      value,
-    }));
-  }, [data]);
-
   const minValue = Math.min(...data);
   const maxValue = Math.max(...data);
   const range = maxValue - minValue || 1;

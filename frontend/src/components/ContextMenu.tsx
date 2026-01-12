@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, ReactNode } from 'react';
 import '../App.css';
 
 export interface ContextMenuItem {
-  label: string;
-  onClick: () => void;
+  label?: string;
+  onClick?: () => void;
   icon?: ReactNode;
   disabled?: boolean;
   separator?: boolean;
@@ -69,7 +69,7 @@ export function ContextMenu({ items, onClose, x, y }: ContextMenuProps) {
   }, [onClose]);
 
   const handleItemClick = (item: ContextMenuItem) => {
-    if (!item.disabled) {
+    if (!item.disabled && item.onClick && !item.separator) {
       item.onClick();
       onClose();
     }

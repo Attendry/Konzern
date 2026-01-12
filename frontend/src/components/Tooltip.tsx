@@ -30,9 +30,7 @@ export function Tooltip({
     if (isVisible && tooltipRef.current && triggerRef.current) {
       // Auto-adjust position if tooltip would go off-screen
       const tooltip = tooltipRef.current;
-      const trigger = triggerRef.current;
       const rect = tooltip.getBoundingClientRect();
-      const triggerRect = trigger.getBoundingClientRect();
 
       let newPosition = position;
 

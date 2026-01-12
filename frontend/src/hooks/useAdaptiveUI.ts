@@ -55,9 +55,9 @@ export function useAdaptiveUI(): AdaptiveUIContext {
 // Hook for learning user patterns
 export function useUserPatterns() {
   const [patterns, setPatterns] = useState<{
-    frequentActions: Map<string, number>;
-    preferredRoutes: Map<string, number>;
-    timeOfDay: Map<string, number>;
+    frequentActions: Record<string, number>;
+    preferredRoutes: Record<string, number>;
+    timeOfDay: Record<string, number>;
   }>(() => {
     const stored = localStorage.getItem('userPatterns');
     return stored
