@@ -122,9 +122,12 @@ async function bootstrap() {
     const apiPrefix = process.env.API_PREFIX || 'api';
     app.setGlobalPrefix(apiPrefix);
 
+    // Railway requires listening on 0.0.0.0 and PORT env var
+    // See: https://docs.railway.com/reference/errors/application-failed-to-respond
     const port = process.env.PORT || 3000;
-    const host = process.env.HOST || '0.0.0.0';
+    const host = '0.0.0.0'; // Always use 0.0.0.0 for Railway (don't allow override)
     
+    logger.log(`Starting server on host: ${host}, port: ${port}`);
     await app.listen(port, host);
     
     logger.log('═══════════════════════════════════════════════════════════');
