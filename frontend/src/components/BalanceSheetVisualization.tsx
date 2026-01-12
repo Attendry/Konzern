@@ -368,7 +368,6 @@ function BalanceSheetVisualization({
             Treemap
           </button>
         </div>
-      </div>
 
       {viewType === 'both' && hasBefore && hasAfter ? (
         <div style={{ marginBottom: 'var(--spacing-6)' }}>
