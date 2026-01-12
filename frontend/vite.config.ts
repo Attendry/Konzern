@@ -18,16 +18,17 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Put recharts in vendor chunk to avoid initialization order issues
+          // Optimize chunking to reduce memory usage during build
           if (id.includes('node_modules')) {
             if (id.includes('recharts')) {
-              return 'vendor';
+              return 'vendor-recharts';
             }
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor';
+              return 'vendor-react';
             }
             return 'vendor';
           }
