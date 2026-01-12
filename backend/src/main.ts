@@ -22,7 +22,7 @@ async function bootstrap() {
   try {
     logger.log('Starting NestJS application...');
     logger.log('Environment check:');
-    logger.log(`  - PORT: ${process.env.PORT || 'not set (using 3000)'}`);
+    logger.log(`  - PORT: ${process.env.PORT || 'not set (using 8080)'}`);
     logger.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
     logger.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? 'set' : 'not set'}`);
     logger.log(`  - Supabase_Secret: ${process.env.Supabase_Secret ? 'set' : 'not set'}`);
@@ -52,45 +52,10 @@ async function bootstrap() {
     logger.log(`  - ALLOWED_ORIGINS: ${process.env.ALLOWED_ORIGINS || 'not set'}`);
     logger.log(`  - Parsed allowed origins: ${allowedOrigins.join(', ')}`);
     
+    // Temporarily allow all origins to debug 502 errors
+    // Once Railway routing is fixed, we can restrict this
     app.enableCors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) {
-          logger.log('CORS: Allowing request with no origin');
-          return callback(null, true);
-        }
-        
-        // In development, allow all origins
-        if (process.env.NODE_ENV !== 'production') {
-          logger.log(`CORS: Allowing origin in development: ${origin}`);
-          callback(null, true);
-          return;
-        }
-        
-        // In production, check allowed origins
-        // Automatically allow all *.vercel.app subdomains (for preview deployments)
-        const isVercelPreview = origin.endsWith('.vercel.app');
-        const isExplicitlyAllowed = allowedOrigins.includes(origin);
-        const hasVercelInAllowed = allowedOrigins.some(o => o.includes('vercel.app'));
-        
-        logger.log(`CORS Check: origin=${origin}, isVercelPreview=${isVercelPreview}, isExplicitlyAllowed=${isExplicitlyAllowed}, hasVercelInAllowed=${hasVercelInAllowed}`);
-        
-        // Allow if:
-        // 1. Explicitly in allowed list, OR
-        // 2. It's a Vercel preview domain AND we have any vercel.app domain in allowed list
-        const isAllowed = isExplicitlyAllowed || (isVercelPreview && hasVercelInAllowed);
-        
-        if (isAllowed) {
-          logger.log(`CORS: ✅ Allowing origin: ${origin}${isVercelPreview && !isExplicitlyAllowed ? ' (Vercel preview)' : ''}`);
-          callback(null, true);
-        } else {
-          logger.warn(`CORS: ❌ Blocking origin: ${origin}`);
-          logger.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
-          // Temporarily allow to debug - change back to callback(new Error(...)) after fixing
-          logger.warn(`CORS: Temporarily allowing for debugging`);
-          callback(null, true);
-        }
-      },
+      origin: true, // Allow all origins for now
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -124,7 +89,8 @@ async function bootstrap() {
 
     // Railway requires listening on 0.0.0.0 and PORT env var
     // See: https://docs.railway.com/reference/errors/application-failed-to-respond
-    const port = process.env.PORT || 3000;
+    // Default to 8080 to match Railway's typical port assignment
+    const port = process.env.PORT || 8080;
     const host = '0.0.0.0'; // Always use 0.0.0.0 for Railway (don't allow override)
     
     logger.log(`Starting server on host: ${host}, port: ${port}`);

@@ -20,6 +20,9 @@ export class RootController {
     return {
       message: 'Konzern API',
       version: '1.0.0',
+      status: 'running',
+      timestamp: new Date().toISOString(),
+      port: process.env.PORT || 'not set',
       endpoints: {
         health: '/api/health',
         companies: '/api/companies',
@@ -28,6 +31,15 @@ export class RootController {
         consolidation: '/api/consolidation',
       },
       documentation: 'All API endpoints are prefixed with /api',
+    };
+  }
+  
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
     };
   }
 }
