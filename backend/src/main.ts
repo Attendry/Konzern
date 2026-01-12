@@ -54,7 +54,11 @@ async function bootstrap() {
         }
         
         // In production, check allowed origins
-        if (allowedOrigins.includes(origin)) {
+        // Also allow any *.vercel.app subdomain if a vercel.app domain is in the list
+        const isAllowed = allowedOrigins.includes(origin) || 
+          (origin.includes('.vercel.app') && allowedOrigins.some(o => o.includes('vercel.app')));
+        
+        if (isAllowed) {
           logger.log(`CORS: Allowing origin: ${origin}`);
           callback(null, true);
         } else {
