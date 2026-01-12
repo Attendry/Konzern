@@ -114,11 +114,22 @@ async function bootstrap() {
     logger.log(`✅ Health check: http://${host === '0.0.0.0' ? 'localhost' : host}:${port}/${apiPrefix}/health`);
     logger.log(`✅ Companies endpoint: http://${host === '0.0.0.0' ? 'localhost' : host}:${port}/${apiPrefix}/companies`);
     logger.log('═══════════════════════════════════════════════════════════');
+    logger.log('✅ Backend started successfully!');
   } catch (error: any) {
     logger.error('❌ Failed to start application:', error);
     logger.error('Error details:', error.message);
+    logger.error('Error name:', error.name);
     logger.error('Stack:', error.stack);
-    process.exit(1);
+    logger.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    // Give it a moment before exiting to ensure logs are written
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
   }
 }
-bootstrap();
+
+// Wrap bootstrap in try-catch at top level
+bootstrap().catch((error) => {
+  console.error('Fatal error in bootstrap:', error);
+  process.exit(1);
+});
