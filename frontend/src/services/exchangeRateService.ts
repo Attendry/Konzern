@@ -106,6 +106,59 @@ export const exchangeRateService = {
     );
     return response.data;
   },
+
+  // ===== ECB RATE FETCHING =====
+
+  // Fetch latest spot rates from ECB
+  fetchLatestRates: async (): Promise<{ success: number; failed: number }> => {
+    const response = await api.post<{ success: number; failed: number; message: string }>(
+      '/exchange-rates/fetch/latest'
+    );
+    return response.data;
+  },
+
+  // Fetch rates for a specific date (balance sheet date)
+  fetchRatesForDate: async (date: string): Promise<{ success: number; failed: number }> => {
+    const response = await api.post<{ success: number; failed: number; message: string }>(
+      '/exchange-rates/fetch/date',
+      { date }
+    );
+    return response.data;
+  },
+
+  // Calculate average rates for a fiscal year/month
+  calculateAverageRates: async (
+    fiscalYear: number,
+    fiscalMonth?: number,
+  ): Promise<{ success: number; failed: number }> => {
+    const response = await api.post<{ success: number; failed: number; message: string }>(
+      '/exchange-rates/calculate/average',
+      { fiscalYear, fiscalMonth }
+    );
+    return response.data;
+  },
+
+  // Get rate schedule configuration
+  getRateSchedule: async (): Promise<any> => {
+    const response = await api.get('/exchange-rates/schedule');
+    return response.data;
+  },
+
+  // Update rate schedule configuration
+  updateRateSchedule: async (config: any): Promise<void> => {
+    await api.post('/exchange-rates/schedule', config);
+  },
+
+  // Get rate status/summary
+  getRateStatus: async (): Promise<{
+    currencies: string[];
+    currencyCount: number;
+    latestRates: any[];
+    lastUpdate: string | null;
+  }> => {
+    const response = await api.get('/exchange-rates/status');
+    return response.data;
+  },
 };
 
 // Common currency list for UI

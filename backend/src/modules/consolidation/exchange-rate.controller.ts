@@ -10,11 +10,15 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ExchangeRateService, ExchangeRateDto } from './exchange-rate.service';
+import { ExchangeRateFetcherService } from './exchange-rate-fetcher.service';
 import { RateType } from '../../entities/exchange-rate.entity';
 
 @Controller('exchange-rates')
 export class ExchangeRateController {
-  constructor(private readonly exchangeRateService: ExchangeRateService) {}
+  constructor(
+    private readonly exchangeRateService: ExchangeRateService,
+    private readonly exchangeRateFetcherService: ExchangeRateFetcherService,
+  ) {}
 
   /**
    * Get all exchange rates with optional filters
@@ -130,5 +134,121 @@ export class ExchangeRateController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
   ) {
     return this.exchangeRateService.getTranslationDifferences(companyId);
+  }
+
+  // ===== ECB RATE FETCHING ENDPOINTS =====
+
+  /**
+   * Fetch latest spot rates from ECB
+   * POST /api/exchange-rates/fetch/latest
+   */
+  @Post('fetch/latest')
+  async fetchLatestRates() {
+    const result = await this.exchangeRateFetcherService.updateAllSpotRates();
+    return {
+      message: `Spot-Kurse aktualisiert: ${result.success} erfolgreich, ${result.failed} fehlgeschlagen`,
+      ...result,
+    };
+  }
+
+  /**
+   * Fetch rates for a specific date (balance sheet date)
+   * POST /api/exchange-rates/fetch/date
+   */
+  @Post('fetch/date')
+  async fetchRatesForDate(@Body('date') date: string) {
+    const result = await this.exchangeRateFetcherService.fetchBalanceSheetRates(date);
+    return {
+      message: `Stichtagskurse für ${date} abgerufen: ${result.success} erfolgreich, ${result.failed} fehlgeschlagen`,
+      date,
+      ...result,
+    };
+  }
+
+  /**
+   * Calculate average rates for a fiscal year
+   * POST /api/exchange-rates/calculate/average
+   */
+  @Post('calculate/average')
+  async calculateAverageRates(
+    @Body('fiscalYear') fiscalYear: number,
+    @Body('fiscalMonth') fiscalMonth?: number,
+  ) {
+    if (fiscalMonth) {
+      // Calculate for specific month
+      const currencies = ['USD', 'GBP', 'CHF', 'PLN', 'CZK', 'SEK', 'DKK', 'NOK', 'HUF', 'JPY', 'CNY'];
+      let success = 0;
+      let failed = 0;
+
+      for (const currency of currencies) {
+        const result = await this.exchangeRateFetcherService.calculateAndStoreAverageRate(
+          currency, fiscalYear, fiscalMonth
+        );
+        if (result !== null) success++;
+        else failed++;
+      }
+
+      return {
+        message: `Monatliche Durchschnittskurse für ${fiscalMonth}/${fiscalYear} berechnet`,
+        fiscalYear,
+        fiscalMonth,
+        success,
+        failed,
+      };
+    }
+
+    // Calculate for entire year
+    const result = await this.exchangeRateFetcherService.calculateAllAverageRates(fiscalYear);
+    return {
+      message: `Jährliche Durchschnittskurse für ${fiscalYear} berechnet`,
+      fiscalYear,
+      ...result,
+    };
+  }
+
+  /**
+   * Get rate update schedule configuration
+   * GET /api/exchange-rates/schedule
+   */
+  @Get('schedule')
+  async getRateSchedule() {
+    return this.exchangeRateFetcherService.getRateScheduleConfig();
+  }
+
+  /**
+   * Update rate schedule configuration
+   * POST /api/exchange-rates/schedule
+   */
+  @Post('schedule')
+  async updateRateSchedule(@Body() config: any) {
+    await this.exchangeRateFetcherService.saveRateScheduleConfig(config);
+    return { message: 'Zeitplan gespeichert', config };
+  }
+
+  /**
+   * Get rate summary/status
+   * GET /api/exchange-rates/status
+   */
+  @Get('status')
+  async getRateStatus() {
+    const { data: latestRates } = await this.exchangeRateService['supabase']
+      .from('exchange_rates')
+      .select('from_currency, rate_date, rate_type, rate_source')
+      .order('rate_date', { ascending: false })
+      .limit(10);
+
+    const { data: currencyCount } = await this.exchangeRateService['supabase']
+      .from('exchange_rates')
+      .select('from_currency')
+      .limit(1000);
+
+    const uniqueCurrencies = new Set((currencyCount || []).map(r => r.from_currency));
+
+    return {
+      currencies: Array.from(uniqueCurrencies),
+      currencyCount: uniqueCurrencies.size,
+      latestRates: latestRates || [],
+      lastUpdate: latestRates?.[0]?.rate_date || null,
+    };
   }
 }

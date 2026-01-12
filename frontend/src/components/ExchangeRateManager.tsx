@@ -18,13 +18,20 @@ export function ExchangeRateManager() {
   const { success, error: showError } = useToastContext();
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRate, setEditingRate] = useState<ExchangeRate | null>(null);
+  const [showFetchModal, setShowFetchModal] = useState(false);
   
   // Filters
   const [filterCurrency, setFilterCurrency] = useState('');
   const [filterType, setFilterType] = useState<RateType | ''>('');
   const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+
+  // Fetch settings
+  const [fetchDate, setFetchDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [fetchYear, setFetchYear] = useState<number>(new Date().getFullYear());
+  const [fetchMonth, setFetchMonth] = useState<number | ''>('');
 
   // Form state
   const [formData, setFormData] = useState<CreateExchangeRateRequest>({
@@ -109,24 +116,100 @@ export function ExchangeRateManager() {
     });
   };
 
+  // ECB Fetch Functions
+  const handleFetchLatestRates = async () => {
+    setFetching(true);
+    try {
+      const result = await exchangeRateService.fetchLatestRates();
+      success(`${result.success} Kurse von EZB aktualisiert`);
+      loadRates();
+    } catch (error: any) {
+      showError(`Fehler beim Abrufen: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const handleFetchDateRates = async () => {
+    if (!fetchDate) return;
+    setFetching(true);
+    try {
+      const result = await exchangeRateService.fetchRatesForDate(fetchDate);
+      success(`Stichtagskurse für ${fetchDate} abgerufen: ${result.success} Kurse`);
+      loadRates();
+    } catch (error: any) {
+      showError(`Fehler beim Abrufen: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const handleCalculateAverageRates = async () => {
+    setFetching(true);
+    try {
+      const result = await exchangeRateService.calculateAverageRates(
+        fetchYear, 
+        fetchMonth ? Number(fetchMonth) : undefined
+      );
+      success(`Durchschnittskurse berechnet: ${result.success} Währungen`);
+      loadRates();
+    } catch (error: any) {
+      showError(`Fehler bei Berechnung: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+  const months = [
+    { value: 1, label: 'Januar' },
+    { value: 2, label: 'Februar' },
+    { value: 3, label: 'März' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'Mai' },
+    { value: 6, label: 'Juni' },
+    { value: 7, label: 'Juli' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'Oktober' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'Dezember' },
+  ];
 
   return (
     <div className="exchange-rate-manager">
       <div className="card">
         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>Wechselkurse (§ 308a HGB)</h2>
-          <button
-            className="button button-primary"
-            onClick={() => {
-              resetForm();
-              setEditingRate(null);
-              setShowAddModal(true);
-            }}
-          >
-            + Wechselkurs hinzufügen
-          </button>
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+            <button
+              className="button button-secondary"
+              onClick={() => setShowFetchModal(true)}
+              disabled={fetching}
+              title="Kurse von EZB abrufen"
+            >
+              🌐 EZB-Kurse
+            </button>
+            <button
+              className="button button-secondary"
+              onClick={handleFetchLatestRates}
+              disabled={fetching}
+              title="Aktuelle Tageskurse abrufen"
+            >
+              {fetching ? '...' : '↻ Aktualisieren'}
+            </button>
+            <button
+              className="button button-primary"
+              onClick={() => {
+                resetForm();
+                setEditingRate(null);
+                setShowAddModal(true);
+              }}
+            >
+              + Manuell hinzufügen
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -352,6 +435,120 @@ export function ExchangeRateManager() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* ECB Fetch Modal */}
+      <Modal
+        isOpen={showFetchModal}
+        onClose={() => setShowFetchModal(false)}
+        title="EZB-Kurse abrufen"
+        size="md"
+      >
+        <div style={{ marginBottom: 'var(--spacing-6)' }}>
+          <div style={{ 
+            padding: 'var(--spacing-4)', 
+            background: 'rgba(11, 140, 238, 0.1)', 
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: 'var(--spacing-4)',
+          }}>
+            <h4 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-accent-blue)' }}>
+              ℹ️ Automatische Kurspflege
+            </h4>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+              Die Wechselkurse werden automatisch von der Europäischen Zentralbank (EZB) abgerufen. 
+              Für HGB § 308a werden Stichtagskurse (Bilanz) und Durchschnittskurse (GuV) benötigt.
+            </p>
+          </div>
+
+          {/* Fetch Latest Rates */}
+          <div className="card" style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
+            <h4 style={{ marginTop: 0 }}>Aktuelle Tageskurse (Spot)</h4>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+              Ruft die aktuellen Tageskurse von der EZB ab. Ideal für laufende Bilanzierung.
+            </p>
+            <button
+              className="button button-primary"
+              onClick={handleFetchLatestRates}
+              disabled={fetching}
+            >
+              {fetching ? 'Lädt...' : 'Aktuelle Kurse abrufen'}
+            </button>
+          </div>
+
+          {/* Fetch Balance Sheet Date Rates */}
+          <div className="card" style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
+            <h4 style={{ marginTop: 0 }}>Stichtagskurse (Bilanzstichtag)</h4>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+              Ruft Kurse für einen bestimmten Stichtag ab (z.B. Quartalsende, Jahresende).
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                <label>Stichtag</label>
+                <input
+                  type="date"
+                  value={fetchDate}
+                  onChange={(e) => setFetchDate(e.target.value)}
+                />
+              </div>
+              <button
+                className="button button-primary"
+                onClick={handleFetchDateRates}
+                disabled={fetching || !fetchDate}
+              >
+                {fetching ? 'Lädt...' : 'Stichtagskurse abrufen'}
+              </button>
+            </div>
+          </div>
+
+          {/* Calculate Average Rates */}
+          <div className="card" style={{ padding: 'var(--spacing-4)' }}>
+            <h4 style={{ marginTop: 0 }}>Durchschnittskurse berechnen</h4>
+            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+              Berechnet den Durchschnitt aller Tageskurse für einen Zeitraum (GuV-Umrechnung).
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ minWidth: '120px', marginBottom: 0 }}>
+                <label>Jahr</label>
+                <select
+                  value={fetchYear}
+                  onChange={(e) => setFetchYear(parseInt(e.target.value))}
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ minWidth: '150px', marginBottom: 0 }}>
+                <label>Monat (optional)</label>
+                <select
+                  value={fetchMonth}
+                  onChange={(e) => setFetchMonth(e.target.value ? parseInt(e.target.value) : '')}
+                >
+                  <option value="">Gesamtes Jahr</option>
+                  {months.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="button button-primary"
+                onClick={handleCalculateAverageRates}
+                disabled={fetching}
+              >
+                {fetching ? 'Berechnet...' : 'Durchschnitt berechnen'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            className="button button-secondary"
+            onClick={() => setShowFetchModal(false)}
+          >
+            Schließen
+          </button>
+        </div>
       </Modal>
     </div>
   );

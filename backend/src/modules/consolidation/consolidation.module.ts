@@ -17,6 +17,7 @@ import { ConsolidationObligationService } from './consolidation-obligation.servi
 import { IncomeStatementConsolidationService } from './income-statement-consolidation.service';
 import { ConsolidatedNotesService } from './consolidated-notes.service';
 import { ExchangeRateService } from './exchange-rate.service';
+import { ExchangeRateFetcherService } from './exchange-rate-fetcher.service';
 import { FirstConsolidationService } from './first-consolidation.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CompanyModule } from '../company/company.module';
@@ -44,6 +45,7 @@ import { CompanyModule } from '../company/company.module';
     IncomeStatementConsolidationService,
     ConsolidatedNotesService,
     ExchangeRateService,
+    ExchangeRateFetcherService,
     FirstConsolidationService,
   ],
   exports: [
@@ -59,6 +61,7 @@ import { CompanyModule } from '../company/company.module';
     IncomeStatementConsolidationService,
     ConsolidatedNotesService,
     ExchangeRateService,
+    ExchangeRateFetcherService,
     FirstConsolidationService,
   ],
 })
