@@ -225,11 +225,11 @@ export function ConsolidationCircle({ onRefresh }: ConsolidationCircleProps) {
         gap: 'var(--spacing-4)',
         marginBottom: 'var(--spacing-6)',
       }}>
-        <MetricCard title="Unternehmen gesamt" value={totals.total} trend={0} />
-        <MetricCard title="Voll konsolidiert" value={totals.fullCount} trend={0} />
-        <MetricCard title="Quotenkonsolidierung" value={totals.proportionalCount} trend={0} />
-        <MetricCard title="At-Equity" value={totals.equityCount} trend={0} />
-        <MetricCard title="Nicht konsolidiert" value={totals.excludedCount} trend={0} />
+        <MetricCard label="Unternehmen gesamt" value={totals.total} />
+        <MetricCard label="Voll konsolidiert" value={totals.fullCount} />
+        <MetricCard label="Quotenkonsolidierung" value={totals.proportionalCount} />
+        <MetricCard label="At-Equity" value={totals.equityCount} />
+        <MetricCard label="Nicht konsolidiert" value={totals.excludedCount} />
       </div>
 
       {/* Parent Company */}

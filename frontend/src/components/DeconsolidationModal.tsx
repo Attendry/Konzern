@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Company, FinancialStatement, Participation } from '../types';
-import { companyService } from '../services/companyService';
 import { financialStatementService } from '../services/financialStatementService';
 import { 
   firstConsolidationService, 
@@ -125,14 +124,18 @@ export function DeconsolidationModal({
                 <div style={{ textAlign: 'right' }}>{participation.participationPercentage}%</div>
                 <div>Anschaffungskosten:</div>
                 <div style={{ textAlign: 'right', fontFamily: 'var(--font-family-mono)' }}>{formatCurrency(participation.acquisitionCost || 0)}</div>
-                {participation.goodwill > 0 && (
+                {(participation.goodwill ?? 0) > 0 && (
                   <>
                     <div>Goodwill:</div>
-                    <div style={{ textAlign: 'right', fontFamily: 'var(--font-family-mono)' }}>{formatCurrency(participation.goodwill)}</div>
+                    <div style={{ textAlign: 'right', fontFamily: 'var(--font-family-mono)' }}>{formatCurrency(participation.goodwill ?? 0)}</div>
                   </>
                 )}
-                <div>Erwerbsdatum:</div>
-                <div style={{ textAlign: 'right' }}>{new Date(participation.acquisitionDate).toLocaleDateString('de-DE')}</div>
+                {participation.acquisitionDate && (
+                  <>
+                    <div>Erwerbsdatum:</div>
+                    <div style={{ textAlign: 'right' }}>{new Date(participation.acquisitionDate).toLocaleDateString('de-DE')}</div>
+                  </>
+                )}
               </div>
             </div>
           )}

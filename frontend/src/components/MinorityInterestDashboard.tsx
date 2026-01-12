@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Company, FinancialStatement } from '../types';
 import { companyService } from '../services/companyService';
 import { financialStatementService } from '../services/financialStatementService';
-import { firstConsolidationService, MinorityInterestResult } from '../services/firstConsolidationService';
+import { firstConsolidationService } from '../services/firstConsolidationService';
 import { MetricCard } from './MetricCard';
 import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
@@ -181,24 +181,18 @@ export function MinorityInterestDashboard({
         marginBottom: 'var(--spacing-6)',
       }}>
         <MetricCard
-          title="Anteile anderer Gesellschafter (EK)"
+          label="Anteile anderer Gesellschafter (EK)"
           value={totals.totalMinorityEquity}
-          unit="EUR"
-          isCurrency
-          trend={0}
+          format={(v) => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
         />
         <MetricCard
-          title="Anteile anderer Gesellschafter (GuV)"
+          label="Anteile anderer Gesellschafter (GuV)"
           value={totals.totalMinorityProfit}
-          unit="EUR"
-          isCurrency
-          trend={0}
+          format={(v) => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
         />
         <MetricCard
-          title="Gesellschaften mit Minderheiten"
+          label="Gesellschaften mit Minderheiten"
           value={totals.companiesWithMinority}
-          unit="Unternehmen"
-          trend={0}
         />
       </div>
 
