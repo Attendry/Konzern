@@ -35,8 +35,13 @@ async function bootstrap() {
     // CORS für Frontend
     // Allow multiple origins for development and production
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/$/, '')) // Remove trailing slashes
       : [process.env.FRONTEND_URL || 'http://localhost:5173'];
+    
+    logger.log(`CORS Configuration:`);
+    logger.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+    logger.log(`  - ALLOWED_ORIGINS: ${process.env.ALLOWED_ORIGINS || 'not set'}`);
+    logger.log(`  - Parsed allowed origins: ${allowedOrigins.join(', ')}`);
     
     app.enableCors({
       origin: (origin, callback) => {
@@ -59,16 +64,19 @@ async function bootstrap() {
         const isExplicitlyAllowed = allowedOrigins.includes(origin);
         const hasVercelInAllowed = allowedOrigins.some(o => o.includes('vercel.app'));
         
+        logger.log(`CORS Check: origin=${origin}, isVercelPreview=${isVercelPreview}, isExplicitlyAllowed=${isExplicitlyAllowed}, hasVercelInAllowed=${hasVercelInAllowed}`);
+        
         // Allow if:
         // 1. Explicitly in allowed list, OR
         // 2. It's a Vercel preview domain AND we have any vercel.app domain in allowed list
         const isAllowed = isExplicitlyAllowed || (isVercelPreview && hasVercelInAllowed);
         
         if (isAllowed) {
-          logger.log(`CORS: Allowing origin: ${origin}${isVercelPreview && !isExplicitlyAllowed ? ' (Vercel preview)' : ''}`);
+          logger.log(`CORS: ✅ Allowing origin: ${origin}${isVercelPreview && !isExplicitlyAllowed ? ' (Vercel preview)' : ''}`);
           callback(null, true);
         } else {
-          logger.warn(`CORS: Blocking origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+          logger.warn(`CORS: ❌ Blocking origin: ${origin}`);
+          logger.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
           callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
         }
       },
