@@ -2,11 +2,25 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { consolidationService } from '../services/consolidationService';
 import { financialStatementService } from '../services/financialStatementService';
-import { FinancialStatement, ConsolidationEntry } from '../types';
+import { companyService } from '../services/companyService';
+import { 
+  FinancialStatement, 
+  ConsolidationEntry, 
+  Account, 
+  Company,
+  EntryStatus,
+  EntrySource,
+  CreateConsolidationEntryRequest,
+  UpdateConsolidationEntryRequest,
+} from '../types';
 import ConsolidationImpactDashboard from '../components/ConsolidationImpactDashboard';
 import IncomeStatementVisualization from '../components/IncomeStatementVisualization';
+import { ManualEntryForm } from '../components/ManualEntryForm';
+import { ICReconciliation } from '../components/ICReconciliation';
 import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
+
+type EntryTab = 'all' | 'manual' | 'pending';
 
 function Consolidation() {
   const { success, error: showError } = useToastContext();
@@ -18,16 +32,27 @@ function Consolidation() {
   const [calculating, setCalculating] = useState(false);
   const [summary, setSummary] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Manual entry state
+  const [showManualEntryForm, setShowManualEntryForm] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<ConsolidationEntry | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [activeTab, setActiveTab] = useState<EntryTab>('all');
+  const [statusFilter, setStatusFilter] = useState<EntryStatus | ''>('');
+  const [sourceFilter, setSourceFilter] = useState<EntrySource | ''>('');
 
   useEffect(() => {
     loadStatements();
+    loadCompanies();
   }, []);
 
   useEffect(() => {
     if (selectedStatementId) {
       loadEntries();
+      loadAccounts();
     }
-  }, [selectedStatementId]);
+  }, [selectedStatementId, statusFilter, sourceFilter]);
 
   const loadStatements = async () => {
     setLoadingStatements(true);
@@ -46,17 +71,174 @@ function Consolidation() {
     }
   };
 
+  const loadCompanies = async () => {
+    try {
+      const data = await companyService.getAll();
+      setCompanies(data);
+    } catch (error) {
+      console.error('Fehler beim Laden der Unternehmen:', error);
+    }
+  };
+
+  const loadAccounts = async () => {
+    try {
+      // Load accounts for the selected financial statement
+      const balances = await financialStatementService.getBalances(selectedStatementId);
+      const uniqueAccounts = balances
+        .filter((b: any) => b.account)
+        .map((b: any) => b.account)
+        .filter((account: Account, index: number, self: Account[]) => 
+          index === self.findIndex(a => a.id === account.id)
+        );
+      setAccounts(uniqueAccounts);
+    } catch (error) {
+      console.error('Fehler beim Laden der Konten:', error);
+    }
+  };
+
   const loadEntries = async () => {
     if (!selectedStatementId) return;
     setLoading(true);
     try {
-      const data = await consolidationService.getEntries(selectedStatementId);
+      const filters: any = {};
+      if (statusFilter) filters.status = statusFilter;
+      if (sourceFilter) filters.source = sourceFilter;
+      
+      const data = await consolidationService.getEntries(selectedStatementId, filters);
       setEntries(data);
     } catch (error) {
       console.error('Fehler beim Laden der Konsolidierungsbuchungen:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Manual entry handlers
+  const handleCreateEntry = async (entryData: CreateConsolidationEntryRequest | UpdateConsolidationEntryRequest) => {
+    try {
+      if (editingEntry) {
+        await consolidationService.updateEntry(editingEntry.id, entryData as UpdateConsolidationEntryRequest);
+        success('Buchung erfolgreich aktualisiert');
+      } else {
+        await consolidationService.createEntry(entryData as CreateConsolidationEntryRequest);
+        success('Buchung erfolgreich erstellt');
+      }
+      setShowManualEntryForm(false);
+      setEditingEntry(null);
+      loadEntries();
+    } catch (error: any) {
+      showError(`Fehler: ${error.response?.data?.message || error.message}`);
+      throw error;
+    }
+  };
+
+  const handleEditEntry = (entry: ConsolidationEntry) => {
+    if (entry.status !== 'draft') {
+      showError('Nur Buchungen im Status "Entwurf" können bearbeitet werden');
+      return;
+    }
+    setEditingEntry(entry);
+    setShowManualEntryForm(true);
+  };
+
+  const handleDeleteEntry = async (entryId: string) => {
+    if (!confirm('Möchten Sie diese Buchung wirklich löschen?')) return;
+    
+    try {
+      await consolidationService.deleteEntry(entryId);
+      success('Buchung erfolgreich gelöscht');
+      loadEntries();
+    } catch (error: any) {
+      showError(`Fehler: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handleSubmitForApproval = async (entryId: string) => {
+    try {
+      await consolidationService.submitForApproval(entryId);
+      success('Buchung zur Freigabe eingereicht');
+      loadEntries();
+    } catch (error: any) {
+      showError(`Fehler: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handleApproveEntry = async (entryId: string) => {
+    // In production, this would use the actual logged-in user ID
+    const approverUserId = 'current-user-id'; // TODO: Get from auth context
+    try {
+      await consolidationService.approveEntry(entryId, approverUserId);
+      success('Buchung freigegeben');
+      loadEntries();
+    } catch (error: any) {
+      showError(`Fehler: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handleRejectEntry = async (entryId: string) => {
+    const reason = prompt('Bitte geben Sie einen Ablehnungsgrund ein:');
+    if (!reason) return;
+    
+    const rejecterUserId = 'current-user-id'; // TODO: Get from auth context
+    try {
+      await consolidationService.rejectEntry(entryId, rejecterUserId, reason);
+      success('Buchung abgelehnt');
+      loadEntries();
+    } catch (error: any) {
+      showError(`Fehler: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handleReverseEntry = async (entryId: string) => {
+    const reason = prompt('Bitte geben Sie einen Stornogrund ein:');
+    if (!reason) return;
+    
+    const userId = 'current-user-id'; // TODO: Get from auth context
+    try {
+      await consolidationService.reverseEntry(entryId, userId, reason);
+      success('Buchung storniert');
+      loadEntries();
+    } catch (error: any) {
+      showError(`Fehler: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  // Filter entries by tab
+  const getFilteredEntries = () => {
+    switch (activeTab) {
+      case 'manual':
+        return entries.filter(e => e.source === 'manual');
+      case 'pending':
+        return entries.filter(e => e.status === 'pending');
+      default:
+        return entries;
+    }
+  };
+
+  const filteredEntries = getFilteredEntries();
+  const manualCount = entries.filter(e => e.source === 'manual').length;
+  const pendingCount = entries.filter(e => e.status === 'pending').length;
+
+  // Status badge helper
+  const getStatusBadge = (status: EntryStatus) => {
+    const labels: Record<EntryStatus, string> = {
+      draft: 'Entwurf',
+      pending: 'Zur Prüfung',
+      approved: 'Freigegeben',
+      rejected: 'Abgelehnt',
+      reversed: 'Storniert',
+    };
+    return <span className={`entry-status ${status}`}>{labels[status]}</span>;
+  };
+
+  // Source badge helper
+  const getSourceBadge = (source: EntrySource) => {
+    const labels: Record<EntrySource, string> = {
+      automatic: 'Automatisch',
+      manual: 'Manuell',
+      import: 'Import',
+    };
+    return <span className={`entry-source ${source}`}>{labels[source]}</span>;
   };
 
   const handleCalculate = async () => {
@@ -154,40 +336,136 @@ function Consolidation() {
         <IncomeStatementVisualization financialStatementId={selectedStatementId} />
       )}
 
+      {/* IC Reconciliation Section */}
+      {selectedStatementId && (
+        <ICReconciliation 
+          financialStatementId={selectedStatementId} 
+          onEntryCreated={loadEntries}
+        />
+      )}
+
       {selectedStatementId && (
         <div className="card">
-          <div className="card-header">
+          <div className="entry-list-header">
             <h2>Konsolidierungsbuchungen ({entries.length})</h2>
+            <button
+              className="button button-primary"
+              onClick={() => {
+                setEditingEntry(null);
+                setShowManualEntryForm(true);
+              }}
+            >
+              + Manuelle Buchung
+            </button>
           </div>
+
+          {/* Tabs */}
+          <div className="entry-tabs">
+            <button
+              className={`entry-tab ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
+            >
+              Alle
+              <span className="badge-count">{entries.length}</span>
+            </button>
+            <button
+              className={`entry-tab ${activeTab === 'manual' ? 'active' : ''}`}
+              onClick={() => setActiveTab('manual')}
+            >
+              Manuell
+              <span className="badge-count">{manualCount}</span>
+            </button>
+            <button
+              className={`entry-tab ${activeTab === 'pending' ? 'active' : ''}`}
+              onClick={() => setActiveTab('pending')}
+            >
+              Zur Freigabe
+              <span className="badge-count">{pendingCount}</span>
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="entry-list-filters" style={{ marginBottom: 'var(--spacing-4)' }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as EntryStatus | '')}
+            >
+              <option value="">Alle Status</option>
+              <option value="draft">Entwurf</option>
+              <option value="pending">Zur Prüfung</option>
+              <option value="approved">Freigegeben</option>
+              <option value="rejected">Abgelehnt</option>
+              <option value="reversed">Storniert</option>
+            </select>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as EntrySource | '')}
+            >
+              <option value="">Alle Quellen</option>
+              <option value="automatic">Automatisch</option>
+              <option value="manual">Manuell</option>
+              <option value="import">Import</option>
+            </select>
+          </div>
+
           {loading ? (
             <div className="loading">
               <div className="loading-spinner"></div>
               <span>Lade Buchungen...</span>
             </div>
-          ) : entries.length === 0 ? (
+          ) : filteredEntries.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-title">Keine Konsolidierungsbuchungen vorhanden</div>
               <div className="empty-state-description">
-                Führen Sie eine Konsolidierung durch, um Buchungen zu erstellen.
+                {activeTab === 'manual' 
+                  ? 'Erstellen Sie eine manuelle Buchung mit dem Button oben.'
+                  : activeTab === 'pending'
+                  ? 'Keine Buchungen zur Freigabe vorhanden.'
+                  : 'Führen Sie eine Konsolidierung durch oder erstellen Sie eine manuelle Buchung.'}
               </div>
             </div>
           ) : (
             <table className="table">
               <thead>
                 <tr>
-                  <th>Konto</th>
+                  <th>Buchungssatz</th>
                   <th>Typ</th>
                   <th>Betrag</th>
+                  <th>Status</th>
+                  <th>Quelle</th>
                   <th>Beschreibung</th>
                   <th>Datum</th>
+                  <th>Aktionen</th>
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry) => (
+                {filteredEntries.map((entry) => (
                   <tr key={entry.id}>
-                    <td>{entry.account?.accountNumber || entry.accountId}</td>
                     <td>
-                      <span className="badge badge-info">{entry.adjustmentType}</span>
+                      <div className="booking-display">
+                        {entry.debitAccount ? (
+                          <>
+                            <div className="booking-line debit">
+                              <span className="account-number">{entry.debitAccount.accountNumber}</span>
+                              <span className="account-name">{entry.debitAccount.name}</span>
+                            </div>
+                            <div className="booking-line credit">
+                              <span className="account-number">{entry.creditAccount?.accountNumber}</span>
+                              <span className="account-name">{entry.creditAccount?.name}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <span>{entry.account?.accountNumber || entry.accountId?.slice(0, 8)}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge-info">{entry.adjustmentType.replace('_', ' ')}</span>
+                      {entry.hgbReference && (
+                        <span className="hgb-reference" style={{ marginLeft: 'var(--spacing-2)' }}>
+                          {entry.hgbReference}
+                        </span>
+                      )}
                     </td>
                     <td style={{ 
                       color: entry.amount < 0 ? 'var(--color-error)' : 'var(--color-success)',
@@ -198,8 +476,68 @@ function Consolidation() {
                         currency: 'EUR'
                       })}
                     </td>
-                    <td>{entry.description || '-'}</td>
+                    <td>{getStatusBadge(entry.status)}</td>
+                    <td>{getSourceBadge(entry.source)}</td>
+                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {entry.description || '-'}
+                    </td>
                     <td>{new Date(entry.createdAt).toLocaleDateString('de-DE')}</td>
+                    <td>
+                      <div className="entry-actions">
+                        {entry.status === 'draft' && (
+                          <>
+                            <button
+                              className="button button-secondary"
+                              onClick={() => handleEditEntry(entry)}
+                              title="Bearbeiten"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="button button-secondary"
+                              onClick={() => handleSubmitForApproval(entry.id)}
+                              title="Zur Freigabe einreichen"
+                            >
+                              📤
+                            </button>
+                            <button
+                              className="button button-secondary"
+                              onClick={() => handleDeleteEntry(entry.id)}
+                              title="Löschen"
+                            >
+                              🗑️
+                            </button>
+                          </>
+                        )}
+                        {entry.status === 'pending' && (
+                          <>
+                            <button
+                              className="button button-primary"
+                              onClick={() => handleApproveEntry(entry.id)}
+                              title="Freigeben"
+                            >
+                              ✅
+                            </button>
+                            <button
+                              className="button button-secondary"
+                              onClick={() => handleRejectEntry(entry.id)}
+                              title="Ablehnen"
+                            >
+                              ❌
+                            </button>
+                          </>
+                        )}
+                        {entry.status === 'approved' && entry.source === 'manual' && (
+                          <button
+                            className="button button-secondary"
+                            onClick={() => handleReverseEntry(entry.id)}
+                            title="Stornieren"
+                          >
+                            ↩️
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -207,6 +545,20 @@ function Consolidation() {
           )}
         </div>
       )}
+
+      {/* Manual Entry Form Modal */}
+      <ManualEntryForm
+        isOpen={showManualEntryForm}
+        onClose={() => {
+          setShowManualEntryForm(false);
+          setEditingEntry(null);
+        }}
+        onSubmit={handleCreateEntry}
+        financialStatementId={selectedStatementId}
+        accounts={accounts}
+        companies={companies}
+        editEntry={editingEntry}
+      />
     </div>
   );
 }

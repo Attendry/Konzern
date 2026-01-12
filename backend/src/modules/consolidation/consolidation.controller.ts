@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   ParseUUIDPipe,
@@ -18,7 +20,13 @@ import { ConsolidationValidationService } from './consolidation-validation.servi
 import { ReportingService } from './reporting.service';
 import { ExportService } from './export.service';
 import { ParticipationService } from '../company/participation.service';
-import { CreateConsolidationEntryDto } from './dto/create-consolidation-entry.dto';
+import { 
+  CreateConsolidationEntryDto, 
+  UpdateConsolidationEntryDto,
+  ApproveEntryDto,
+  RejectEntryDto,
+} from './dto/create-consolidation-entry.dto';
+import { AdjustmentType, EntryStatus, EntrySource } from '../../entities/consolidation-entry.entity';
 
 @Controller('consolidation')
 export class ConsolidationController {
@@ -44,13 +52,86 @@ export class ConsolidationController {
   @Get('entries/:financialStatementId')
   async getEntries(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+    @Query('adjustmentType') adjustmentType?: AdjustmentType,
+    @Query('status') status?: EntryStatus,
+    @Query('source') source?: EntrySource,
   ) {
-    return this.consolidationService.getConsolidationEntries(financialStatementId);
+    return this.consolidationService.getConsolidationEntries(financialStatementId, {
+      adjustmentType,
+      status,
+      source,
+    });
   }
 
   @Post('entries')
   async createEntry(@Body() createDto: CreateConsolidationEntryDto) {
     return this.consolidationService.createConsolidationEntry(createDto);
+  }
+
+  @Put('entries/:entryId')
+  async updateEntry(
+    @Param('entryId', ParseUUIDPipe) entryId: string,
+    @Body() updateDto: UpdateConsolidationEntryDto,
+  ) {
+    return this.consolidationService.updateConsolidationEntry(entryId, updateDto);
+  }
+
+  @Delete('entries/:entryId')
+  async deleteEntry(@Param('entryId', ParseUUIDPipe) entryId: string) {
+    await this.consolidationService.deleteConsolidationEntry(entryId);
+    return { message: 'Buchung erfolgreich gelöscht' };
+  }
+
+  // Entry Workflow Endpoints
+  @Post('entries/:entryId/submit')
+  async submitEntry(@Param('entryId', ParseUUIDPipe) entryId: string) {
+    return this.consolidationService.submitForApproval(entryId);
+  }
+
+  @Post('entries/:entryId/approve')
+  async approveEntry(
+    @Param('entryId', ParseUUIDPipe) entryId: string,
+    @Body() approveDto: ApproveEntryDto,
+  ) {
+    return this.consolidationService.approveEntry(entryId, approveDto.approvedByUserId);
+  }
+
+  @Post('entries/:entryId/reject')
+  async rejectEntry(
+    @Param('entryId', ParseUUIDPipe) entryId: string,
+    @Body() rejectDto: RejectEntryDto,
+  ) {
+    return this.consolidationService.rejectEntry(
+      entryId,
+      rejectDto.rejectedByUserId,
+      rejectDto.reason,
+    );
+  }
+
+  @Post('entries/:entryId/reverse')
+  async reverseEntry(
+    @Param('entryId', ParseUUIDPipe) entryId: string,
+    @Body() body: { reversedByUserId: string; reason: string },
+  ) {
+    return this.consolidationService.reverseEntry(
+      entryId,
+      body.reversedByUserId,
+      body.reason,
+    );
+  }
+
+  @Get('entries/:financialStatementId/manual')
+  async getManualEntries(
+    @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+  ) {
+    return this.consolidationService.getManualEntries(financialStatementId);
+  }
+
+  @Get('entries/:financialStatementId/pending')
+  async getPendingEntries(
+    @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+  ) {
+    return this.consolidationService.getPendingEntries(financialStatementId);
   }
 
   // Intercompany Transaction Endpoints
@@ -66,6 +147,49 @@ export class ConsolidationController {
   @Post('intercompany/match')
   async matchTransactions(@Body() transactions: any[]) {
     return this.intercompanyService.matchReceivablesAndPayables(transactions);
+  }
+
+  // IC Reconciliation Endpoints
+  @Get('intercompany/reconciliation/:financialStatementId')
+  async getICReconciliations(
+    @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+  ) {
+    return this.intercompanyService.getICReconciliations(financialStatementId);
+  }
+
+  @Get('intercompany/reconciliation/:financialStatementId/summary')
+  async getICReconciliationSummary(
+    @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+  ) {
+    return this.intercompanyService.getICReconciliationSummary(financialStatementId);
+  }
+
+  @Post('intercompany/reconciliation/:financialStatementId/create')
+  async createICReconciliations(
+    @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+  ) {
+    return this.intercompanyService.createICReconciliationsFromMatching(financialStatementId);
+  }
+
+  @Put('intercompany/reconciliation/:reconciliationId')
+  async updateICReconciliation(
+    @Param('reconciliationId', ParseUUIDPipe) reconciliationId: string,
+    @Body() updateData: {
+      status?: string;
+      differenceReason?: string;
+      explanation?: string;
+      resolvedByUserId?: string;
+    },
+  ) {
+    return this.intercompanyService.updateICReconciliation(reconciliationId, updateData);
+  }
+
+  @Post('intercompany/reconciliation/:reconciliationId/clear')
+  async generateClearingEntry(
+    @Param('reconciliationId', ParseUUIDPipe) reconciliationId: string,
+    @Body() body: { userId: string },
+  ) {
+    return this.intercompanyService.generateClearingEntry(reconciliationId, body.userId);
   }
 
   // Debt Consolidation Endpoints

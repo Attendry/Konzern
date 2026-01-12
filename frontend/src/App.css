@@ -2224,3 +2224,357 @@
     font-size: 10px;
   }
 }
+
+/* ============================================
+   MANUAL ENTRY FORM STYLES
+   ============================================ */
+
+.manual-entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.manual-entry-form .form-row {
+  display: flex;
+  gap: var(--spacing-4);
+}
+
+.manual-entry-form .form-row .form-group {
+  flex: 1;
+}
+
+.manual-entry-form .form-row .form-group.flex-2 {
+  flex: 2;
+}
+
+.manual-entry-form .form-row .form-group.flex-1 {
+  flex: 1;
+}
+
+.manual-entry-form .form-section {
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  margin: var(--spacing-2) 0;
+}
+
+.manual-entry-form .form-section h4 {
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.manual-entry-form .booking-entry {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4);
+  border: 1px solid var(--color-border);
+}
+
+.manual-entry-form .amount-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--spacing-3);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  min-height: 42px;
+}
+
+.manual-entry-form .amount-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent-blue);
+}
+
+.manual-entry-form textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.manual-entry-form .company-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.manual-entry-form .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+}
+
+.manual-entry-form .checkbox-label:hover {
+  border-color: var(--color-accent-blue);
+}
+
+.manual-entry-form .checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.manual-entry-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-2);
+}
+
+.manual-entry-form .error-text {
+  color: var(--color-error);
+  font-size: var(--font-size-xs);
+  margin-top: var(--spacing-1);
+  display: block;
+}
+
+.manual-entry-form select.error,
+.manual-entry-form input.error,
+.manual-entry-form textarea.error {
+  border-color: var(--color-error);
+}
+
+/* Entry Status Badges */
+.entry-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.entry-status.draft {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.entry-status.pending {
+  background: rgba(247, 201, 72, 0.15);
+  color: #b38600;
+}
+
+.entry-status.approved {
+  background: rgba(15, 123, 15, 0.15);
+  color: var(--color-success);
+}
+
+.entry-status.rejected {
+  background: rgba(225, 98, 89, 0.15);
+  color: var(--color-error);
+}
+
+.entry-status.reversed {
+  background: rgba(144, 101, 176, 0.15);
+  color: var(--color-accent-purple);
+}
+
+/* Entry Source Badges */
+.entry-source {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.entry-source.manual {
+  background: rgba(11, 140, 238, 0.1);
+  color: var(--color-accent-blue);
+}
+
+.entry-source.automatic {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+}
+
+/* Entry Actions */
+.entry-actions {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.entry-actions button {
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-md);
+}
+
+/* Consolidation Entry List Enhancements */
+.entry-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.entry-list-filters {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: center;
+}
+
+.entry-list-filters select {
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  min-width: 150px;
+}
+
+.entry-tabs {
+  display: flex;
+  gap: var(--spacing-1);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-4);
+}
+
+.entry-tab {
+  padding: var(--spacing-3) var(--spacing-4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.entry-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.entry-tab.active {
+  color: var(--color-accent-blue);
+  border-bottom-color: var(--color-accent-blue);
+}
+
+.entry-tab .badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--spacing-1);
+  margin-left: var(--spacing-2);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.entry-tab.active .badge-count {
+  background: var(--color-accent-blue);
+  color: white;
+}
+
+/* HGB Reference Badge */
+.hgb-reference {
+  display: inline-block;
+  padding: var(--spacing-1) var(--spacing-2);
+  background: rgba(144, 101, 176, 0.1);
+  color: var(--color-accent-purple);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-mono);
+}
+
+/* Booking display (Soll an Haben) */
+.booking-display {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-sm);
+}
+
+.booking-line {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.booking-line .account-number {
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.booking-line .account-name {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.booking-line.debit::before {
+  content: 'S';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: rgba(15, 123, 15, 0.15);
+  color: var(--color-success);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.booking-line.credit::before {
+  content: 'H';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: rgba(225, 98, 89, 0.15);
+  color: var(--color-error);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+@media (max-width: 768px) {
+  .manual-entry-form .form-row {
+    flex-direction: column;
+  }
+
+  .entry-list-header {
+    flex-direction: column;
+    gap: var(--spacing-3);
+    align-items: flex-start;
+  }
+
+  .entry-list-filters {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .entry-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

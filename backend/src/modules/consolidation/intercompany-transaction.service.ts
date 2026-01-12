@@ -410,4 +410,257 @@ export class IntercompanyTransactionService {
 
     return { matched, unmatched, missingInfo };
   }
+
+  /**
+   * Get all IC reconciliation records for a financial statement
+   */
+  async getICReconciliations(financialStatementId: string): Promise<any[]> {
+    const { data, error } = await this.supabase
+      .from('ic_reconciliations')
+      .select(`
+        *,
+        company_a:companies!ic_reconciliations_company_a_id_fkey(id, name),
+        company_b:companies!ic_reconciliations_company_b_id_fkey(id, name),
+        account_a:accounts!ic_reconciliations_account_a_id_fkey(id, account_number, name),
+        account_b:accounts!ic_reconciliations_account_b_id_fkey(id, account_number, name)
+      `)
+      .eq('financial_statement_id', financialStatementId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new BadRequestException(`Fehler beim Laden der IC-Abstimmungen: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  /**
+   * Create IC reconciliation records from matched transactions
+   */
+  async createICReconciliationsFromMatching(
+    financialStatementId: string,
+  ): Promise<{ created: number; differences: number }> {
+    // Get detected transactions and match them
+    const { transactions } = await this.detectIntercompanyTransactions(financialStatementId);
+    const { matched, unmatched } = await this.matchReceivablesAndPayables(transactions);
+
+    let created = 0;
+    let differences = 0;
+
+    // Create reconciliation records for matched transactions
+    for (const match of matched) {
+      const differenceAmount = match.receivable.amount - match.payable.amount;
+      const status = Math.abs(differenceAmount) < 0.01 ? 'cleared' : 'open';
+
+      if (Math.abs(differenceAmount) >= 0.01) {
+        differences++;
+      }
+
+      const { error } = await this.supabase
+        .from('ic_reconciliations')
+        .insert({
+          financial_statement_id: financialStatementId,
+          company_a_id: match.receivable.fromCompanyId,
+          company_b_id: match.payable.fromCompanyId,
+          account_a_id: match.receivable.accountId,
+          account_b_id: match.payable.accountId,
+          amount_company_a: match.receivable.amount,
+          amount_company_b: match.payable.amount,
+          difference_amount: differenceAmount,
+          status: status,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (!error) created++;
+    }
+
+    // Create reconciliation records for unmatched transactions (as open differences)
+    for (const tx of unmatched) {
+      const isReceivable = tx.transactionType === TransactionType.RECEIVABLE;
+      
+      const { error } = await this.supabase
+        .from('ic_reconciliations')
+        .insert({
+          financial_statement_id: financialStatementId,
+          company_a_id: isReceivable ? tx.fromCompanyId : tx.toCompanyId,
+          company_b_id: isReceivable ? tx.toCompanyId : tx.fromCompanyId,
+          account_a_id: tx.accountId,
+          account_b_id: tx.accountId, // Same account as placeholder
+          amount_company_a: isReceivable ? tx.amount : 0,
+          amount_company_b: isReceivable ? 0 : tx.amount,
+          difference_amount: tx.amount,
+          status: 'open',
+          difference_reason: 'missing_entry',
+          explanation: `Keine Gegenbuchung gefunden für ${tx.accountName}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (!error) {
+        created++;
+        differences++;
+      }
+    }
+
+    return { created, differences };
+  }
+
+  /**
+   * Update IC reconciliation status and explanation
+   */
+  async updateICReconciliation(
+    reconciliationId: string,
+    updateData: {
+      status?: string;
+      differenceReason?: string;
+      explanation?: string;
+      resolvedByUserId?: string;
+    },
+  ): Promise<any> {
+    const updatePayload: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updateData.status) updatePayload.status = updateData.status;
+    if (updateData.differenceReason) updatePayload.difference_reason = updateData.differenceReason;
+    if (updateData.explanation) updatePayload.explanation = updateData.explanation;
+    if (updateData.resolvedByUserId) {
+      updatePayload.resolved_by_user_id = updateData.resolvedByUserId;
+      updatePayload.resolved_at = new Date().toISOString();
+    }
+
+    const { data, error } = await this.supabase
+      .from('ic_reconciliations')
+      .update(updatePayload)
+      .eq('id', reconciliationId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(`Fehler beim Aktualisieren: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Generate clearing entry for IC difference
+   */
+  async generateClearingEntry(
+    reconciliationId: string,
+    userId: string,
+  ): Promise<{ entryId: string; reconciliation: any }> {
+    // Get the reconciliation
+    const { data: recon, error: fetchError } = await this.supabase
+      .from('ic_reconciliations')
+      .select('*')
+      .eq('id', reconciliationId)
+      .single();
+
+    if (fetchError || !recon) {
+      throw new BadRequestException('IC-Abstimmung nicht gefunden');
+    }
+
+    if (recon.status === 'cleared') {
+      throw new BadRequestException('Diese Differenz wurde bereits ausgeglichen');
+    }
+
+    const differenceAmount = parseFloat(recon.difference_amount);
+    if (Math.abs(differenceAmount) < 0.01) {
+      throw new BadRequestException('Keine Differenz zum Ausgleichen vorhanden');
+    }
+
+    // Create clearing consolidation entry
+    const { data: entry, error: entryError } = await this.supabase
+      .from('consolidation_entries')
+      .insert({
+        financial_statement_id: recon.financial_statement_id,
+        debit_account_id: differenceAmount > 0 ? recon.account_b_id : recon.account_a_id,
+        credit_account_id: differenceAmount > 0 ? recon.account_a_id : recon.account_b_id,
+        adjustment_type: 'debt_consolidation',
+        amount: Math.abs(differenceAmount),
+        description: `IC-Differenzausgleich: ${recon.explanation || 'Automatisch generiert'}`,
+        source: 'manual',
+        hgb_reference: '§ 303 HGB',
+        affected_company_ids: [recon.company_a_id, recon.company_b_id],
+        created_by_user_id: userId,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (entryError) {
+      throw new BadRequestException(`Fehler beim Erstellen der Buchung: ${entryError.message}`);
+    }
+
+    // Update reconciliation
+    const { data: updatedRecon, error: updateError } = await this.supabase
+      .from('ic_reconciliations')
+      .update({
+        status: 'cleared',
+        clearing_entry_id: entry.id,
+        resolved_by_user_id: userId,
+        resolved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reconciliationId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new BadRequestException(`Fehler beim Aktualisieren der Abstimmung: ${updateError.message}`);
+    }
+
+    return { entryId: entry.id, reconciliation: updatedRecon };
+  }
+
+  /**
+   * Get IC reconciliation summary
+   */
+  async getICReconciliationSummary(financialStatementId: string): Promise<{
+    total: number;
+    open: number;
+    explained: number;
+    cleared: number;
+    accepted: number;
+    totalDifferenceAmount: number;
+    openDifferenceAmount: number;
+  }> {
+    const { data, error } = await this.supabase
+      .from('ic_reconciliations')
+      .select('status, difference_amount')
+      .eq('financial_statement_id', financialStatementId);
+
+    if (error) {
+      throw new BadRequestException(`Fehler: ${error.message}`);
+    }
+
+    const records = data || [];
+    const total = records.length;
+    const open = records.filter(r => r.status === 'open').length;
+    const explained = records.filter(r => r.status === 'explained').length;
+    const cleared = records.filter(r => r.status === 'cleared').length;
+    const accepted = records.filter(r => r.status === 'accepted').length;
+    
+    const totalDifferenceAmount = records.reduce(
+      (sum, r) => sum + Math.abs(parseFloat(r.difference_amount) || 0), 
+      0
+    );
+    const openDifferenceAmount = records
+      .filter(r => r.status === 'open')
+      .reduce((sum, r) => sum + Math.abs(parseFloat(r.difference_amount) || 0), 0);
+
+    return {
+      total,
+      open,
+      explained,
+      cleared,
+      accepted,
+      totalDifferenceAmount,
+      openDifferenceAmount,
+    };
+  }
 }

@@ -4,10 +4,15 @@ import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 import { FinancialStatement } from '../../entities/financial-statement.entity';
 import { AccountBalance } from '../../entities/account-balance.entity';
-import { ConsolidationEntry, AdjustmentType } from '../../entities/consolidation-entry.entity';
+import { 
+  ConsolidationEntry, 
+  AdjustmentType, 
+  EntryStatus, 
+  EntrySource 
+} from '../../entities/consolidation-entry.entity';
 import { Company } from '../../entities/company.entity';
 import { IntercompanyTransaction } from '../../entities/intercompany-transaction.entity';
-import { CreateConsolidationEntryDto } from './dto/create-consolidation-entry.dto';
+import { CreateConsolidationEntryDto, UpdateConsolidationEntryDto } from './dto/create-consolidation-entry.dto';
 import { IntercompanyTransactionService, TransactionType } from './intercompany-transaction.service';
 import { DebtConsolidationService } from './debt-consolidation.service';
 import { CapitalConsolidationService } from './capital-consolidation.service';
@@ -302,12 +307,34 @@ export class ConsolidationService {
 
   async getConsolidationEntries(
     financialStatementId: string,
+    filters?: {
+      adjustmentType?: AdjustmentType;
+      status?: EntryStatus;
+      source?: EntrySource;
+    },
   ): Promise<ConsolidationEntry[]> {
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from('consolidation_entries')
-      .select('*, account:accounts(*)')
-      .eq('financial_statement_id', financialStatementId)
-      .order('created_at', { ascending: true });
+      .select(`
+        *,
+        account:accounts(*),
+        debit_account:accounts!consolidation_entries_debit_account_id_fkey(*),
+        credit_account:accounts!consolidation_entries_credit_account_id_fkey(*)
+      `)
+      .eq('financial_statement_id', financialStatementId);
+
+    // Apply filters
+    if (filters?.adjustmentType) {
+      query = query.eq('adjustment_type', filters.adjustmentType);
+    }
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.source) {
+      query = query.eq('source', filters.source);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch consolidation entries: ${error.message}`);
@@ -323,10 +350,17 @@ export class ConsolidationService {
       .from('consolidation_entries')
       .insert({
         financial_statement_id: createDto.financialStatementId,
-        account_id: createDto.accountId,
+        account_id: createDto.accountId || createDto.debitAccountId, // Backward compatibility
+        debit_account_id: createDto.debitAccountId,
+        credit_account_id: createDto.creditAccountId,
         adjustment_type: createDto.adjustmentType,
         amount: createDto.amount,
         description: createDto.description,
+        source: createDto.source || EntrySource.AUTOMATIC,
+        hgb_reference: createDto.hgbReference,
+        affected_company_ids: createDto.affectedCompanyIds,
+        created_by_user_id: createDto.createdByUserId,
+        status: createDto.source === EntrySource.MANUAL ? EntryStatus.DRAFT : EntryStatus.APPROVED,
         created_at: SupabaseMapper.getCurrentTimestamp(),
         updated_at: SupabaseMapper.getCurrentTimestamp(),
       })
@@ -339,5 +373,257 @@ export class ConsolidationService {
 
     SupabaseErrorHandler.handleNotFound(data, 'Consolidation Entry');
     return SupabaseMapper.toConsolidationEntry(data);
+  }
+
+  async updateConsolidationEntry(
+    entryId: string,
+    updateDto: UpdateConsolidationEntryDto,
+  ): Promise<ConsolidationEntry> {
+    // First check if entry exists and is in DRAFT status
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('consolidation_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (fetchError || !existing) {
+      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+    }
+
+    if (existing.status !== EntryStatus.DRAFT) {
+      throw new BadRequestException(
+        `Nur Buchungen im Status "Entwurf" können bearbeitet werden. Aktueller Status: ${existing.status}`
+      );
+    }
+
+    const updateData: any = {
+      updated_at: SupabaseMapper.getCurrentTimestamp(),
+    };
+
+    if (updateDto.debitAccountId !== undefined) updateData.debit_account_id = updateDto.debitAccountId;
+    if (updateDto.creditAccountId !== undefined) updateData.credit_account_id = updateDto.creditAccountId;
+    if (updateDto.adjustmentType !== undefined) updateData.adjustment_type = updateDto.adjustmentType;
+    if (updateDto.amount !== undefined) updateData.amount = updateDto.amount;
+    if (updateDto.description !== undefined) updateData.description = updateDto.description;
+    if (updateDto.hgbReference !== undefined) updateData.hgb_reference = updateDto.hgbReference;
+    if (updateDto.affectedCompanyIds !== undefined) updateData.affected_company_ids = updateDto.affectedCompanyIds;
+
+    const { data, error } = await this.supabase
+      .from('consolidation_entries')
+      .update(updateData)
+      .eq('id', entryId)
+      .select()
+      .single();
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Consolidation Entry', 'update');
+    }
+
+    return SupabaseMapper.toConsolidationEntry(data);
+  }
+
+  async deleteConsolidationEntry(entryId: string): Promise<void> {
+    // First check if entry exists and is in DRAFT status
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('consolidation_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (fetchError || !existing) {
+      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+    }
+
+    if (existing.status !== EntryStatus.DRAFT) {
+      throw new BadRequestException(
+        `Nur Buchungen im Status "Entwurf" können gelöscht werden. Aktueller Status: ${existing.status}`
+      );
+    }
+
+    const { error } = await this.supabase
+      .from('consolidation_entries')
+      .delete()
+      .eq('id', entryId);
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Consolidation Entry', 'delete');
+    }
+  }
+
+  async submitForApproval(entryId: string): Promise<ConsolidationEntry> {
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('consolidation_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (fetchError || !existing) {
+      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+    }
+
+    if (existing.status !== EntryStatus.DRAFT) {
+      throw new BadRequestException(
+        `Nur Buchungen im Status "Entwurf" können zur Freigabe eingereicht werden.`
+      );
+    }
+
+    const { data, error } = await this.supabase
+      .from('consolidation_entries')
+      .update({
+        status: EntryStatus.PENDING,
+        updated_at: SupabaseMapper.getCurrentTimestamp(),
+      })
+      .eq('id', entryId)
+      .select()
+      .single();
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Consolidation Entry', 'submit');
+    }
+
+    return SupabaseMapper.toConsolidationEntry(data);
+  }
+
+  async approveEntry(entryId: string, approvedByUserId: string): Promise<ConsolidationEntry> {
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('consolidation_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (fetchError || !existing) {
+      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+    }
+
+    if (existing.status !== EntryStatus.PENDING) {
+      throw new BadRequestException(
+        `Nur Buchungen im Status "Zur Prüfung" können freigegeben werden.`
+      );
+    }
+
+    // 4-eyes principle: approver must be different from creator
+    if (existing.created_by_user_id === approvedByUserId) {
+      throw new BadRequestException(
+        `Vier-Augen-Prinzip: Der Freigebende muss eine andere Person als der Ersteller sein.`
+      );
+    }
+
+    const { data, error } = await this.supabase
+      .from('consolidation_entries')
+      .update({
+        status: EntryStatus.APPROVED,
+        approved_by_user_id: approvedByUserId,
+        approved_at: SupabaseMapper.getCurrentTimestamp(),
+        updated_at: SupabaseMapper.getCurrentTimestamp(),
+      })
+      .eq('id', entryId)
+      .select()
+      .single();
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Consolidation Entry', 'approve');
+    }
+
+    return SupabaseMapper.toConsolidationEntry(data);
+  }
+
+  async rejectEntry(entryId: string, rejectedByUserId: string, reason: string): Promise<ConsolidationEntry> {
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('consolidation_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (fetchError || !existing) {
+      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+    }
+
+    if (existing.status !== EntryStatus.PENDING) {
+      throw new BadRequestException(
+        `Nur Buchungen im Status "Zur Prüfung" können abgelehnt werden.`
+      );
+    }
+
+    const { data, error } = await this.supabase
+      .from('consolidation_entries')
+      .update({
+        status: EntryStatus.REJECTED,
+        description: `${existing.description || ''}\n\n[ABGELEHNT von ${rejectedByUserId}]: ${reason}`,
+        updated_at: SupabaseMapper.getCurrentTimestamp(),
+      })
+      .eq('id', entryId)
+      .select()
+      .single();
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Consolidation Entry', 'reject');
+    }
+
+    return SupabaseMapper.toConsolidationEntry(data);
+  }
+
+  async reverseEntry(entryId: string, reversedByUserId: string, reason: string): Promise<ConsolidationEntry> {
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('consolidation_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (fetchError || !existing) {
+      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+    }
+
+    if (existing.status !== EntryStatus.APPROVED) {
+      throw new BadRequestException(
+        `Nur freigegebene Buchungen können storniert werden.`
+      );
+    }
+
+    // Create reversal entry
+    const { data: reversalEntry, error: reversalError } = await this.supabase
+      .from('consolidation_entries')
+      .insert({
+        financial_statement_id: existing.financial_statement_id,
+        account_id: existing.account_id,
+        debit_account_id: existing.credit_account_id, // Swap debit/credit
+        credit_account_id: existing.debit_account_id,
+        adjustment_type: existing.adjustment_type,
+        amount: -existing.amount, // Negative amount
+        description: `[STORNO] ${reason}\n\nOriginal: ${existing.description || ''}`,
+        source: EntrySource.MANUAL,
+        hgb_reference: existing.hgb_reference,
+        affected_company_ids: existing.affected_company_ids,
+        created_by_user_id: reversedByUserId,
+        status: EntryStatus.APPROVED,
+        reverses_entry_id: entryId,
+        created_at: SupabaseMapper.getCurrentTimestamp(),
+        updated_at: SupabaseMapper.getCurrentTimestamp(),
+      })
+      .select()
+      .single();
+
+    if (reversalError) {
+      SupabaseErrorHandler.handle(reversalError, 'Reversal Entry', 'create');
+    }
+
+    // Update original entry status
+    await this.supabase
+      .from('consolidation_entries')
+      .update({
+        status: EntryStatus.REVERSED,
+        reversed_by_entry_id: reversalEntry.id,
+        updated_at: SupabaseMapper.getCurrentTimestamp(),
+      })
+      .eq('id', entryId);
+
+    return SupabaseMapper.toConsolidationEntry(reversalEntry);
+  }
+
+  async getManualEntries(financialStatementId: string): Promise<ConsolidationEntry[]> {
+    return this.getConsolidationEntries(financialStatementId, { source: EntrySource.MANUAL });
+  }
+
+  async getPendingEntries(financialStatementId: string): Promise<ConsolidationEntry[]> {
+    return this.getConsolidationEntries(financialStatementId, { status: EntryStatus.PENDING });
   }
 }
