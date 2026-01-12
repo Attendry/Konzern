@@ -97,25 +97,14 @@ function BalanceSheetVisualization({
 
   // Defer chart rendering to avoid initialization issues
   useEffect(() => {
-    // Check if recharts components are available
-    const checkChartsReady = () => {
-      try {
-        // Verify recharts components are loaded
-        if (typeof PieChart !== 'undefined' && typeof BarChart !== 'undefined') {
-          setChartsReady(true);
-        } else {
-          // Retry after a short delay
-          setTimeout(checkChartsReady, 50);
-        }
-      } catch (e) {
-        // If there's an error, retry
-        setTimeout(checkChartsReady, 50);
-      }
-    };
-    
-    // Start checking after initial render
-    const timer = setTimeout(checkChartsReady, 100);
-    return () => clearTimeout(timer);
+    // Use requestAnimationFrame to ensure we're past the initialization phase
+    const frame1 = requestAnimationFrame(() => {
+      const frame2 = requestAnimationFrame(() => {
+        setChartsReady(true);
+      });
+      return () => cancelAnimationFrame(frame2);
+    });
+    return () => cancelAnimationFrame(frame1);
   }, []);
 
   // Load consolidated balance sheet when financialStatementId changes
