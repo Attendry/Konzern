@@ -2,49 +2,71 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   ParseUUIDPipe,
-  Query,
 } from '@nestjs/common';
-import { ParticipationService } from '../company/participation.service';
-import { CreateParticipationDto } from './dto/participation.dto';
+import { ParticipationService } from './participation.service';
+import { 
+  CreateParticipationDto,
+  UpdateParticipationDto,
+  RecordOwnershipChangeDto,
+} from './dto/participation.dto';
 
 @Controller('participations')
 export class ParticipationController {
   constructor(private readonly participationService: ParticipationService) {}
 
+  @Get()
+  async findAll() {
+    return this.participationService.findAll();
+  }
+
+  @Get(':id')
+  async findById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.participationService.findById(id);
+  }
+
   @Get('parent/:parentCompanyId')
-  async getByParentCompany(@Param('parentCompanyId', ParseUUIDPipe) parentCompanyId: string) {
-    return this.participationService.getByParentCompany(parentCompanyId);
+  async findByParentCompany(@Param('parentCompanyId', ParseUUIDPipe) parentCompanyId: string) {
+    return this.participationService.findByParentCompany(parentCompanyId);
   }
 
   @Get('subsidiary/:subsidiaryCompanyId')
-  async getBySubsidiaryCompany(@Param('subsidiaryCompanyId', ParseUUIDPipe) subsidiaryCompanyId: string) {
-    return this.participationService.getBySubsidiaryCompany(subsidiaryCompanyId);
+  async findBySubsidiaryCompany(@Param('subsidiaryCompanyId', ParseUUIDPipe) subsidiaryCompanyId: string) {
+    return this.participationService.findBySubsidiaryCompany(subsidiaryCompanyId);
   }
 
   @Post()
-  async createOrUpdate(@Body() dto: CreateParticipationDto) {
-    return this.participationService.createOrUpdate({
-      parentCompanyId: dto.parentCompanyId,
-      subsidiaryCompanyId: dto.subsidiaryCompanyId,
-      participationPercentage: dto.participationPercentage,
-      acquisitionCost: dto.acquisitionCost,
-      acquisitionDate: dto.acquisitionDate ? new Date(dto.acquisitionDate) : undefined,
-    });
+  async create(@Body() dto: CreateParticipationDto) {
+    return this.participationService.create(dto);
   }
 
-  @Get(':id/book-value')
-  async calculateBookValue(
+  @Put(':id')
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('financialStatementId', ParseUUIDPipe) financialStatementId: string,
+    @Body() dto: UpdateParticipationDto,
   ) {
-    return this.participationService.calculateBookValue(id, financialStatementId);
+    return this.participationService.update(id, dto);
   }
 
-  @Get(':id/missing-info')
-  async checkMissingInformation(@Param('id', ParseUUIDPipe) id: string) {
-    return this.participationService.checkMissingInformation(id);
+  @Delete(':id')
+  async delete(@Param('id', ParseUUIDPipe) id: string) {
+    return this.participationService.delete(id);
+  }
+
+  @Get(':id/history')
+  async getOwnershipHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.participationService.getOwnershipHistory(id);
+  }
+
+  @Post(':id/ownership-change')
+  async recordOwnershipChange(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RecordOwnershipChangeDto,
+  ) {
+    return this.participationService.recordOwnershipChange(id, dto);
   }
 }
