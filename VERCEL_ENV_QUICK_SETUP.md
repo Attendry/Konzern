@@ -71,7 +71,10 @@ Railway Dashboard
 4. Click **Add New**
 5. Fill in:
    - **Key:** `VITE_API_URL`
-   - **Value:** `https://konzern-backend-production-xxxx.up.railway.app/api` (your Railway backend URL + `/api`)
+   - **Value:** `https://konzern-backend-production-xxxx.up.railway.app/api` 
+     - ⚠️ **IMPORTANT:** Must start with `https://` (not just the domain!)
+     - Must end with `/api`
+     - Example: `https://konzern-backend-production.up.railway.app/api`
    - **Environments:** Check all three:
      - ✅ Production
      - ✅ Preview  
@@ -119,9 +122,11 @@ VITE_API_URL = https://konzern-backend-production-abc123.up.railway.app/api
    - Must redeploy after adding/changing variables
 
 3. **Check the value:**
-   - Should include `https://`
-   - Should include `/api` at the end
-   - Should NOT have trailing slash: `https://example.com/api` ✅ (not `https://example.com/api/` ❌)
+   - ✅ **MUST start with `https://`** - This is critical!
+   - ✅ Should include `/api` at the end
+   - ✅ Should NOT have trailing slash: `https://example.com/api` ✅ (not `https://example.com/api/` ❌)
+   - ❌ **WRONG:** `konzern-backend-production.up.railway.app/api` (missing `https://`)
+   - ✅ **CORRECT:** `https://konzern-backend-production.up.railway.app/api`
 
 ### CORS Errors?
 
@@ -133,6 +138,25 @@ If you see CORS errors, you need to update your backend CORS configuration:
    - Replace `your-vercel-app` with your actual Vercel domain
 
 2. Redeploy backend in Railway
+
+### 405 Method Not Allowed Error?
+
+If you see `Request failed with status code 405`, check:
+
+1. **Missing `https://` in VITE_API_URL:**
+   - ❌ Wrong: `konzern-backend-production.up.railway.app/api`
+   - ✅ Correct: `https://konzern-backend-production.up.railway.app/api`
+   - The URL MUST start with `https://`
+
+2. **Fix it:**
+   - Vercel Dashboard → Settings → Environment Variables
+   - Edit `VITE_API_URL`
+   - Make sure it starts with `https://`
+   - Save and redeploy
+
+3. **Verify in browser console:**
+   - Should see: `[API] POST https://konzern-backend-production.up.railway.app/api/companies`
+   - NOT: `[API] POST konzern-backend-production.up.railway.app/api/companies` (missing https://)
 
 ## Summary
 

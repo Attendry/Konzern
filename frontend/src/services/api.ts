@@ -5,6 +5,14 @@ import axios from 'axios';
 let API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.DEV ? '/api' : '');
 
+// Ensure protocol is present for absolute URLs
+if (API_BASE_URL && !API_BASE_URL.startsWith('http://') && !API_BASE_URL.startsWith('https://') && !API_BASE_URL.startsWith('/')) {
+  // If it looks like a domain (contains .), add https://
+  if (API_BASE_URL.includes('.')) {
+    API_BASE_URL = `https://${API_BASE_URL}`;
+  }
+}
+
 // Remove trailing slash if present to avoid double slashes
 if (API_BASE_URL && API_BASE_URL.endsWith('/')) {
   API_BASE_URL = API_BASE_URL.slice(0, -1);
