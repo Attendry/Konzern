@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bash vercel-build.sh || powershell -ExecutionPolicy Bypass -File vercel-build.ps1",
+  "buildCommand": "(git config user.name 'Attendry' || true) && (git config user.email 'attendry@example.com' || true) && npm ci && npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "framework": "vite",
