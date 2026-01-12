@@ -4,7 +4,7 @@ import { Company } from '../types';
 export const companyService = {
   getAll: async (): Promise<Company[]> => {
     const response = await api.get<Company[]>('/companies');
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   getById: async (id: string): Promise<Company> => {
@@ -14,7 +14,7 @@ export const companyService = {
 
   getChildren: async (id: string): Promise<Company[]> => {
     const response = await api.get<Company[]>(`/companies/${id}/children`);
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 
   create: async (company: Partial<Company>): Promise<Company> => {
@@ -33,6 +33,6 @@ export const companyService = {
 
   getHierarchy: async (): Promise<any[]> => {
     const response = await api.get<any[]>('/companies/hierarchy/all');
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   },
 };
