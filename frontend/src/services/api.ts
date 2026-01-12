@@ -18,6 +18,13 @@ if (API_BASE_URL && API_BASE_URL.endsWith('/')) {
   API_BASE_URL = API_BASE_URL.slice(0, -1);
 }
 
+// Warn if API URL is not configured in production
+if (!import.meta.env.DEV && !API_BASE_URL) {
+  console.error('[API] WARNING: VITE_API_URL is not set! API calls will fail. Please set VITE_API_URL in your Vercel environment variables.');
+} else if (!import.meta.env.DEV && API_BASE_URL) {
+  console.log(`[API] Using API URL: ${API_BASE_URL}`);
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000, // 30 Sekunden Timeout

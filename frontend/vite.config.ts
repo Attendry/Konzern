@@ -20,11 +20,23 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
+        manualChunks: (id) => {
+          // Separate node_modules into chunks
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts')) {
+              return 'recharts';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor';
+            }
+            return 'vendor-misc';
+          }
         },
       },
+    },
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
     },
   },
 });

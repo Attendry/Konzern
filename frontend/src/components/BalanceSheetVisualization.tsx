@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Treemap } from 'recharts';
 import api from '../services/api';
 import { AccountBalance, FinancialStatement } from '../types';
@@ -81,13 +81,15 @@ function BalanceSheetVisualization({
   const [viewMode, setViewMode] = useState<'pie' | 'bar' | 'treemap'>('pie');
   const [viewType, setViewType] = useState<'before' | 'after' | 'both'>('both');
 
-  useEffect(() => {
-    if (financialStatementId) {
-      loadData();
-    }
-  }, [financialStatementId, accountBalances, financialStatement]);
+  // Memoize account balances length and financial statement ID to avoid unnecessary re-renders
+  const accountBalancesLength = useMemo(() => accountBalances?.length || 0, [accountBalances?.length]);
+  const fiscalYear = useMemo(() => financialStatement?.fiscalYear, [financialStatement?.fiscalYear]);
+  const periodStart = useMemo(() => financialStatement?.periodStart, [financialStatement?.periodStart]);
+  const periodEnd = useMemo(() => financialStatement?.periodEnd, [financialStatement?.periodEnd]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!financialStatementId) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -110,7 +112,7 @@ function BalanceSheetVisualization({
         );
         setConsolidatedBalanceSheet(response.data);
         // If we have both, default to 'both' view, otherwise 'after'
-        if (beforeBalanceSheet || (accountBalances && accountBalances.length > 0)) {
+        if (accountBalances && accountBalances.length > 0) {
           setViewType('both');
         } else {
           setViewType('after');
@@ -118,7 +120,7 @@ function BalanceSheetVisualization({
       } catch (consolidatedErr: any) {
         // If consolidated balance sheet doesn't exist, that's okay - we'll show before only
         console.log('No consolidated balance sheet available, showing uploaded data only');
-        if (beforeBalanceSheet || (accountBalances && accountBalances.length > 0)) {
+        if (accountBalances && accountBalances.length > 0) {
           setViewType('before');
         }
       }
@@ -128,13 +130,28 @@ function BalanceSheetVisualization({
     } finally {
       setLoading(false);
     }
-  };
+  }, [financialStatementId, accountBalances, financialStatement]);
+
+  useEffect(() => {
+    if (financialStatementId) {
+      loadData();
+    }
+  }, [financialStatementId, loadData]);
 
   // Determine which balance sheet to use
   const balanceSheet = consolidatedBalanceSheet || beforeBalanceSheet;
   const isConsolidated = !!consolidatedBalanceSheet;
   const hasBefore = !!beforeBalanceSheet;
   const hasAfter = !!consolidatedBalanceSheet;
+
+  // Early return if no financial statement ID
+  if (!financialStatementId) {
+    return (
+      <div className="card">
+        <p>Keine Jahresabschluss-ID angegeben.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
