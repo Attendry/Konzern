@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 /**
  * Exchange Rate Fetcher Service
