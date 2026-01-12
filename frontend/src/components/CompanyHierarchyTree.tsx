@@ -23,7 +23,6 @@ interface TreeNode {
 }
 
 function CompanyHierarchyTree() {
-  const [hierarchy, setHierarchy] = useState<CompanyHierarchy[]>([]);
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +35,6 @@ function CompanyHierarchyTree() {
     try {
       setLoading(true);
       const response = await api.get<CompanyHierarchy[]>('/companies/hierarchy/all');
-      setHierarchy(response.data);
       
       // Transform to tree structure
       const transformed = transformToTreeData(response.data);
@@ -120,7 +118,8 @@ function CompanyHierarchyTree() {
           separation={{ siblings: 1.5, nonSiblings: 1.5 }}
           renderCustomNodeElement={(rd3tProps) => {
             const { nodeDatum } = rd3tProps;
-            const color = getNodeColor(nodeDatum.attributes.type);
+            const nodeType = String(nodeDatum.attributes?.type ?? 'unknown');
+            const color = getNodeColor(nodeType);
             return (
               <g>
                 <circle
@@ -144,7 +143,7 @@ function CompanyHierarchyTree() {
                 >
                   {nodeDatum.name}
                 </text>
-                {nodeDatum.attributes.participationPercentage && (
+                {nodeDatum.attributes?.participationPercentage && (
                   <text
                     x="0"
                     y="50"
@@ -152,7 +151,7 @@ function CompanyHierarchyTree() {
                     fill="#666"
                     fontSize="10"
                   >
-                    {nodeDatum.attributes.participationPercentage}
+                    {String(nodeDatum.attributes.participationPercentage)}
                   </text>
                 )}
                 <text
@@ -163,23 +162,10 @@ function CompanyHierarchyTree() {
                   fontSize="9"
                   fontStyle="italic"
                 >
-                  {nodeDatum.attributes.type}
+                  {nodeType}
                 </text>
               </g>
             );
-          }}
-          styles={{
-            links: {
-              stroke: '#999',
-              strokeWidth: 2,
-            },
-            nodes: {
-              node: {
-                circle: {
-                  fill: '#3498db',
-                },
-              },
-            },
           }}
         />
       </div>

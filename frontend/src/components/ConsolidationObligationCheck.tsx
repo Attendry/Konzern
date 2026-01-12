@@ -24,7 +24,6 @@ const EXCEPTION_LABELS: { [key: string]: string } = {
 
 function ConsolidationObligationCheck({
   companyId,
-  companyName,
   onCheckComplete,
 }: ConsolidationObligationCheckProps) {
   const [result, setResult] = useState<ConsolidationObligationResult | null>(null);
