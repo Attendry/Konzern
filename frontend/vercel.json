@@ -1,7 +1,7 @@
 {
-  "buildCommand": "(git config user.name 'Attendry' || true) && (git config user.email 'attendry@example.com' || true) && npm ci && npm run build",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci",
+  "installCommand": "git config --global user.name 'Attendry' || true && git config --global user.email 'attendry@example.com' || true && npm ci",
   "framework": "vite",
   "rewrites": [
     {
