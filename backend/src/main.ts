@@ -41,27 +41,8 @@ async function bootstrap() {
       throw createError;
     }
     
-    // Request logging middleware (must be before other middleware)
-    const loggingMiddleware = new LoggingMiddleware();
-    app.use((req: any, res: any, next: any) => loggingMiddleware.use(req, res, next));
-    
-    // Global exception filter for error handling
-    app.useGlobalFilters(new AllExceptionsFilter());
-    
-    // Global validation pipe
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: false, // Erlaube zusätzliche Felder für multipart/form-data
-        transform: true,
-        transformOptions: {
-          enableImplicitConversion: true,
-        },
-      }),
-    );
-
-    // CORS für Frontend
-    // Allow multiple origins for development and production
+    // CORS MUST be enabled FIRST - before any other middleware
+    // This ensures preflight OPTIONS requests are handled correctly
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/$/, '')) // Remove trailing slashes
       : [process.env.FRONTEND_URL || 'http://localhost:5173'];
@@ -112,9 +93,30 @@ async function bootstrap() {
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      exposedHeaders: ['Content-Length', 'Content-Type'],
+      maxAge: 86400, // 24 hours
     });
-    logger.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+    logger.log(`✅ CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+    
+    // Request logging middleware (after CORS)
+    const loggingMiddleware = new LoggingMiddleware();
+    app.use((req: any, res: any, next: any) => loggingMiddleware.use(req, res, next));
+    
+    // Global exception filter for error handling
+    app.useGlobalFilters(new AllExceptionsFilter());
+    
+    // Global validation pipe
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: false, // Erlaube zusätzliche Felder für multipart/form-data
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
 
     // API Prefix
     const apiPrefix = process.env.API_PREFIX || 'api';
