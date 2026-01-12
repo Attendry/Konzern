@@ -1,0 +1,27 @@
+{
+  "name": "konzern",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Konzern - Konsolidierte Jahresabschlüsse nach HGB",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run start:dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "install:all": "cd frontend && npm install && cd ../backend && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Attendry/Konzern.git"
+  },
+  "author": "Attendry <attendry@example.com>",
+  "license": "UNLICENSED"
+}

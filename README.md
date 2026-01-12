@@ -60,3 +60,40 @@ konzern/
 ## Entwicklung
 
 Siehe separate README-Dateien in `backend/` und `frontend/` für detaillierte Entwicklungsanweisungen.
+
+## Deployment
+
+### Frontend (Vercel)
+
+Das Frontend kann auf Vercel deployed werden. Siehe [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) für detaillierte Anweisungen.
+
+**Schnellstart:**
+1. Repository zu Vercel importieren
+2. **Root Directory** auf `frontend` setzen
+3. Environment Variable `VITE_API_URL` mit der Backend-URL setzen
+4. Deploy!
+
+### Backend
+
+Das NestJS Backend sollte separat auf Railway, Render oder einem ähnlichen Service deployed werden.
+
+## Git Setup
+
+Falls Sie den Fehler "A commit author is required" erhalten:
+
+**Windows (PowerShell):**
+```powershell
+.\setup-git.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x setup-git.sh
+./setup-git.sh
+```
+
+Oder manuell:
+```bash
+git config user.name "Your Name"
+git config user.email "your.email@example.com"
+```
