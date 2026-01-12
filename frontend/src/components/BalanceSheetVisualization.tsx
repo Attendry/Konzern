@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Treemap } from 'recharts';
 import api from '../services/api';
 import { AccountBalance, FinancialStatement } from '../types';
@@ -81,56 +81,58 @@ function BalanceSheetVisualization({
   const [viewMode, setViewMode] = useState<'pie' | 'bar' | 'treemap'>('pie');
   const [viewType, setViewType] = useState<'before' | 'after' | 'both'>('both');
 
-  const loadData = useCallback(async () => {
-    if (!financialStatementId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Build balance sheet from uploaded account balances (before consolidation)
-      if (accountBalances && accountBalances.length > 0 && financialStatement) {
-        const before = buildBalanceSheetFromBalances(
-          accountBalances,
-          financialStatement.fiscalYear,
-          financialStatement.periodStart,
-          financialStatement.periodEnd
-        );
-        setBeforeBalanceSheet(before);
-      }
-
-      // Try to load consolidated balance sheet (after consolidation)
-      try {
-        const response = await api.get<ConsolidatedBalanceSheet>(
-          `/consolidation/balance-sheet/${financialStatementId}`
-        );
-        setConsolidatedBalanceSheet(response.data);
-        // If we have both, default to 'both' view, otherwise 'after'
-        if (accountBalances && accountBalances.length > 0) {
-          setViewType('both');
-        } else {
-          setViewType('after');
-        }
-      } catch (consolidatedErr: any) {
-        // If consolidated balance sheet doesn't exist, that's okay - we'll show before only
-        console.log('No consolidated balance sheet available, showing uploaded data only');
-        if (accountBalances && accountBalances.length > 0) {
-          setViewType('before');
-        }
-      }
-    } catch (err: any) {
-      console.error('Error loading balance sheet:', err);
-      setError(err.response?.data?.message || err.message || 'Fehler beim Laden der Bilanz');
-    } finally {
-      setLoading(false);
-    }
-  }, [financialStatementId, accountBalances, financialStatement]);
-
+  // Update beforeBalanceSheet when accountBalances or financialStatement change
   useEffect(() => {
-    if (financialStatementId) {
-      loadData();
+    if (accountBalances && accountBalances.length > 0 && financialStatement) {
+      const before = buildBalanceSheetFromBalances(
+        accountBalances,
+        financialStatement.fiscalYear,
+        financialStatement.periodStart,
+        financialStatement.periodEnd
+      );
+      setBeforeBalanceSheet(before);
     }
-  }, [financialStatementId, loadData]);
+  }, [accountBalances, financialStatement]);
+
+  // Load consolidated balance sheet when financialStatementId changes
+  useEffect(() => {
+    if (!financialStatementId) return;
+
+    const loadConsolidated = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Try to load consolidated balance sheet (after consolidation)
+        try {
+          const response = await api.get<ConsolidatedBalanceSheet>(
+            `/consolidation/balance-sheet/${financialStatementId}`
+          );
+          setConsolidatedBalanceSheet(response.data);
+          // If we have both, default to 'both' view, otherwise 'after'
+          if (accountBalances && accountBalances.length > 0) {
+            setViewType('both');
+          } else {
+            setViewType('after');
+          }
+        } catch (consolidatedErr: any) {
+          // If consolidated balance sheet doesn't exist, that's okay - we'll show before only
+          console.log('No consolidated balance sheet available, showing uploaded data only');
+          if (accountBalances && accountBalances.length > 0) {
+            setViewType('before');
+          }
+        }
+      } catch (err: any) {
+        console.error('Error loading balance sheet:', err);
+        setError(err.response?.data?.message || err.message || 'Fehler beim Laden der Bilanz');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConsolidated();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [financialStatementId]);
 
   // Determine which balance sheet to use
   const balanceSheet = consolidatedBalanceSheet || beforeBalanceSheet;
