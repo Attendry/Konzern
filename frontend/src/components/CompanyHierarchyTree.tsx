@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Tree } from 'react-d3-tree';
-import api from '../services/api';
+import { companyService } from '../services/companyService';
 import '../App.css';
 
 interface CompanyHierarchy {
@@ -34,10 +34,13 @@ function CompanyHierarchyTree() {
   const loadHierarchy = async () => {
     try {
       setLoading(true);
-      const response = await api.get<CompanyHierarchy[]>('/companies/hierarchy/all');
+      const hierarchyData = await companyService.getHierarchy();
+      
+      // Ensure we have an array
+      const safeData = Array.isArray(hierarchyData) ? hierarchyData : [];
       
       // Transform to tree structure
-      const transformed = transformToTreeData(response.data);
+      const transformed = transformToTreeData(safeData);
       setTreeData(transformed);
     } catch (err: any) {
       console.error('Error loading company hierarchy:', err);
