@@ -72,11 +72,35 @@ The project now includes:
 - ✅ GitHub Actions workflow with git config
 - ✅ Local git config set in repository
 
+## If Git Push Doesn't Trigger Deployment
+
+If pushing to git doesn't trigger a new Vercel deployment:
+
+1. **Check GitHub Webhook:**
+   - Go to GitHub → Settings → Webhooks
+   - Verify Vercel webhook exists and is active
+   - Check recent deliveries for errors
+
+2. **Verify Vercel Project Connection:**
+   - Vercel Dashboard → Settings → Git
+   - Ensure repository is connected: `Attendry/Konzern`
+   - Check Production Branch matches your branch (`master` or `main`)
+
+3. **Manual Trigger:**
+   - Vercel Dashboard → Deployments → **Redeploy** or **Create Deployment**
+
+4. **Reconnect Repository:**
+   - Vercel Dashboard → Settings → Git → **Disconnect**
+   - Wait 10 seconds, then **Connect Git Repository** again
+
+5. **See comprehensive guide:** `VERCEL_DEPLOYMENT_TROUBLESHOOTING.md`
+
 ## If Still Not Working
 
 1. **Check Vercel Build Logs**: Look for the git config commands in the output
 2. **Try Manual Override**: Use the manual build command from Solution #2 above
-3. **Contact Vercel Support**: If the issue persists, it might be a Vercel-specific problem
+3. **Check Deployment Triggers**: See section above about git push not triggering
+4. **Contact Vercel Support**: If the issue persists, it might be a Vercel-specific problem
 
 ## Testing
 
@@ -85,3 +109,9 @@ After applying the fix:
 2. Check the Vercel deployment logs
 3. Verify the build completes successfully
 4. Test the deployed application
+
+**Test commit command:**
+```bash
+git commit --allow-empty -m "test: trigger Vercel deployment"
+git push origin master
+```
