@@ -28,10 +28,18 @@ async function bootstrap() {
     logger.log(`  - Supabase_Secret: ${process.env.Supabase_Secret ? 'set' : 'not set'}`);
     
     logger.log('Creating NestJS app...');
-    const app = await NestFactory.create(AppModule, {
-      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-    });
-    logger.log('NestJS app created successfully');
+    let app;
+    try {
+      app = await NestFactory.create(AppModule, {
+        logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+      });
+      logger.log('✅ NestJS app created successfully');
+    } catch (createError: any) {
+      logger.error('❌ Failed to create NestJS app:', createError);
+      logger.error('Error message:', createError.message);
+      logger.error('Error stack:', createError.stack);
+      throw createError;
+    }
     
     // Request logging middleware (must be before other middleware)
     const loggingMiddleware = new LoggingMiddleware();
