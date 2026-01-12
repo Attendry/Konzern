@@ -21,9 +21,17 @@ async function bootstrap() {
   
   try {
     logger.log('Starting NestJS application...');
+    logger.log('Environment check:');
+    logger.log(`  - PORT: ${process.env.PORT || 'not set (using 3000)'}`);
+    logger.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+    logger.log(`  - SUPABASE_URL: ${process.env.SUPABASE_URL ? 'set' : 'not set'}`);
+    logger.log(`  - Supabase_Secret: ${process.env.Supabase_Secret ? 'set' : 'not set'}`);
+    
+    logger.log('Creating NestJS app...');
     const app = await NestFactory.create(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
+    logger.log('NestJS app created successfully');
     
     // Request logging middleware (must be before other middleware)
     const loggingMiddleware = new LoggingMiddleware();
