@@ -103,6 +103,51 @@
   --breakpoint-2xl: 1536px;
 }
 
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  /* Color Palette - Dark Mode */
+  --color-bg-primary: #191919;
+  --color-bg-secondary: #121212;
+  --color-bg-tertiary: #252525;
+  --color-bg-hover: #2d2d2d;
+  --color-bg-sidebar: #191919;
+  --color-bg-sidebar-hover: #2d2d2d;
+  --color-bg-sidebar-active: #363636;
+
+  /* Text Colors - Dark Mode */
+  --color-text-primary: #ebebeb;
+  --color-text-secondary: #a0a0a0;
+  --color-text-tertiary: #6b6b6b;
+  --color-text-disabled: #4a4a4a;
+  --color-text-inverse: #191919;
+
+  /* Border Colors - Dark Mode */
+  --color-border: #333333;
+  --color-border-hover: #444444;
+  --color-border-focus: #4da6ff;
+  --color-border-error: #ff6b6b;
+
+  /* Accent Colors - Dark Mode (slightly brighter for contrast) */
+  --color-accent-blue: #4da6ff;
+  --color-accent-blue-hover: #6cb8ff;
+  --color-accent-green: #4ade80;
+  --color-accent-red: #ff6b6b;
+  --color-accent-yellow: #fcd34d;
+  --color-accent-purple: #c084fc;
+
+  /* Status Colors - Dark Mode */
+  --color-success: #4ade80;
+  --color-warning: #fcd34d;
+  --color-error: #ff6b6b;
+  --color-info: #4da6ff;
+
+  /* Shadows - Dark Mode (more subtle, different color) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
 * {
   margin: 0;
   padding: 0;
