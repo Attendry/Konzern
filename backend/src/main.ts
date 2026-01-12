@@ -7,15 +7,16 @@ import { AllExceptionsFilter } from './common/http-exception.filter';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
-  // Catch unhandled errors
+  // Catch unhandled errors (log but don't exit immediately - let NestJS handle it)
   process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', error);
-    process.exit(1);
+    logger.error('Stack:', error.stack);
+    // Don't exit immediately - let the app try to handle it
   });
   
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
+    // Don't exit immediately - let the app try to handle it
   });
   
   try {
