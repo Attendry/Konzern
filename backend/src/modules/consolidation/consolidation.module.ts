@@ -4,6 +4,7 @@ import { ConsolidationController } from './consolidation.controller';
 import { ConsolidationObligationController } from './consolidation-obligation.controller';
 import { IncomeStatementConsolidationController } from './income-statement-consolidation.controller';
 import { ConsolidatedNotesController } from './consolidated-notes.controller';
+import { ExchangeRateController } from './exchange-rate.controller';
 import { IntercompanyTransactionService } from './intercompany-transaction.service';
 import { DebtConsolidationService } from './debt-consolidation.service';
 import { CapitalConsolidationService } from './capital-consolidation.service';
@@ -14,6 +15,7 @@ import { ExportService } from './export.service';
 import { ConsolidationObligationService } from './consolidation-obligation.service';
 import { IncomeStatementConsolidationService } from './income-statement-consolidation.service';
 import { ConsolidatedNotesService } from './consolidated-notes.service';
+import { ExchangeRateService } from './exchange-rate.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CompanyModule } from '../company/company.module';
 
@@ -24,6 +26,7 @@ import { CompanyModule } from '../company/company.module';
     ConsolidationObligationController,
     IncomeStatementConsolidationController,
     ConsolidatedNotesController,
+    ExchangeRateController,
   ],
   providers: [
     ConsolidationService,
@@ -37,6 +40,7 @@ import { CompanyModule } from '../company/company.module';
     ConsolidationObligationService,
     IncomeStatementConsolidationService,
     ConsolidatedNotesService,
+    ExchangeRateService,
   ],
   exports: [
     ConsolidationService,
@@ -50,6 +54,7 @@ import { CompanyModule } from '../company/company.module';
     ConsolidationObligationService,
     IncomeStatementConsolidationService,
     ConsolidatedNotesService,
+    ExchangeRateService,
   ],
 })
 export class ConsolidationModule {}

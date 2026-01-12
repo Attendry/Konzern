@@ -1,3 +1,18 @@
+// Consolidation type according to HGB
+export type ConsolidationType = 'full' | 'proportional' | 'equity' | 'none';
+
+// Reason for exclusion from consolidation (§ 296 HGB)
+export type ExclusionReason = 
+  | 'materiality' 
+  | 'temporary_control' 
+  | 'severe_restrictions' 
+  | 'disproportionate_cost' 
+  | 'different_activity' 
+  | 'none';
+
+// Currency codes
+export type Currency = 'EUR' | 'USD' | 'GBP' | 'CHF' | 'PLN' | 'CZK' | 'SEK' | 'DKK' | 'NOK' | 'HUF' | 'RON' | 'BGN' | 'HRK' | 'JPY' | 'CNY' | 'OTHER';
+
 export interface Company {
   id: string;
   name: string;
@@ -6,6 +21,17 @@ export interface Company {
   legalForm?: string;
   parentCompanyId?: string | null;
   isConsolidated: boolean;
+  // Phase 2 extensions
+  consolidationType?: ConsolidationType;
+  exclusionReason?: ExclusionReason | null;
+  firstConsolidationDate?: string | null;
+  deconsolidationDate?: string | null;
+  functionalCurrency?: Currency;
+  countryCode?: string | null;
+  industry?: string | null;
+  fiscalYearEndMonth?: number;
+  notes?: string | null;
+  isUltimateParent?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,4 +144,117 @@ export interface UpdateConsolidationEntryRequest {
   description?: string;
   hgbReference?: HgbReference;
   affectedCompanyIds?: string[];
+}
+
+// ============================================
+// PHASE 2: Participations & Ownership
+// ============================================
+
+export type OwnershipChangeType = 'initial' | 'increase' | 'decrease' | 'full_sale' | 'merger' | 'demerger';
+
+export interface Participation {
+  id: string;
+  parentCompanyId: string;
+  parentCompany?: Company;
+  subsidiaryCompanyId: string;
+  subsidiaryCompany?: Company;
+  participationPercentage: number;
+  votingRightsPercentage?: number;
+  acquisitionCost?: number;
+  acquisitionDate?: string;
+  goodwill?: number;
+  negativeGoodwill?: number;
+  hiddenReserves?: number;
+  hiddenLiabilities?: number;
+  equityAtAcquisition?: number;
+  isDirect?: boolean;
+  throughCompanyId?: string;
+  throughCompany?: Company;
+  isActive?: boolean;
+  disposalDate?: string;
+  disposalProceeds?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OwnershipHistory {
+  id: string;
+  participationId: string;
+  participation?: Participation;
+  changeType: OwnershipChangeType;
+  effectiveDate: string;
+  percentageBefore: number;
+  percentageAfter: number;
+  percentageChange: number;
+  transactionAmount?: number;
+  goodwillChange?: number;
+  description?: string;
+  consolidationEntryId?: string;
+  createdAt: string;
+}
+
+export interface CreateParticipationRequest {
+  parentCompanyId: string;
+  subsidiaryCompanyId: string;
+  participationPercentage: number;
+  votingRightsPercentage?: number;
+  acquisitionCost?: number;
+  acquisitionDate?: string;
+  goodwill?: number;
+  hiddenReserves?: number;
+  equityAtAcquisition?: number;
+}
+
+// ============================================
+// PHASE 2: Exchange Rates & Currency
+// ============================================
+
+export type RateType = 'spot' | 'average' | 'historical';
+export type RateSource = 'ecb' | 'bundesbank' | 'manual' | 'import';
+
+export interface ExchangeRate {
+  id: string;
+  fromCurrency: string;
+  toCurrency: string;
+  rateDate: string;
+  rate: number;
+  rateType: RateType;
+  rateSource: RateSource;
+  fiscalYear?: number;
+  fiscalMonth?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExchangeRateRequest {
+  fromCurrency: string;
+  toCurrency: string;
+  rateDate: string;
+  rate: number;
+  rateType: RateType;
+  rateSource?: RateSource;
+  fiscalYear?: number;
+  fiscalMonth?: number;
+  notes?: string;
+}
+
+export interface CurrencyTranslationDifference {
+  id: string;
+  companyId: string;
+  financialStatementId: string;
+  fiscalYear: number;
+  sourceCurrency: string;
+  targetCurrency: string;
+  spotRate: number;
+  averageRate: number;
+  historicalRate?: number;
+  balanceSheetDifference: number;
+  incomeStatementDifference: number;
+  equityDifference: number;
+  totalDifference: number;
+  cumulativeDifference: number;
+  consolidationEntryId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
