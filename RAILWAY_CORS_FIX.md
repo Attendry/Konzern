@@ -41,21 +41,31 @@ You need to add your Vercel URLs to Railway's `ALLOWED_ORIGINS`.
 
 3. **Set the Value:**
    - **Key:** `ALLOWED_ORIGINS`
-   - **Value:** Add all your Vercel URLs, separated by commas:
+   - **Value:** Add your production Vercel URL (and localhost):
      ```
-     https://konzern-9lybj38pp-attendry.vercel.app,https://your-production-url.vercel.app,http://localhost:5173
+     https://your-production-url.vercel.app,http://localhost:5173
      ```
    
+   **Good News:** 🎉
+   - ✅ **You only need your PRODUCTION URL!**
+   - ✅ All Vercel preview URLs (`*.vercel.app`) are automatically allowed
+   - ✅ The backend will accept any `*.vercel.app` domain if you have any vercel.app URL in the list
+   
    **Important:**
-   - ✅ Include `https://` for each URL
-   - ✅ No spaces after commas (or spaces are OK, code trims them)
+   - ✅ Include `https://` for the production URL
    - ✅ Include `http://localhost:5173` for local development
-   - ✅ You can add multiple preview URLs if needed
+   - ✅ No need to add preview URLs - they're auto-allowed!
 
 4. **Example:**
    ```
-   https://konzern-9lybj38pp-attendry.vercel.app,https://konzern-frontend.vercel.app,http://localhost:5173
+   https://konzern-frontend.vercel.app,http://localhost:5173
    ```
+   
+   This will automatically allow:
+   - ✅ `https://konzern-frontend.vercel.app` (production)
+   - ✅ `https://konzern-9lybj38pp-attendry.vercel.app` (preview - auto-allowed)
+   - ✅ `https://konzern-xyz123-abc456.vercel.app` (any preview - auto-allowed)
+   - ✅ `http://localhost:5173` (local dev)
 
 5. **Save and Redeploy:**
    - Click **Save** or **Add**
@@ -90,7 +100,7 @@ If you have many preview deployments, you can temporarily allow all Vercel URLs:
 **In Railway, set:**
 - `NODE_ENV` = `development` (allows all origins)
 
-**OR modify the backend code** to allow any `*.vercel.app` domain (not recommended for production).
+**Note:** The backend code already automatically allows all `*.vercel.app` preview domains if you have any vercel.app URL in `ALLOWED_ORIGINS`. No code changes needed!
 
 ## Verify It's Working
 
@@ -125,9 +135,9 @@ If you have many preview deployments, you can temporarily allow all Vercel URLs:
    - ❌ Wrong: `konzern-9lybj38pp-attendry.vercel.app` (missing https://)
    - ✅ Correct: `https://konzern-9lybj38pp-attendry.vercel.app`
 
-3. **Missing preview URL:**
-   - Preview deployments have different URLs
-   - Add the preview URL to `ALLOWED_ORIGINS`
+3. **Preview URLs not working:**
+   - Preview URLs are automatically allowed if you have any `*.vercel.app` URL in `ALLOWED_ORIGINS`
+   - Just make sure you have at least one vercel.app URL in the list (your production URL)
 
 4. **502 Bad Gateway:**
    - Backend is not running
@@ -144,6 +154,12 @@ If you have many preview deployments, you can temporarily allow all Vercel URLs:
 ## Summary
 
 **Railway needs:**
-- ✅ `ALLOWED_ORIGINS` = `https://your-vercel-preview-url.vercel.app,https://your-vercel-production-url.vercel.app,http://localhost:5173`
+- ✅ `ALLOWED_ORIGINS` = `https://your-vercel-production-url.vercel.app,http://localhost:5173`
+  - **Only production URL needed!** All preview URLs are automatically allowed
 - ✅ Backend must be running (check for 502 errors)
 - ✅ Backend must be redeployed after setting the variable
+
+**How it works:**
+- If `ALLOWED_ORIGINS` contains any `*.vercel.app` URL, the backend automatically allows ALL `*.vercel.app` domains
+- This means every preview deployment will work without updating `ALLOWED_ORIGINS`
+- You only need to set your production Vercel URL once

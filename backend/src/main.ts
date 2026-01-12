@@ -54,12 +54,18 @@ async function bootstrap() {
         }
         
         // In production, check allowed origins
-        // Also allow any *.vercel.app subdomain if a vercel.app domain is in the list
-        const isAllowed = allowedOrigins.includes(origin) || 
-          (origin.includes('.vercel.app') && allowedOrigins.some(o => o.includes('vercel.app')));
+        // Automatically allow all *.vercel.app subdomains (for preview deployments)
+        const isVercelPreview = origin.endsWith('.vercel.app');
+        const isExplicitlyAllowed = allowedOrigins.includes(origin);
+        const hasVercelInAllowed = allowedOrigins.some(o => o.includes('vercel.app'));
+        
+        // Allow if:
+        // 1. Explicitly in allowed list, OR
+        // 2. It's a Vercel preview domain AND we have any vercel.app domain in allowed list
+        const isAllowed = isExplicitlyAllowed || (isVercelPreview && hasVercelInAllowed);
         
         if (isAllowed) {
-          logger.log(`CORS: Allowing origin: ${origin}`);
+          logger.log(`CORS: Allowing origin: ${origin}${isVercelPreview && !isExplicitlyAllowed ? ' (Vercel preview)' : ''}`);
           callback(null, true);
         } else {
           logger.warn(`CORS: Blocking origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
