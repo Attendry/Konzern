@@ -3,9 +3,11 @@ import { importService } from '../services/importService';
 import { financialStatementService } from '../services/financialStatementService';
 import { companyService } from '../services/companyService';
 import { FinancialStatement } from '../types';
+import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
 
 function DataImport() {
+  const { success, error: showError } = useToastContext();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'excel' | 'csv'>('excel');
   const [financialStatementId, setFinancialStatementId] = useState<string>('');
@@ -57,7 +59,7 @@ function DataImport() {
 
   const handleCreateStatement = async () => {
     if (!newStatement.companyId) {
-      alert('Bitte wählen Sie ein Unternehmen aus');
+      showError('Bitte wählen Sie ein Unternehmen aus');
       return;
     }
 
@@ -68,10 +70,10 @@ function DataImport() {
       setFinancialStatementId(created.id);
       setShowCreateForm(false);
       setError(null);
-      alert('Jahresabschluss erfolgreich erstellt');
+      success('Jahresabschluss erfolgreich erstellt');
     } catch (error: any) {
       console.error('Fehler beim Erstellen des Jahresabschlusses:', error);
-      alert(`Fehler beim Erstellen: ${error.message || 'Unbekannter Fehler'}`);
+      showError(`Fehler beim Erstellen: ${error.message || 'Unbekannter Fehler'}`);
     } finally {
       setCreating(false);
     }
@@ -92,7 +94,7 @@ function DataImport() {
 
   const handleImport = async () => {
     if (!selectedFile || !financialStatementId) {
-      alert('Bitte wählen Sie eine Datei und einen Jahresabschluss aus');
+      showError('Bitte wählen Sie eine Datei und einen Jahresabschluss aus');
       return;
     }
 
@@ -108,7 +110,9 @@ function DataImport() {
       }
       setResult(importResult);
       if (importResult.errors.length === 0) {
-        alert(`Erfolgreich ${importResult.imported} Datensätze importiert`);
+        success(`Erfolgreich ${importResult.imported} Datensätze importiert`);
+      } else {
+        showError(`Import mit ${importResult.errors.length} Fehler${importResult.errors.length > 1 ? 'n' : ''} abgeschlossen`);
       }
     } catch (error: any) {
       console.error('Fehler beim Import:', error);
@@ -116,7 +120,7 @@ function DataImport() {
                           error.response?.data?.error || 
                           error.message || 
                           'Unbekannter Fehler';
-      alert(`Fehler beim Import: ${errorMessage}`);
+      showError(`Fehler beim Import: ${errorMessage}`);
       setError(`Import fehlgeschlagen: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -126,10 +130,10 @@ function DataImport() {
   const handleDownloadTemplate = async () => {
     try {
       await importService.downloadTemplate();
-      alert('Vorlage erfolgreich heruntergeladen');
+      success('Vorlage erfolgreich heruntergeladen');
     } catch (error: any) {
       console.error('Fehler beim Herunterladen der Vorlage:', error);
-      alert(`Fehler beim Herunterladen der Vorlage: ${error.message || 'Unbekannter Fehler'}`);
+      showError(`Fehler beim Herunterladen der Vorlage: ${error.message || 'Unbekannter Fehler'}`);
     }
   };
 

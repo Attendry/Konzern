@@ -2,12 +2,20 @@ import { useEffect, useState } from 'react';
 import { companyService } from '../services/companyService';
 import { Company } from '../types';
 import ConsolidationObligationCheck from '../components/ConsolidationObligationCheck';
+import { useToastContext } from '../contexts/ToastContext';
+import { AdvancedTable, TableColumn } from '../components/AdvancedTable';
+import { Modal } from '../components/Modal';
+import { Tooltip } from '../components/Tooltip';
+import { useContextMenu, ContextMenuItem, ContextMenu } from '../components/ContextMenu';
 import '../App.css';
 
 function CompanyManagement() {
+  const { success, error: showError } = useToastContext();
+  const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +31,24 @@ function CompanyManagement() {
 
   useEffect(() => {
     loadCompanies();
+    
+    // Listen for command palette events
+    const handleOpenForm = () => {
+      setShowForm(true);
+      setEditingCompany(null);
+      setFormData({
+        name: '',
+        taxId: '',
+        address: '',
+        legalForm: '',
+        parentCompanyId: null,
+        participationPercentage: 100,
+        isConsolidated: true,
+      });
+    };
+    
+    window.addEventListener('openCompanyForm', handleOpenForm);
+    return () => window.removeEventListener('openCompanyForm', handleOpenForm);
   }, []);
 
   const loadCompanies = async () => {
@@ -52,12 +78,12 @@ function CompanyManagement() {
         console.log('Updating company:', editingCompany.id);
         result = await companyService.update(editingCompany.id, formData);
         console.log('Company updated:', result);
-        alert('Unternehmen erfolgreich aktualisiert');
+        success('Unternehmen erfolgreich aktualisiert');
       } else {
         console.log('Creating company:', formData);
         result = await companyService.create(formData);
         console.log('Company created:', result);
-        alert('Unternehmen erfolgreich erstellt');
+        success('Unternehmen erfolgreich erstellt');
       }
       
       setShowForm(false);
@@ -76,7 +102,7 @@ function CompanyManagement() {
       console.error('Fehler beim Speichern:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Unbekannter Fehler';
       setError(`Fehler beim Speichern: ${errorMessage}`);
-      alert(`Fehler beim Speichern des Unternehmens: ${errorMessage}`);
+      showError(`Fehler beim Speichern des Unternehmens: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -115,10 +141,12 @@ function CompanyManagement() {
     }
     try {
       await companyService.delete(id);
+      success('Unternehmen erfolgreich gelöscht');
       loadCompanies();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fehler beim Löschen:', error);
-      alert('Fehler beim Löschen des Unternehmens');
+      const errorMessage = error.response?.data?.message || error.message || 'Unbekannter Fehler';
+      showError(`Fehler beim Löschen des Unternehmens: ${errorMessage}`);
     }
   };
 
@@ -161,12 +189,6 @@ function CompanyManagement() {
         </div>
       )}
 
-      {loading && (
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <span>Lade Unternehmen...</span>
-        </div>
-      )}
 
       {showForm && editingCompany && (
         <ConsolidationObligationCheck
@@ -289,90 +311,319 @@ function CompanyManagement() {
         </div>
       )}
 
-      {!loading && (
+  const companyColumns: TableColumn<Company>[] = [
+    {
+      id: 'name',
+      header: 'Name',
+      accessor: (row) => row.name,
+      sortable: true,
+    },
+    {
+      id: 'parentCompany',
+      header: 'Mutterunternehmen',
+      accessor: (row) => {
+        const parent = companies.find((c) => c.id === row.parentCompanyId);
+        return parent ? parent.name : '-';
+      },
+      sortable: true,
+    },
+    {
+      id: 'taxId',
+      header: 'Steuernummer',
+      accessor: (row) => row.taxId || '-',
+      sortable: true,
+    },
+    {
+      id: 'legalForm',
+      header: 'Rechtsform',
+      accessor: (row) => row.legalForm || '-',
+      sortable: true,
+    },
+    {
+      id: 'isConsolidated',
+      header: 'Konsolidiert',
+      accessor: (row) => row.isConsolidated,
+      sortable: true,
+      align: 'center',
+      render: (value) => (
+        <span className={`badge ${value ? 'badge-success' : 'badge-neutral'}`}>
+          {value ? 'Ja' : 'Nein'}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Aktionen',
+      accessor: () => '',
+      render: (_, row) => (
+        <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+          <Tooltip content="Unternehmen bearbeiten" position="top">
+            <button
+              className="button button-secondary button-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(row);
+              }}
+            >
+              Bearbeiten
+            </button>
+          </Tooltip>
+          <Tooltip content="HGB-Prüfung durchführen" position="top">
+            <button
+              className="button button-tertiary button-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingCompany(row);
+                setShowModal(true);
+              }}
+            >
+              HGB-Prüfung
+            </button>
+          </Tooltip>
+          <Tooltip content="Unternehmen löschen" position="top">
+            <button
+              className="button button-danger button-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.id);
+              }}
+            >
+              Löschen
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
+  const handleRowContextMenu = (e: React.MouseEvent, company: Company) => {
+    e.preventDefault();
+    const items: ContextMenuItem[] = [
+      {
+        label: 'Bearbeiten',
+        onClick: () => handleEdit(company),
+      },
+      {
+        label: 'HGB-Prüfung',
+        onClick: () => {
+          setEditingCompany(company);
+          setShowModal(true);
+        },
+      },
+      { separator: true },
+      {
+        label: 'Löschen',
+        onClick: () => handleDelete(company.id),
+        variant: 'danger',
+      },
+    ];
+    showContextMenu(items, e.clientX, e.clientY);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+        <h1>Unternehmensverwaltung</h1>
+        <Tooltip content="Neues Unternehmen erstellen" position="bottom">
+          <button
+            className="button button-primary"
+            onClick={() => {
+              setShowForm(!showForm);
+              setError(null);
+              if (!showForm) {
+                setEditingCompany(null);
+                setFormData({
+                  name: '',
+                  taxId: '',
+                  address: '',
+                  legalForm: '',
+                  parentCompanyId: null,
+                  isConsolidated: true,
+                });
+              }
+            }}
+          >
+            {showForm ? 'Abbrechen' : 'Neues Unternehmen'}
+          </button>
+        </Tooltip>
+      </div>
+
+      {error && !loading && (
+        <div className="error-message">
+          <strong>Fehler:</strong> {error}
+          <button
+            onClick={loadCompanies}
+            className="button button-tertiary button-sm"
+            style={{ marginLeft: 'var(--spacing-3)' }}
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      )}
+
+      {showForm && editingCompany && (
+        <ConsolidationObligationCheck
+          companyId={editingCompany.id}
+          companyName={editingCompany.name}
+          onCheckComplete={(result) => {
+            if (result.isObligatory && !formData.isConsolidated) {
+              if (confirm(`Konsolidierungspflicht erkannt. Soll das Unternehmen als konsolidiert markiert werden?`)) {
+                setFormData({ ...formData, isConsolidated: true });
+              }
+            }
+          }}
+        />
+      )}
+
+      {showForm && (
         <div className="card">
           <div className="card-header">
-            <h2>Unternehmen ({companies.length})</h2>
+            <h2>{editingCompany ? 'Unternehmen bearbeiten' : 'Neues Unternehmen'}</h2>
           </div>
-          {companies.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-title">Keine Unternehmen vorhanden</div>
-              <div className="empty-state-description">
-                Klicken Sie auf "Neues Unternehmen", um eines zu erstellen.
-              </div>
+          <form onSubmit={handleSubmit}>
+            {/* Form fields remain the same */}
+            <div className="form-group">
+              <label>Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
             </div>
-          ) : (
-            <table className="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Mutterunternehmen</th>
-              <th>Steuernummer</th>
-              <th>Rechtsform</th>
-              <th>Konsolidiert</th>
-              <th>Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((company) => {
-              const parentCompany = companies.find((c) => c.id === company.parentCompanyId);
-              return (
-                <tr key={company.id}>
-                  <td>{company.name}</td>
-                  <td>{parentCompany ? parentCompany.name : '-'}</td>
-                  <td>{company.taxId || '-'}</td>
-                  <td>{company.legalForm || '-'}</td>
-                  <td>
-                    <span className={`badge ${company.isConsolidated ? 'badge-success' : 'badge-neutral'}`}>
-                      {company.isConsolidated ? 'Ja' : 'Nein'}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
-                      <button
-                        className="button button-secondary button-sm"
-                        onClick={() => handleEdit(company)}
-                      >
-                        Bearbeiten
-                      </button>
-                      <button
-                        className="button button-tertiary button-sm"
-                        onClick={() => {
-                          // Show consolidation check in a modal or separate section
-                          const checkWindow = window.open('', '_blank', 'width=800,height=600');
-                          if (checkWindow) {
-                            checkWindow.document.write(`
-                              <html>
-                                <head><title>Konsolidierungspflicht-Prüfung - ${company.name}</title></head>
-                                <body>
-                                  <h1>Konsolidierungspflicht-Prüfung: ${company.name}</h1>
-                                  <p>Diese Funktion wird in der Hauptansicht verfügbar sein.</p>
-                                  <p>Unternehmen-ID: ${company.id}</p>
-                                  <button onclick="window.close()">Schließen</button>
-                                </body>
-                              </html>
-                            `);
-                          }
-                        }}
-                        title="Konsolidierungspflicht prüfen (HGB § 290-292)"
-                      >
-                        HGB-Prüfung
-                      </button>
-                      <button
-                        className="button button-danger button-sm"
-                        onClick={() => handleDelete(company.id)}
-                      >
-                        Löschen
-                      </button>
-                    </div>
-                  </td>
-              </tr>
-              );
-            })}
-          </tbody>
-        </table>
-          )}
+            <div className="form-group">
+              <label>Steuernummer</label>
+              <input
+                type="text"
+                value={formData.taxId || ''}
+                onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Adresse</label>
+              <textarea
+                value={formData.address || ''}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="form-group">
+              <label>Rechtsform</label>
+              <input
+                type="text"
+                value={formData.legalForm || ''}
+                onChange={(e) => setFormData({ ...formData, legalForm: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Mutterunternehmen (optional)</label>
+              <select
+                value={formData.parentCompanyId || ''}
+                onChange={(e) => {
+                  const newParentId = e.target.value || null;
+                  setFormData({
+                    ...formData,
+                    parentCompanyId: newParentId,
+                    participationPercentage: newParentId ? (formData.participationPercentage || 100) : undefined
+                  });
+                }}
+              >
+                <option value="">-- Kein Mutterunternehmen (Standalone) --</option>
+                {companies
+                  .filter((c) => !editingCompany || c.id !== editingCompany.id)
+                  .map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+              </select>
+              <small style={{ color: '#666', fontSize: '0.9rem' }}>
+                Wählen Sie ein Mutterunternehmen, wenn dies eine Tochtergesellschaft ist
+              </small>
+            </div>
+            {formData.parentCompanyId && (
+              <div className="form-group">
+                <label>Beteiligungsquote (%) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.participationPercentage ?? 100}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    setFormData({
+                      ...formData,
+                      participationPercentage: isNaN(value) ? 100 : Math.max(0, Math.min(100, value))
+                    });
+                  }}
+                  required={!!formData.parentCompanyId}
+                />
+                <small style={{ color: '#666', fontSize: '0.9rem' }}>
+                  Prozentuale Beteiligung des Mutterunternehmens an dieser Tochtergesellschaft (0-100%)
+                </small>
+              </div>
+            )}
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.isConsolidated}
+                  onChange={(e) => setFormData({ ...formData, isConsolidated: e.target.checked })}
+                />
+                Wird konsolidiert
+              </label>
+            </div>
+            <button type="submit" className="button button-primary" disabled={saving}>
+              {saving ? 'Speichere...' : editingCompany ? 'Aktualisieren' : 'Erstellen'}
+            </button>
+          </form>
         </div>
+      )}
+
+      <div className="card">
+        <div className="card-header">
+          <h2>Unternehmen ({companies.length})</h2>
+        </div>
+        <AdvancedTable
+          data={companies}
+          columns={companyColumns}
+          loading={loading}
+          emptyMessage="Keine Unternehmen vorhanden"
+          onRowClick={(row) => handleEdit(row)}
+          onRowContextMenu={handleRowContextMenu}
+        />
+      </div>
+
+      {showModal && editingCompany && (
+        <Modal
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false);
+            setEditingCompany(null);
+          }}
+          title={`HGB-Prüfung: ${editingCompany.name}`}
+          size="lg"
+        >
+          <ConsolidationObligationCheck
+            companyId={editingCompany.id}
+            companyName={editingCompany.name}
+            onCheckComplete={(result) => {
+              if (result.isObligatory) {
+                success(`Konsolidierungspflicht erkannt für ${editingCompany.name}`);
+              }
+            }}
+          />
+        </Modal>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          items={contextMenu.items}
+          onClose={hideContextMenu}
+          x={contextMenu.x}
+          y={contextMenu.y}
+        />
       )}
     </div>
   );

@@ -48,7 +48,8 @@ function ConsolidatedNotesPage() {
       document.body.removeChild(a);
     } catch (err: any) {
       console.error('Error exporting notes:', err);
-      alert('Fehler beim Export: ' + (err.message || 'Unbekannter Fehler'));
+      // Error handling - could add toast here if needed
+      console.error('Fehler beim Export:', err);
     } finally {
       setExporting(false);
     }

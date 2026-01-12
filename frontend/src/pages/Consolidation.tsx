@@ -5,9 +5,11 @@ import { financialStatementService } from '../services/financialStatementService
 import { FinancialStatement, ConsolidationEntry } from '../types';
 import ConsolidationImpactDashboard from '../components/ConsolidationImpactDashboard';
 import IncomeStatementVisualization from '../components/IncomeStatementVisualization';
+import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
 
 function Consolidation() {
+  const { success, error: showError } = useToastContext();
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedStatementId, setSelectedStatementId] = useState<string>('');
   const [entries, setEntries] = useState<ConsolidationEntry[]>([]);
@@ -59,7 +61,7 @@ function Consolidation() {
 
   const handleCalculate = async () => {
     if (!selectedStatementId) {
-      alert('Bitte wählen Sie einen Jahresabschluss aus');
+      showError('Bitte wählen Sie einen Jahresabschluss aus');
       return;
     }
 
@@ -68,14 +70,14 @@ function Consolidation() {
       const result = await consolidationService.calculate(selectedStatementId);
       setEntries(result.entries);
       setSummary(result.summary);
-      alert(`Konsolidierung erfolgreich durchgeführt. ${result.summary.totalEntries} Buchungen erstellt.`);
+      success(`Konsolidierung erfolgreich durchgeführt. ${result.summary.totalEntries} Buchungen erstellt.`);
     } catch (error: any) {
       console.error('Fehler bei der Konsolidierung:', error);
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           error.message || 
                           'Unbekannter Fehler';
-      alert(`Fehler bei der Konsolidierung: ${errorMessage}`);
+      showError(`Fehler bei der Konsolidierung: ${errorMessage}`);
     } finally {
       setCalculating(false);
     }
