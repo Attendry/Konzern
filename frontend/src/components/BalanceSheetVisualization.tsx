@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Treemap } from 'recharts';
 import api from '../services/api';
 import { AccountBalance, FinancialStatement } from '../types';
@@ -80,12 +80,6 @@ function BalanceSheetVisualization({
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'pie' | 'bar' | 'treemap'>('pie');
   const [viewType, setViewType] = useState<'before' | 'after' | 'both'>('both');
-
-  // Memoize account balances length and financial statement ID to avoid unnecessary re-renders
-  const accountBalancesLength = useMemo(() => accountBalances?.length || 0, [accountBalances?.length]);
-  const fiscalYear = useMemo(() => financialStatement?.fiscalYear, [financialStatement?.fiscalYear]);
-  const periodStart = useMemo(() => financialStatement?.periodStart, [financialStatement?.periodStart]);
-  const periodEnd = useMemo(() => financialStatement?.periodEnd, [financialStatement?.periodEnd]);
 
   const loadData = useCallback(async () => {
     if (!financialStatementId) return;
