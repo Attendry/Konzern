@@ -33,14 +33,40 @@ async function bootstrap() {
     );
 
     // CORS für Frontend
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    // Allow multiple origins for development and production
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+      : [process.env.FRONTEND_URL || 'http://localhost:5173'];
+    
     app.enableCors({
-      origin: frontendUrl,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+          logger.log('CORS: Allowing request with no origin');
+          return callback(null, true);
+        }
+        
+        // In development, allow all origins
+        if (process.env.NODE_ENV !== 'production') {
+          logger.log(`CORS: Allowing origin in development: ${origin}`);
+          callback(null, true);
+          return;
+        }
+        
+        // In production, check allowed origins
+        if (allowedOrigins.includes(origin)) {
+          logger.log(`CORS: Allowing origin: ${origin}`);
+          callback(null, true);
+        } else {
+          logger.warn(`CORS: Blocking origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+          callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     });
-    logger.log(`CORS enabled for origin: ${frontendUrl}`);
+    logger.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
 
     // API Prefix
     const apiPrefix = process.env.API_PREFIX || 'api';
