@@ -4,11 +4,22 @@
 
 Your frontend is deployed but trying to call `http://localhost:3000/api`, which won't work in production. You need to set the `VITE_API_URL` environment variable in Vercel.
 
+## Architecture Overview
+
+**Important:** Supabase is your **database**, not your backend API!
+
+Your architecture is:
+- **Supabase** = Database (PostgreSQL) - Already hosted ✅
+- **NestJS Backend** = API server - Needs to be deployed ⚠️
+- **React Frontend** = UI - Already deployed on Vercel ✅
+
+The frontend calls the NestJS backend, which then queries Supabase. So you need to deploy the NestJS backend separately.
+
 ## Step-by-Step Instructions
 
-### 1. Get Your Backend API URL
+### 1. Deploy Your NestJS Backend
 
-First, you need to know where your backend is deployed. The backend should be deployed to one of these platforms:
+**If your backend is NOT deployed yet**, you need to deploy it first. The backend should be deployed to one of these platforms:
 
 - **Railway** (recommended)
 - **Render**
@@ -16,14 +27,18 @@ First, you need to know where your backend is deployed. The backend should be de
 - **AWS/DigitalOcean**
 - **Any other hosting service**
 
-**If your backend is NOT deployed yet:**
-- You need to deploy it first before the frontend can work
-- See `backend/README.md` for deployment instructions
-- Common options: Railway, Render, or Heroku
+**Backend Deployment Required:**
+- The NestJS backend in the `backend/` folder needs to be deployed
+- It will connect to your Supabase database (which is already set up)
+- See deployment options below
 
-**If your backend IS deployed:**
-- Find your backend URL (e.g., `https://your-backend.railway.app`)
-- The API URL should be: `https://your-backend.railway.app/api` (note the `/api` suffix)
+**Backend Configuration:**
+When deploying the backend, you'll need to set these environment variables:
+- `SUPABASE_URL` - Your Supabase project URL
+- `Supabase_Secret` - Your Supabase service role key
+- `Supabase_Public` - Your Supabase anon key (optional)
+
+These are the same values you use for local development (see `README_SUPABASE_SETUP.md`).
 
 ### 2. Set Environment Variable in Vercel
 
@@ -112,22 +127,33 @@ If you need to deploy the backend:
 ### Railway (Recommended)
 1. Go to [Railway](https://railway.app)
 2. Create new project
-3. Connect your GitHub repository
-4. Select the `backend` folder
-5. Set environment variables (Supabase credentials)
-6. Deploy
-7. Get the URL (e.g., `https://your-app.railway.app`)
-8. Use `https://your-app.railway.app/api` as `VITE_API_URL`
+3. Connect your GitHub repository: `Attendry/Konzern`
+4. **Important:** Set **Root Directory** to `backend`
+5. Set environment variables:
+   - `SUPABASE_URL` = Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+   - `Supabase_Secret` = Your Supabase service role key
+   - `Supabase_Public` = Your Supabase anon key (optional)
+   - `NODE_ENV` = `production`
+   - `PORT` = `3000` (or let Railway assign one)
+6. Railway will auto-detect NestJS and build
+7. After deployment, get the URL (e.g., `https://your-app.railway.app`)
+8. **Use `https://your-app.railway.app/api` as `VITE_API_URL` in Vercel**
 
 ### Render
 1. Go to [Render](https://render.com)
-2. Create new Web Service
-3. Connect GitHub repository
-4. Set root directory to `backend`
-5. Build command: `npm install && npm run build`
-6. Start command: `npm run start:prod`
-7. Set environment variables
-8. Deploy and get URL
+2. Create new **Web Service**
+3. Connect GitHub repository: `Attendry/Konzern`
+4. **Root Directory:** `backend`
+5. **Build Command:** `npm install && npm run build`
+6. **Start Command:** `npm run start:prod`
+7. Set environment variables:
+   - `SUPABASE_URL` = Your Supabase project URL
+   - `Supabase_Secret` = Your Supabase service role key
+   - `Supabase_Public` = Your Supabase anon key (optional)
+   - `NODE_ENV` = `production`
+   - `PORT` = `3000`
+8. Deploy and get URL (e.g., `https://your-app.onrender.com`)
+9. **Use `https://your-app.onrender.com/api` as `VITE_API_URL` in Vercel**
 
 ## Important Notes
 
