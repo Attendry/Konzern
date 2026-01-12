@@ -45,16 +45,21 @@ function IncomeStatementVisualization({ financialStatementId }: IncomeStatementV
   if (loading) {
     return (
       <div className="card">
-        <p>Lade GuV-Daten...</p>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <span>Lade GuV-Daten...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="card" style={{ backgroundColor: '#fee', border: '1px solid #fcc' }}>
-        <p style={{ color: '#c33' }}>Fehler: {error}</p>
-        <button onClick={loadIncomeStatement} style={{ marginTop: '1rem' }}>
+      <div className="card">
+        <div className="error-message">
+          <strong>Fehler:</strong> {error}
+        </div>
+        <button onClick={loadIncomeStatement} className="button button-primary" style={{ marginTop: 'var(--spacing-4)' }}>
           Erneut laden
         </button>
       </div>
@@ -64,7 +69,9 @@ function IncomeStatementVisualization({ financialStatementId }: IncomeStatementV
   if (!incomeStatement) {
     return (
       <div className="card">
-        <p>Keine GuV-Daten verfügbar.</p>
+        <div className="empty-state">
+          <div className="empty-state-title">Keine GuV-Daten verfügbar</div>
+        </div>
       </div>
     );
   }
@@ -161,32 +168,18 @@ function IncomeStatementVisualization({ financialStatementId }: IncomeStatementV
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <h2>Konsolidierte Gewinn- und Verlustrechnung (GuV)</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
           <button
             onClick={() => setViewMode('before')}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: viewMode === 'before' ? '#f39c12' : 'white',
-              color: viewMode === 'before' ? 'white' : '#333',
-              cursor: 'pointer',
-            }}
+            className={`button button-sm ${viewMode === 'before' ? 'button-primary' : 'button-secondary'}`}
           >
             Vor Konsolidierung
           </button>
           <button
             onClick={() => setViewMode('after')}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: viewMode === 'after' ? '#27ae60' : 'white',
-              color: viewMode === 'after' ? 'white' : '#333',
-              cursor: 'pointer',
-            }}
+            className={`button button-sm ${viewMode === 'after' ? 'button-primary' : 'button-secondary'}`}
           >
             Nach Konsolidierung
           </button>
@@ -197,33 +190,33 @@ function IncomeStatementVisualization({ financialStatementId }: IncomeStatementV
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '1rem',
-        marginBottom: '2rem'
+        gap: 'var(--spacing-4)',
+        marginBottom: 'var(--spacing-8)'
       }}>
-        <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Konsolidierter Umsatz</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: COLORS.revenue }}>
+        <div className="metric-card">
+          <div className="metric-label">Konsolidierter Umsatz</div>
+          <div className="metric-value" style={{ color: COLORS.revenue }}>
             {formatCurrency(incomeStatement.revenue.consolidated)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 'var(--spacing-2)' }}>
             Eliminiert: {formatCurrency(incomeStatement.revenue.intercompanyEliminated)}
           </div>
         </div>
-        <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Ergebnis vor Steuern</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: incomeStatement.incomeBeforeTax >= 0 ? COLORS.netIncome : '#e74c3c' }}>
+        <div className="metric-card">
+          <div className="metric-label">Ergebnis vor Steuern</div>
+          <div className="metric-value" style={{ color: incomeStatement.incomeBeforeTax >= 0 ? COLORS.netIncome : 'var(--color-error)' }}>
             {formatCurrency(incomeStatement.incomeBeforeTax)}
           </div>
         </div>
-        <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Jahresüberschuss</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: COLORS.netIncome }}>
+        <div className="metric-card">
+          <div className="metric-label">Jahresüberschuss</div>
+          <div className="metric-value" style={{ color: COLORS.netIncome }}>
             {formatCurrency(incomeStatement.netIncome.consolidated)}
           </div>
         </div>
-        <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Minderheitsanteile</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#e74c3c' }}>
+        <div className="metric-card">
+          <div className="metric-label">Minderheitsanteile</div>
+          <div className="metric-value" style={{ color: 'var(--color-error)' }}>
             {formatCurrency(incomeStatement.netIncome.minorityInterests)}
           </div>
         </div>
@@ -280,9 +273,9 @@ function IncomeStatementVisualization({ financialStatementId }: IncomeStatementV
       )}
 
       {/* Eliminations Summary */}
-      <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-        <h3>Eliminierungen</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+      <div className="card" style={{ marginTop: 'var(--spacing-8)', backgroundColor: 'var(--color-bg-tertiary)' }}>
+        <h3 style={{ marginBottom: 'var(--spacing-4)' }}>Eliminierungen</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
           <div>
             <strong>Zwischenumsätze:</strong> {formatCurrency(incomeStatement.eliminations.intercompanyRevenue)}
           </div>
@@ -302,9 +295,9 @@ function IncomeStatementVisualization({ financialStatementId }: IncomeStatementV
       </div>
 
       {/* Consolidation Summary */}
-      <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-        <h3>Konsolidierungszusammenfassung</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+      <div className="card" style={{ marginTop: 'var(--spacing-4)', backgroundColor: 'rgba(15, 123, 15, 0.1)', border: '1px solid var(--color-success)' }}>
+        <h3 style={{ marginBottom: 'var(--spacing-4)' }}>Konsolidierungszusammenfassung</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
           <div>
             <strong>Einbezogene Unternehmen:</strong> {incomeStatement.consolidationSummary.companiesIncluded}
           </div>

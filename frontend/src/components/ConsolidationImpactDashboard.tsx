@@ -112,7 +112,9 @@ function ConsolidationImpactDashboard({ entries, summary }: ConsolidationImpactD
   if (!entries || entries.length === 0) {
     return (
       <div className="card">
-        <p>Keine Konsolidierungsbuchungen vorhanden.</p>
+        <div className="empty-state">
+          <div className="empty-state-title">Keine Konsolidierungsbuchungen vorhanden</div>
+        </div>
       </div>
     );
   }
@@ -121,31 +123,33 @@ function ConsolidationImpactDashboard({ entries, summary }: ConsolidationImpactD
 
   return (
     <div className="card">
-      <h2>Konsolidierungsauswirkungen</h2>
+      <div className="card-header">
+        <h2>Konsolidierungsauswirkungen</h2>
+      </div>
 
       {/* Summary Cards */}
       {summary && (
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '1rem',
-          marginBottom: '2rem'
+          gap: 'var(--spacing-4)',
+          marginBottom: 'var(--spacing-8)'
         }}>
-          <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Gesamt Buchungen</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3498db' }}>
+          <div className="metric-card">
+            <div className="metric-label">Gesamt Buchungen</div>
+            <div className="metric-value" style={{ color: 'var(--color-accent-blue)' }}>
               {summary.totalEntries || entries.length}
             </div>
           </div>
-          <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Gesamtbetrag</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#27ae60' }}>
+          <div className="metric-card">
+            <div className="metric-label">Gesamtbetrag</div>
+            <div className="metric-value" style={{ color: 'var(--color-success)' }}>
               {formatCurrency(summary.totalAmount || totalAmount)}
             </div>
           </div>
-          <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>Eliminierungen</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#e74c3c' }}>
+          <div className="metric-card">
+            <div className="metric-label">Eliminierungen</div>
+            <div className="metric-value" style={{ color: 'var(--color-error)' }}>
               {summary.intercompanyEliminations || 0}
             </div>
           </div>
@@ -248,19 +252,16 @@ function ConsolidationImpactDashboard({ entries, summary }: ConsolidationImpactD
                   <tr key={entry.id}>
                     <td>{entry.account?.accountNumber || entry.accountId}</td>
                     <td>
-                      <span style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        backgroundColor: ELIMINATION_COLORS[entry.adjustmentType] || '#95a5a6',
+                      <span className="badge" style={{
+                        backgroundColor: ELIMINATION_COLORS[entry.adjustmentType] || 'var(--color-text-tertiary)',
                         color: 'white',
-                        fontSize: '0.75rem',
                       }}>
                         {ELIMINATION_LABELS[entry.adjustmentType] || entry.adjustmentType}
                       </span>
                     </td>
                     <td style={{ 
-                      color: entry.amount < 0 ? '#e74c3c' : '#27ae60',
-                      fontWeight: 'bold'
+                      color: entry.amount < 0 ? 'var(--color-error)' : 'var(--color-success)',
+                      fontWeight: 'var(--font-weight-semibold)'
                     }}>
                       {formatCurrency(entry.amount)}
                     </td>

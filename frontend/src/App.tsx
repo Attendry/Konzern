@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import CompanyManagement from './pages/CompanyManagement';
 import DataImport from './pages/DataImport';
@@ -11,25 +11,25 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <nav className="navbar">
-          <div className="nav-container">
-            <h1 className="nav-title">Konzern</h1>
-            <ul className="nav-links">
-              <li>
-                <Link to="/">Dashboard</Link>
-              </li>
-              <li>
-                <Link to="/companies">Unternehmen</Link>
-              </li>
-              <li>
-                <Link to="/import">Datenimport</Link>
-              </li>
-              <li>
-                <Link to="/consolidation">Konsolidierung</Link>
-              </li>
-            </ul>
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h1 className="sidebar-title">Konzern</h1>
           </div>
-        </nav>
+          <nav className="sidebar-nav">
+            <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+              Dashboard
+            </NavLink>
+            <NavLink to="/companies" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              Unternehmen
+            </NavLink>
+            <NavLink to="/import" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              Datenimport
+            </NavLink>
+            <NavLink to="/consolidation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              Konsolidierung
+            </NavLink>
+          </nav>
+        </aside>
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Dashboard />} />

@@ -80,6 +80,7 @@ function BalanceSheetVisualization({
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'pie' | 'bar' | 'treemap'>('pie');
   const [viewType, setViewType] = useState<'before' | 'after' | 'both'>('both');
+  const [chartsReady, setChartsReady] = useState(false);
 
   // Update beforeBalanceSheet when accountBalances or financialStatement change
   useEffect(() => {
@@ -93,6 +94,29 @@ function BalanceSheetVisualization({
       setBeforeBalanceSheet(before);
     }
   }, [accountBalances, financialStatement]);
+
+  // Defer chart rendering to avoid initialization issues
+  useEffect(() => {
+    // Check if recharts components are available
+    const checkChartsReady = () => {
+      try {
+        // Verify recharts components are loaded
+        if (typeof PieChart !== 'undefined' && typeof BarChart !== 'undefined') {
+          setChartsReady(true);
+        } else {
+          // Retry after a short delay
+          setTimeout(checkChartsReady, 50);
+        }
+      } catch (e) {
+        // If there's an error, retry
+        setTimeout(checkChartsReady, 50);
+      }
+    };
+    
+    // Start checking after initial render
+    const timer = setTimeout(checkChartsReady, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load consolidated balance sheet when financialStatementId changes
   useEffect(() => {
@@ -152,15 +176,20 @@ function BalanceSheetVisualization({
   if (loading) {
     return (
       <div className="card">
-        <p>Lade Bilanzdaten...</p>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <span>Lade Bilanzdaten...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="card" style={{ backgroundColor: '#fee', border: '1px solid #fcc' }}>
-        <p style={{ color: '#c33' }}>Fehler: {error}</p>
+      <div className="card">
+        <div className="error-message">
+          <strong>Fehler:</strong> {error}
+        </div>
       </div>
     );
   }
@@ -168,7 +197,12 @@ function BalanceSheetVisualization({
   if (!balanceSheet) {
     return (
       <div className="card">
-        <p>Keine Bilanzdaten verfügbar.</p>
+        <div className="empty-state">
+          <div className="empty-state-title">Keine Bilanzdaten verfügbar</div>
+          <div className="empty-state-description">
+            Importieren Sie Daten oder führen Sie eine Konsolidierung durch.
+          </div>
+        </div>
       </div>
     );
   }
@@ -300,47 +334,27 @@ function BalanceSheetVisualization({
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="card-header">
         <h2>Bilanzvisualisierung</h2>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 'var(--spacing-6)', flexWrap: 'wrap', gap: 'var(--spacing-2)' }}>
           {hasBefore && hasAfter && (
             <>
               <button
                 onClick={() => setViewType('before')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  backgroundColor: viewType === 'before' ? '#f39c12' : 'white',
-                  color: viewType === 'before' ? 'white' : '#333',
-                  cursor: 'pointer',
-                }}
+                className={`button ${viewType === 'before' ? 'button-primary' : 'button-secondary'}`}
               >
                 Vor Konsolidierung
               </button>
               <button
                 onClick={() => setViewType('after')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  backgroundColor: viewType === 'after' ? '#27ae60' : 'white',
-                  color: viewType === 'after' ? 'white' : '#333',
-                  cursor: 'pointer',
-                }}
+                className={`button ${viewType === 'after' ? 'button-primary' : 'button-secondary'}`}
               >
                 Nach Konsolidierung
               </button>
               <button
                 onClick={() => setViewType('both')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  backgroundColor: viewType === 'both' ? '#3498db' : 'white',
-                  color: viewType === 'both' ? 'white' : '#333',
-                  cursor: 'pointer',
-                }}
+                className={`button ${viewType === 'both' ? 'button-primary' : 'button-secondary'}`}
               >
                 Vergleich
               </button>
@@ -348,40 +362,19 @@ function BalanceSheetVisualization({
           )}
           <button
             onClick={() => setViewMode('pie')}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: viewMode === 'pie' ? '#3498db' : 'white',
-              color: viewMode === 'pie' ? 'white' : '#333',
-              cursor: 'pointer',
-            }}
+            className={`button button-sm ${viewMode === 'pie' ? 'button-primary' : 'button-secondary'}`}
           >
             Kreis
           </button>
           <button
             onClick={() => setViewMode('bar')}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: viewMode === 'bar' ? '#3498db' : 'white',
-              color: viewMode === 'bar' ? 'white' : '#333',
-              cursor: 'pointer',
-            }}
+            className={`button button-sm ${viewMode === 'bar' ? 'button-primary' : 'button-secondary'}`}
           >
             Balken
           </button>
           <button
             onClick={() => setViewMode('treemap')}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: viewMode === 'treemap' ? '#3498db' : 'white',
-              color: viewMode === 'treemap' ? 'white' : '#333',
-              cursor: 'pointer',
-            }}
+            className={`button button-sm ${viewMode === 'treemap' ? 'button-primary' : 'button-secondary'}`}
           >
             Treemap
           </button>
@@ -389,11 +382,11 @@ function BalanceSheetVisualization({
       </div>
 
       {viewType === 'both' && hasBefore && hasAfter ? (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ marginBottom: 'var(--spacing-6)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
             {/* Before Consolidation */}
-            <div style={{ padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px', border: '2px solid #f39c12' }}>
-              <h3 style={{ marginTop: 0, color: '#856404' }}>Vor Konsolidierung</h3>
+            <div className="card" style={{ backgroundColor: 'rgba(247, 201, 72, 0.1)', border: '2px solid var(--color-warning)' }}>
+              <h3 style={{ marginTop: 0, color: '#b8941f', fontSize: 'var(--font-size-lg)' }}>Vor Konsolidierung</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
                 <div>
                   <strong>Gesamtvermögen:</strong>
@@ -420,8 +413,8 @@ function BalanceSheetVisualization({
               </div>
             </div>
             {/* After Consolidation */}
-            <div style={{ padding: '1rem', backgroundColor: '#d4edda', borderRadius: '4px', border: '2px solid #27ae60' }}>
-              <h3 style={{ marginTop: 0, color: '#155724' }}>Nach Konsolidierung</h3>
+            <div className="card" style={{ backgroundColor: 'rgba(15, 123, 15, 0.1)', border: '2px solid var(--color-success)' }}>
+              <h3 style={{ marginTop: 0, color: 'var(--color-success)', fontSize: 'var(--font-size-lg)' }}>Nach Konsolidierung</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
                 <div>
                   <strong>Gesamtvermögen:</strong>
@@ -460,8 +453,8 @@ function BalanceSheetVisualization({
           </div>
         </div>
       ) : (
-        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div className="card" style={{ marginBottom: 'var(--spacing-6)', backgroundColor: 'var(--color-bg-tertiary)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
             <div>
               <strong>Gesamtvermögen:</strong>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#27ae60' }}>
@@ -493,7 +486,13 @@ function BalanceSheetVisualization({
         </div>
       )}
 
-      {viewMode === 'pie' && (
+      {!chartsReady && (
+        <div className="card" style={{ marginTop: '2rem' }}>
+          <p>Initialisiere Diagramme...</p>
+        </div>
+      )}
+
+      {viewMode === 'pie' && chartsReady && (
         <>
           {viewType === 'both' && hasBefore && hasAfter ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
@@ -649,7 +648,7 @@ function BalanceSheetVisualization({
         </>
       )}
 
-      {viewMode === 'bar' && (
+      {viewMode === 'bar' && chartsReady && (
         <div style={{ marginTop: '2rem' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '1rem' }}>Bilanzstruktur</h3>
           <ResponsiveContainer width="100%" height={400}>
@@ -669,7 +668,7 @@ function BalanceSheetVisualization({
         </div>
       )}
 
-      {viewMode === 'treemap' && (
+      {viewMode === 'treemap' && chartsReady && (
         <div style={{ marginTop: '2rem' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '1rem' }}>Bilanzübersicht (Treemap)</h3>
           <ResponsiveContainer width="100%" height={400}>
@@ -716,9 +715,9 @@ function BalanceSheetVisualization({
       )}
 
       {isConsolidated && consolidatedBalanceSheet?.consolidationSummary && (
-        <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <h3>Konsolidierungszusammenfassung</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div className="card" style={{ marginTop: 'var(--spacing-8)', backgroundColor: 'var(--color-bg-tertiary)' }}>
+          <h3 style={{ marginBottom: 'var(--spacing-4)' }}>Konsolidierungszusammenfassung</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
             <div>
               <strong>Einbezogene Unternehmen:</strong> {consolidatedBalanceSheet.consolidationSummary.companiesIncluded}
             </div>

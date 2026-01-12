@@ -83,12 +83,12 @@ function Consolidation() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <h1>Konsolidierung</h1>
         {selectedStatementId && (
           <Link
             to={`/consolidated-notes/${selectedStatementId}`}
-            className="button"
+            className="button button-primary"
             style={{ textDecoration: 'none' }}
           >
             Konzernanhang anzeigen
@@ -97,17 +97,12 @@ function Consolidation() {
       </div>
 
       <div className="card">
-        <h2>Jahresabschluss auswählen</h2>
+        <div className="card-header">
+          <h2>Jahresabschluss auswählen</h2>
+        </div>
         
         {error && (
-          <div style={{ 
-            padding: '1rem', 
-            marginBottom: '1rem', 
-            backgroundColor: '#fee', 
-            border: '1px solid #fcc',
-            borderRadius: '4px',
-            color: '#c33'
-          }}>
+          <div className="error-message">
             <strong>Hinweis:</strong> {error}
           </div>
         )}
@@ -132,7 +127,7 @@ function Consolidation() {
                 ))}
               </select>
               {statements.length === 0 && (
-                <p style={{ marginTop: '0.5rem', color: '#e74c3c', fontSize: '0.9rem' }}>
+                <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
                   Keine Jahresabschlüsse verfügbar. Bitte erstellen Sie zuerst einen Jahresabschluss oder importieren Sie Daten.
                 </p>
               )}
@@ -141,7 +136,7 @@ function Consolidation() {
         </div>
 
         <button
-          className="button"
+          className="button button-primary"
           onClick={handleCalculate}
           disabled={calculating || !selectedStatementId}
         >
@@ -159,11 +154,21 @@ function Consolidation() {
 
       {selectedStatementId && (
         <div className="card">
-          <h2>Konsolidierungsbuchungen ({entries.length})</h2>
+          <div className="card-header">
+            <h2>Konsolidierungsbuchungen ({entries.length})</h2>
+          </div>
           {loading ? (
-            <p>Lade Buchungen...</p>
+            <div className="loading">
+              <div className="loading-spinner"></div>
+              <span>Lade Buchungen...</span>
+            </div>
           ) : entries.length === 0 ? (
-            <p>Keine Konsolidierungsbuchungen vorhanden.</p>
+            <div className="empty-state">
+              <div className="empty-state-title">Keine Konsolidierungsbuchungen vorhanden</div>
+              <div className="empty-state-description">
+                Führen Sie eine Konsolidierung durch, um Buchungen zu erstellen.
+              </div>
+            </div>
           ) : (
             <table className="table">
               <thead>
@@ -179,8 +184,13 @@ function Consolidation() {
                 {entries.map((entry) => (
                   <tr key={entry.id}>
                     <td>{entry.account?.accountNumber || entry.accountId}</td>
-                    <td>{entry.adjustmentType}</td>
-                    <td style={{ color: entry.amount < 0 ? '#e74c3c' : '#27ae60' }}>
+                    <td>
+                      <span className="badge badge-info">{entry.adjustmentType}</span>
+                    </td>
+                    <td style={{ 
+                      color: entry.amount < 0 ? 'var(--color-error)' : 'var(--color-success)',
+                      fontWeight: 'var(--font-weight-medium)'
+                    }}>
                       {entry.amount.toLocaleString('de-DE', {
                         style: 'currency',
                         currency: 'EUR'

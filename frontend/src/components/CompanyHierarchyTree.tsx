@@ -80,15 +80,20 @@ function CompanyHierarchyTree() {
   if (loading) {
     return (
       <div className="card">
-        <p>Lade Unternehmenshierarchie...</p>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <span>Lade Unternehmenshierarchie...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="card" style={{ backgroundColor: '#fee', border: '1px solid #fcc' }}>
-        <p style={{ color: '#c33' }}>Fehler: {error}</p>
+      <div className="card">
+        <div className="error-message">
+          <strong>Fehler:</strong> {error}
+        </div>
       </div>
     );
   }
@@ -96,20 +101,27 @@ function CompanyHierarchyTree() {
   if (treeData.length === 0) {
     return (
       <div className="card">
-        <p>Keine Unternehmenshierarchie verfügbar.</p>
+        <div className="empty-state">
+          <div className="empty-state-title">Keine Unternehmenshierarchie verfügbar</div>
+          <div className="empty-state-description">
+            Erstellen Sie Unternehmen und definieren Sie Beziehungen, um eine Hierarchie anzuzeigen.
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="card">
-      <h2>Unternehmenshierarchie</h2>
+      <div className="card-header">
+        <h2>Unternehmenshierarchie</h2>
+      </div>
       <div style={{ 
         width: '100%', 
         height: '600px', 
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        backgroundColor: '#fafafa',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        backgroundColor: 'var(--color-bg-tertiary)',
         overflow: 'auto'
       }}>
         <Tree
@@ -172,18 +184,18 @@ function CompanyHierarchyTree() {
           }}
         />
       </div>
-      <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#3498db' }}></div>
-          <span style={{ fontSize: '0.875rem' }}>Mutterunternehmen</span>
+      <div style={{ marginTop: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-4)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-accent-blue)' }}></div>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Mutterunternehmen</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#27ae60' }}></div>
-          <span style={{ fontSize: '0.875rem' }}>Tochtergesellschaft</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }}></div>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Tochtergesellschaft</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#95a5a6' }}></div>
-          <span style={{ fontSize: '0.875rem' }}>Standalone</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-text-tertiary)' }}></div>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Standalone</span>
         </div>
       </div>
     </div>

@@ -138,24 +138,18 @@ function DataImport() {
       <h1>Datenimport</h1>
 
       <div className="card">
-        <h2>Datei importieren</h2>
+        <div className="card-header">
+          <h2>Datei importieren</h2>
+        </div>
         
         {error && (
-          <div style={{ 
-            padding: '1rem', 
-            marginBottom: '1rem', 
-            backgroundColor: '#fee', 
-            border: '1px solid #fcc',
-            borderRadius: '4px',
-            color: '#c33'
-          }}>
+          <div className="error-message">
             <strong>Hinweis:</strong> {error}
             {statements.length === 0 && (
-              <div style={{ marginTop: '0.5rem' }}>
+              <div style={{ marginTop: 'var(--spacing-3)' }}>
                 <button 
-                  className="button" 
+                  className="button button-primary button-sm" 
                   onClick={() => setShowCreateForm(!showCreateForm)}
-                  style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                 >
                   {showCreateForm ? 'Abbrechen' : 'Jahresabschluss erstellen'}
                 </button>
@@ -165,7 +159,7 @@ function DataImport() {
         )}
 
         {showCreateForm && (
-          <div className="card" style={{ marginBottom: '1rem', backgroundColor: '#f9f9f9' }}>
+          <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'var(--color-bg-tertiary)' }}>
             <h3>Neuen Jahresabschluss erstellen</h3>
             <div className="form-group">
               <label>Unternehmen *</label>
@@ -210,7 +204,7 @@ function DataImport() {
               />
             </div>
             <button
-              className="button"
+              className="button button-primary"
               onClick={handleCreateStatement}
               disabled={creating || !newStatement.companyId}
             >
@@ -239,7 +233,7 @@ function DataImport() {
                 ))}
               </select>
               {statements.length === 0 && (
-                <p style={{ marginTop: '0.5rem', color: '#e74c3c', fontSize: '0.9rem' }}>
+                <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
                   Keine Jahresabschlüsse verfügbar. Bitte erstellen Sie zuerst einen Jahresabschluss.
                 </p>
               )}
@@ -267,15 +261,15 @@ function DataImport() {
             required
           />
           {selectedFile && (
-            <p style={{ marginTop: '0.5rem', color: '#666' }}>
+            <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-text-secondary)' }}>
               Ausgewählt: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
             </p>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
           <button
-            className="button"
+            className="button button-primary"
             onClick={handleImport}
             disabled={loading || !selectedFile || !financialStatementId}
           >
@@ -289,14 +283,16 @@ function DataImport() {
 
       {result && (
         <div className="card">
-          <h2>Import-Ergebnis</h2>
-          <p>
+          <div className="card-header">
+            <h2>Import-Ergebnis</h2>
+          </div>
+          <div className="success-message" style={{ marginBottom: 'var(--spacing-4)' }}>
             <strong>Importiert:</strong> {result.imported} Datensätze
-          </p>
+          </div>
           {result.warnings && result.warnings.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
+            <div style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-4)', backgroundColor: 'rgba(247, 201, 72, 0.1)', border: '1px solid var(--color-warning)', borderRadius: 'var(--radius-md)' }}>
               <strong>Warnungen ({result.warnings.length}):</strong>
-              <ul style={{ marginTop: '0.5rem', color: '#f39c12' }}>
+              <ul style={{ marginTop: 'var(--spacing-2)', color: '#b8941f', paddingLeft: 'var(--spacing-5)' }}>
                 {result.warnings.map((warning, index) => (
                   <li key={index}>{warning}</li>
                 ))}
@@ -304,13 +300,15 @@ function DataImport() {
             </div>
           )}
           {result.errors.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
-              <strong>Fehler ({result.errors.length}):</strong>
-              <ul style={{ marginTop: '0.5rem', color: '#e74c3c' }}>
-                {result.errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
+            <div style={{ marginTop: 'var(--spacing-4)' }}>
+              <div className="error-message">
+                <strong>Fehler ({result.errors.length}):</strong>
+                <ul style={{ marginTop: 'var(--spacing-2)', paddingLeft: 'var(--spacing-5)' }}>
+                  {result.errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>

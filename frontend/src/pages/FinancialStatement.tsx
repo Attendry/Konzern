@@ -44,15 +44,24 @@ function FinancialStatement() {
   }, [id, loadData]);
 
   if (loading) {
-    return <div className="card">Lade Jahresabschluss...</div>;
+    return (
+      <div className="loading">
+        <div className="loading-spinner"></div>
+        <span>Lade Jahresabschluss...</span>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="card">
-        <h2>Fehler</h2>
-        <p>{error}</p>
-        <button onClick={loadData} style={{ marginTop: '1rem' }}>
+        <div className="card-header">
+          <h2>Fehler</h2>
+        </div>
+        <div className="error-message">
+          {error}
+        </div>
+        <button onClick={loadData} className="button button-primary" style={{ marginTop: 'var(--spacing-4)' }}>
           Erneut versuchen
         </button>
       </div>
@@ -60,7 +69,13 @@ function FinancialStatement() {
   }
 
   if (!statement) {
-    return <div className="card">Jahresabschluss nicht gefunden</div>;
+    return (
+      <div className="card">
+        <div className="empty-state">
+          <div className="empty-state-title">Jahresabschluss nicht gefunden</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -68,30 +83,41 @@ function FinancialStatement() {
       <h1>Jahresabschluss</h1>
 
       <div className="card">
-        <h2>Details</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div className="card-header">
+          <h2>Details</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
           <div>
-            <strong>Unternehmen:</strong> {statement.company?.name || 'Unbekannt'}
+            <div className="metric-label">Unternehmen</div>
+            <div style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}>
+              {statement.company?.name || 'Unbekannt'}
+            </div>
           </div>
           <div>
-            <strong>Geschäftsjahr:</strong> {statement.fiscalYear}
+            <div className="metric-label">Geschäftsjahr</div>
+            <div style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}>
+              {statement.fiscalYear}
+            </div>
           </div>
           <div>
-            <strong>Von:</strong> {new Date(statement.periodStart).toLocaleDateString('de-DE')}
+            <div className="metric-label">Von</div>
+            <div style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}>
+              {new Date(statement.periodStart).toLocaleDateString('de-DE')}
+            </div>
           </div>
           <div>
-            <strong>Bis:</strong> {new Date(statement.periodEnd).toLocaleDateString('de-DE')}
+            <div className="metric-label">Bis</div>
+            <div style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--font-weight-medium)' }}>
+              {new Date(statement.periodEnd).toLocaleDateString('de-DE')}
+            </div>
           </div>
           <div>
-            <strong>Status:</strong>{' '}
-            <span style={{
-              padding: '0.25rem 0.5rem',
-              borderRadius: '4px',
-              backgroundColor: statement.status === 'consolidated' ? '#27ae60' : 
-                             statement.status === 'finalized' ? '#f39c12' : '#95a5a6',
-              color: 'white',
-              fontSize: '0.875rem'
-            }}>
+            <div className="metric-label">Status</div>
+            <span className={`badge ${
+              statement.status === 'consolidated' ? 'badge-success' : 
+              statement.status === 'finalized' ? 'badge-warning' : 
+              'badge-neutral'
+            }`}>
               {statement.status}
             </span>
           </div>
@@ -107,9 +133,16 @@ function FinancialStatement() {
       </ErrorBoundary>
 
       <div className="card">
-        <h2>Kontensalden ({balances.length})</h2>
+        <div className="card-header">
+          <h2>Kontensalden ({balances.length})</h2>
+        </div>
         {balances.length === 0 ? (
-          <p>Keine Kontensalden vorhanden.</p>
+          <div className="empty-state">
+            <div className="empty-state-title">Keine Kontensalden vorhanden</div>
+            <div className="empty-state-description">
+              Importieren Sie Daten, um Kontensalden anzuzeigen.
+            </div>
+          </div>
         ) : (
           <table className="table">
             <thead>

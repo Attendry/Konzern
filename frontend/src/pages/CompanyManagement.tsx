@@ -124,10 +124,10 @@ function CompanyManagement() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <h1>Unternehmensverwaltung</h1>
         <button 
-          className="button" 
+          className="button button-primary" 
           onClick={() => {
             setShowForm(!showForm);
             setError(null);
@@ -149,22 +149,12 @@ function CompanyManagement() {
       </div>
 
       {error && !loading && (
-        <div style={{ 
-          padding: '1rem', 
-          marginBottom: '1rem', 
-          backgroundColor: '#fee', 
-          border: '1px solid #fcc',
-          borderRadius: '4px',
-          color: '#c33'
-        }}>
+        <div className="error-message">
           <strong>Fehler:</strong> {error}
           <button 
             onClick={loadCompanies}
-            style={{ 
-              marginLeft: '1rem', 
-              padding: '0.25rem 0.5rem',
-              fontSize: '0.9rem'
-            }}
+            className="button button-tertiary button-sm"
+            style={{ marginLeft: 'var(--spacing-3)' }}
           >
             Erneut versuchen
           </button>
@@ -172,7 +162,10 @@ function CompanyManagement() {
       )}
 
       {loading && (
-        <div className="card">Lade Unternehmen...</div>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <span>Lade Unternehmen...</span>
+        </div>
       )}
 
       {showForm && editingCompany && (
@@ -192,7 +185,9 @@ function CompanyManagement() {
 
       {showForm && (
         <div className="card">
-          <h2>{editingCompany ? 'Unternehmen bearbeiten' : 'Neues Unternehmen'}</h2>
+          <div className="card-header">
+            <h2>{editingCompany ? 'Unternehmen bearbeiten' : 'Neues Unternehmen'}</h2>
+          </div>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Name *</label>
@@ -278,16 +273,16 @@ function CompanyManagement() {
               </div>
             )}
             <div className="form-group">
-              <label>
+              <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={formData.isConsolidated}
                   onChange={(e) => setFormData({ ...formData, isConsolidated: e.target.checked })}
                 />
-                {' '}Wird konsolidiert
+                Wird konsolidiert
               </label>
             </div>
-            <button type="submit" className="button" disabled={saving}>
+            <button type="submit" className="button button-primary" disabled={saving}>
               {saving ? 'Speichere...' : editingCompany ? 'Aktualisieren' : 'Erstellen'}
             </button>
           </form>
@@ -296,11 +291,16 @@ function CompanyManagement() {
 
       {!loading && (
         <div className="card">
-          <h2>Unternehmen ({companies.length})</h2>
+          <div className="card-header">
+            <h2>Unternehmen ({companies.length})</h2>
+          </div>
           {companies.length === 0 ? (
-            <p style={{ padding: '1rem', color: '#666' }}>
-              Keine Unternehmen vorhanden. Klicken Sie auf "Neues Unternehmen", um eines zu erstellen.
-            </p>
+            <div className="empty-state">
+              <div className="empty-state-title">Keine Unternehmen vorhanden</div>
+              <div className="empty-state-description">
+                Klicken Sie auf "Neues Unternehmen", um eines zu erstellen.
+              </div>
+            </div>
           ) : (
             <table className="table">
           <thead>
@@ -322,46 +322,50 @@ function CompanyManagement() {
                   <td>{parentCompany ? parentCompany.name : '-'}</td>
                   <td>{company.taxId || '-'}</td>
                   <td>{company.legalForm || '-'}</td>
-                  <td>{company.isConsolidated ? 'Ja' : 'Nein'}</td>
                   <td>
-                  <button
-                    className="button"
-                    style={{ marginRight: '0.5rem' }}
-                    onClick={() => handleEdit(company)}
-                  >
-                    Bearbeiten
-                  </button>
-                  <button
-                    className="button"
-                    style={{ marginRight: '0.5rem', fontSize: '0.875rem', padding: '0.25rem 0.5rem' }}
-                    onClick={() => {
-                      // Show consolidation check in a modal or separate section
-                      const checkWindow = window.open('', '_blank', 'width=800,height=600');
-                      if (checkWindow) {
-                        checkWindow.document.write(`
-                          <html>
-                            <head><title>Konsolidierungspflicht-Prüfung - ${company.name}</title></head>
-                            <body>
-                              <h1>Konsolidierungspflicht-Prüfung: ${company.name}</h1>
-                              <p>Diese Funktion wird in der Hauptansicht verfügbar sein.</p>
-                              <p>Unternehmen-ID: ${company.id}</p>
-                              <button onclick="window.close()">Schließen</button>
-                            </body>
-                          </html>
-                        `);
-                      }
-                    }}
-                    title="Konsolidierungspflicht prüfen (HGB § 290-292)"
-                  >
-                    HGB-Prüfung
-                  </button>
-                  <button
-                    className="button button-danger"
-                    onClick={() => handleDelete(company.id)}
-                  >
-                    Löschen
-                  </button>
-                </td>
+                    <span className={`badge ${company.isConsolidated ? 'badge-success' : 'badge-neutral'}`}>
+                      {company.isConsolidated ? 'Ja' : 'Nein'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                      <button
+                        className="button button-secondary button-sm"
+                        onClick={() => handleEdit(company)}
+                      >
+                        Bearbeiten
+                      </button>
+                      <button
+                        className="button button-tertiary button-sm"
+                        onClick={() => {
+                          // Show consolidation check in a modal or separate section
+                          const checkWindow = window.open('', '_blank', 'width=800,height=600');
+                          if (checkWindow) {
+                            checkWindow.document.write(`
+                              <html>
+                                <head><title>Konsolidierungspflicht-Prüfung - ${company.name}</title></head>
+                                <body>
+                                  <h1>Konsolidierungspflicht-Prüfung: ${company.name}</h1>
+                                  <p>Diese Funktion wird in der Hauptansicht verfügbar sein.</p>
+                                  <p>Unternehmen-ID: ${company.id}</p>
+                                  <button onclick="window.close()">Schließen</button>
+                                </body>
+                              </html>
+                            `);
+                          }
+                        }}
+                        title="Konsolidierungspflicht prüfen (HGB § 290-292)"
+                      >
+                        HGB-Prüfung
+                      </button>
+                      <button
+                        className="button button-danger button-sm"
+                        onClick={() => handleDelete(company.id)}
+                      >
+                        Löschen
+                      </button>
+                    </div>
+                  </td>
               </tr>
               );
             })}

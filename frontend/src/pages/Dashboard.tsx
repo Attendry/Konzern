@@ -31,74 +31,91 @@ function Dashboard() {
   };
 
   if (loading) {
-    return <div className="card">Lade Daten...</div>;
+    return (
+      <div className="loading">
+        <div className="loading-spinner"></div>
+        <span>Lade Daten...</span>
+      </div>
+    );
   }
+
+  const consolidatedCount = statements.filter(s => s.status === 'consolidated').length;
 
   return (
     <div>
       <h1>Dashboard</h1>
       
       <div className="card">
-        <h2>Übersicht</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div>
-            <h3>Unternehmen</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3498db' }}>
+        <div className="card-header">
+          <h2>Übersicht</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
+          <div className="metric-card">
+            <div className="metric-label">Unternehmen</div>
+            <div className="metric-value" style={{ color: 'var(--color-accent-blue)' }}>
               {companies.length}
-            </p>
+            </div>
           </div>
-          <div>
-            <h3>Jahresabschlüsse</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3498db' }}>
+          <div className="metric-card">
+            <div className="metric-label">Jahresabschlüsse</div>
+            <div className="metric-value" style={{ color: 'var(--color-accent-blue)' }}>
               {statements.length}
-            </p>
+            </div>
           </div>
-          <div>
-            <h3>Konsolidiert</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#27ae60' }}>
-              {statements.filter(s => s.status === 'consolidated').length}
-            </p>
+          <div className="metric-card">
+            <div className="metric-label">Konsolidiert</div>
+            <div className="metric-value" style={{ color: 'var(--color-success)' }}>
+              {consolidatedCount}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="card">
-        <h2>Letzte Jahresabschlüsse</h2>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Unternehmen</th>
-              <th>Geschäftsjahr</th>
-              <th>Status</th>
-              <th>Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {statements.slice(0, 5).map((statement) => (
-              <tr key={statement.id}>
-                <td>{statement.company?.name || 'Unbekannt'}</td>
-                <td>{statement.fiscalYear}</td>
-                <td>
-                  <span style={{
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '4px',
-                    backgroundColor: statement.status === 'consolidated' ? '#27ae60' : 
-                                   statement.status === 'finalized' ? '#f39c12' : '#95a5a6',
-                    color: 'white',
-                    fontSize: '0.875rem'
-                  }}>
-                    {statement.status}
-                  </span>
-                </td>
-                <td>
-                  <Link to={`/financial-statements/${statement.id}`}>
-                    Details
-                  </Link>
-                </td>
+        <div className="card-header">
+          <h2>Letzte Jahresabschlüsse</h2>
+        </div>
+        {statements.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-title">Keine Jahresabschlüsse vorhanden</div>
+            <div className="empty-state-description">
+              Erstellen Sie einen neuen Jahresabschluss oder importieren Sie Daten.
+            </div>
+          </div>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Unternehmen</th>
+                <th>Geschäftsjahr</th>
+                <th>Status</th>
+                <th>Aktionen</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {statements.slice(0, 5).map((statement) => (
+                <tr key={statement.id}>
+                  <td>{statement.company?.name || 'Unbekannt'}</td>
+                  <td>{statement.fiscalYear}</td>
+                  <td>
+                    <span className={`badge ${
+                      statement.status === 'consolidated' ? 'badge-success' : 
+                      statement.status === 'finalized' ? 'badge-warning' : 
+                      'badge-neutral'
+                    }`}>
+                      {statement.status}
+                    </span>
+                  </td>
+                  <td>
+                    <Link to={`/financial-statements/${statement.id}`} className="button button-tertiary button-sm">
+                      Details
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <CompanyHierarchyTree />

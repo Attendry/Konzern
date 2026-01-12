@@ -73,16 +73,21 @@ function ConsolidationObligationCheck({
   if (loading) {
     return (
       <div className="card">
-        <p>Prüfe Konsolidierungspflicht...</p>
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <span>Prüfe Konsolidierungspflicht...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="card" style={{ backgroundColor: '#fee', border: '1px solid #fcc' }}>
-        <p style={{ color: '#c33' }}>Fehler: {error}</p>
-        <button onClick={loadCheck} style={{ marginTop: '1rem' }}>
+      <div className="card">
+        <div className="error-message">
+          <strong>Fehler:</strong> {error}
+        </div>
+        <button onClick={loadCheck} className="button button-primary" style={{ marginTop: 'var(--spacing-4)' }}>
           Erneut prüfen
         </button>
       </div>
@@ -92,8 +97,10 @@ function ConsolidationObligationCheck({
   if (!result) {
     return (
       <div className="card">
-        <p>Keine Prüfungsergebnisse verfügbar.</p>
-        <button onClick={loadCheck} style={{ marginTop: '1rem' }}>
+        <div className="empty-state">
+          <div className="empty-state-title">Keine Prüfungsergebnisse verfügbar</div>
+        </div>
+        <button onClick={loadCheck} className="button button-primary" style={{ marginTop: 'var(--spacing-4)' }}>
           Prüfung starten
         </button>
       </div>
@@ -102,30 +109,33 @@ function ConsolidationObligationCheck({
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Konsolidierungspflicht-Prüfung</h2>
-        <button onClick={loadCheck} style={{ padding: '0.5rem 1rem' }}>
+        <button onClick={loadCheck} className="button button-secondary button-sm">
           Erneut prüfen
         </button>
       </div>
 
       {/* Status */}
       <div
+        className={result.isObligatory
+          ? result.exceptions.length > 0
+            ? 'error-message'
+            : 'error-message'
+          : 'success-message'}
         style={{
-          padding: '1rem',
-          borderRadius: '4px',
-          marginBottom: '1rem',
+          marginBottom: 'var(--spacing-4)',
           backgroundColor: result.isObligatory
             ? result.exceptions.length > 0
-              ? '#fff3cd'
-              : '#f8d7da'
-            : '#d4edda',
+              ? 'rgba(247, 201, 72, 0.1)'
+              : 'rgba(225, 98, 89, 0.1)'
+            : 'rgba(15, 123, 15, 0.1)',
           border: `2px solid ${
             result.isObligatory
               ? result.exceptions.length > 0
-                ? '#ffc107'
-                : '#dc3545'
-              : '#28a745'
+                ? 'var(--color-warning)'
+                : 'var(--color-error)'
+              : 'var(--color-success)'
           }`,
         }}
       >
@@ -171,11 +181,11 @@ function ConsolidationObligationCheck({
 
       {/* Exceptions */}
       {result.exceptions.length > 0 && (
-        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px' }}>
-          <h3>Ausnahmen (HGB § 296)</h3>
-          <ul>
+        <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'rgba(247, 201, 72, 0.1)', border: '1px solid var(--color-warning)' }}>
+          <h3 style={{ marginBottom: 'var(--spacing-3)' }}>Ausnahmen (HGB § 296)</h3>
+          <ul style={{ paddingLeft: 'var(--spacing-5)' }}>
             {result.exceptions.map((exception, index) => (
-              <li key={index}>{EXCEPTION_LABELS[exception] || exception}</li>
+              <li key={index} style={{ marginBottom: 'var(--spacing-2)' }}>{EXCEPTION_LABELS[exception] || exception}</li>
             ))}
           </ul>
         </div>
@@ -183,11 +193,11 @@ function ConsolidationObligationCheck({
 
       {/* Warnings */}
       {result.warnings.length > 0 && (
-        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8d7da', borderRadius: '4px' }}>
-          <h3 style={{ color: '#721c24' }}>⚠️ Warnungen</h3>
-          <ul>
+        <div className="error-message" style={{ marginBottom: 'var(--spacing-4)' }}>
+          <h3 style={{ marginBottom: 'var(--spacing-3)' }}>⚠️ Warnungen</h3>
+          <ul style={{ paddingLeft: 'var(--spacing-5)' }}>
             {result.warnings.map((warning, index) => (
-              <li key={index} style={{ color: '#721c24' }}>{warning}</li>
+              <li key={index} style={{ marginBottom: 'var(--spacing-2)' }}>{warning}</li>
             ))}
           </ul>
         </div>
@@ -195,11 +205,11 @@ function ConsolidationObligationCheck({
 
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
-        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#d1ecf1', borderRadius: '4px' }}>
-          <h3 style={{ color: '#0c5460' }}>💡 Empfehlungen</h3>
-          <ul>
+        <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'rgba(11, 140, 238, 0.1)', border: '1px solid var(--color-info)' }}>
+          <h3 style={{ marginBottom: 'var(--spacing-3)', color: 'var(--color-info)' }}>💡 Empfehlungen</h3>
+          <ul style={{ paddingLeft: 'var(--spacing-5)' }}>
             {result.recommendations.map((recommendation, index) => (
-              <li key={index} style={{ color: '#0c5460' }}>{recommendation}</li>
+              <li key={index} style={{ marginBottom: 'var(--spacing-2)' }}>{recommendation}</li>
             ))}
           </ul>
         </div>
@@ -207,19 +217,11 @@ function ConsolidationObligationCheck({
 
       {/* HGB References */}
       {result.hgbReferences.length > 0 && (
-        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-          <h3>HGB-Referenzen</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'var(--color-bg-tertiary)' }}>
+          <h3 style={{ marginBottom: 'var(--spacing-3)' }}>HGB-Referenzen</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-2)' }}>
             {result.hgbReferences.map((ref, index) => (
-              <span
-                key={index}
-                style={{
-                  padding: '0.25rem 0.5rem',
-                  backgroundColor: '#e9ecef',
-                  borderRadius: '4px',
-                  fontSize: '0.875rem',
-                }}
-              >
+              <span key={index} className="badge badge-info">
                 {ref}
               </span>
             ))}
@@ -228,19 +230,19 @@ function ConsolidationObligationCheck({
       )}
 
       {/* Manual Decision */}
-      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #ddd' }}>
+      <div style={{ marginTop: 'var(--spacing-4)', paddingTop: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)' }}>
         {!showManualDecision ? (
           <button
             onClick={() => setShowManualDecision(true)}
-            style={{ padding: '0.5rem 1rem' }}
+            className="button button-secondary"
           >
             Manuelle Entscheidung eingeben
           </button>
         ) : (
-          <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <h3>Manuelle Entscheidung</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
-              <label>
+          <div className="card" style={{ backgroundColor: 'var(--color-bg-tertiary)' }}>
+            <h3 style={{ marginBottom: 'var(--spacing-4)' }}>Manuelle Entscheidung</h3>
+            <div className="form-group">
+              <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={manualDecision.hasUnifiedManagement || false}
@@ -251,9 +253,11 @@ function ConsolidationObligationCheck({
                     })
                   }
                 />
-                {' '}Einheitliche Leitung
+                Einheitliche Leitung
               </label>
-              <label>
+            </div>
+            <div className="form-group">
+              <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={manualDecision.hasControlAgreement || false}
@@ -264,30 +268,29 @@ function ConsolidationObligationCheck({
                     })
                   }
                 />
-                {' '}Beherrschungsvertrag
+                Beherrschungsvertrag
               </label>
-              <div>
-                <label>
-                  <strong>Kommentar:</strong>
-                </label>
-                <textarea
-                  value={manualDecision.comment || ''}
-                  onChange={(e) =>
-                    setManualDecision({
-                      ...manualDecision,
-                      comment: e.target.value,
-                    })
-                  }
-                  style={{ width: '100%', minHeight: '100px', marginTop: '0.5rem' }}
-                  placeholder="Begründung der manuellen Entscheidung..."
-                />
-              </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="form-group">
+              <label>
+                <strong>Kommentar:</strong>
+              </label>
+              <textarea
+                value={manualDecision.comment || ''}
+                onChange={(e) =>
+                  setManualDecision({
+                    ...manualDecision,
+                    comment: e.target.value,
+                  })
+                }
+                placeholder="Begründung der manuellen Entscheidung..."
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
               <button
                 onClick={handleSaveManualDecision}
                 disabled={saving}
-                style={{ padding: '0.5rem 1rem', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}
+                className="button button-primary"
               >
                 {saving ? 'Speichern...' : 'Speichern'}
               </button>
@@ -296,7 +299,7 @@ function ConsolidationObligationCheck({
                   setShowManualDecision(false);
                   setManualDecision({});
                 }}
-                style={{ padding: '0.5rem 1rem' }}
+                className="button button-secondary"
               >
                 Abbrechen
               </button>
