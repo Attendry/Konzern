@@ -287,7 +287,7 @@ export class ConsolidationObligationService {
 
     // Berechne Bilanzsumme (Summe aller Aktiva)
     const totalAssets = balances
-      .filter((b) => b.accounts?.account_type === 'asset')
+      .filter((b: any) => (b.accounts as any)?.account_type === 'asset')
       .reduce((sum, b) => sum + Math.abs(parseFloat(b.balance || '0')), 0);
 
     // Lade Konzern-Bilanzsumme (vereinfacht: Summe aller konsolidierten Unternehmen)
@@ -317,7 +317,7 @@ export class ConsolidationObligationService {
 
         if (companyBalances) {
           const companyAssets = companyBalances
-            .filter((b) => b.accounts?.account_type === 'asset')
+            .filter((b: any) => (b.accounts as any)?.account_type === 'asset')
             .reduce((sum, b) => sum + Math.abs(parseFloat(b.balance || '0')), 0);
           totalConsolidatedAssets += companyAssets;
         }
@@ -436,8 +436,8 @@ export class ConsolidationObligationService {
     const { error } = await this.supabase
       .from('consolidation_obligation_checks')
       .update({
-        has_unified_management: decision.hasUnifiedManagement ?? lastCheck.has_unified_management,
-        has_control_agreement: decision.hasControlAgreement ?? lastCheck.has_control_agreement,
+        has_unified_management: decision.hasUnifiedManagement ?? lastCheck.hasUnifiedManagement,
+        has_control_agreement: decision.hasControlAgreement ?? lastCheck.hasControlAgreement,
         exceptions: decision.exceptions ?? lastCheck.exceptions,
         manual_decision_comment: decision.comment,
         checked_at: new Date().toISOString(),

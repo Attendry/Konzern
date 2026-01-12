@@ -320,10 +320,10 @@ export class IncomeStatementConsolidationService {
       incomeTax: {
         total: totalTax,
         consolidated: totalTax,
-        positions: (taxBalances || []).map((b) => ({
-          accountId: b.accounts?.id || '',
-          accountNumber: b.accounts?.account_number || '',
-          accountName: b.accounts?.name || '',
+        positions: (taxBalances || []).map((b: any) => ({
+          accountId: (b.accounts as any)?.id || '',
+          accountNumber: (b.accounts as any)?.account_number || '',
+          accountName: (b.accounts as any)?.name || '',
           accountType: 'income_tax',
           amount: Math.abs(parseFloat(b.balance || '0')),
         })),
