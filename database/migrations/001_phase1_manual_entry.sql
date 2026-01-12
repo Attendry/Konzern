@@ -45,37 +45,36 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- Extend adjustment_type enum with new values (if not already present)
--- Note: PostgreSQL doesn't support IF NOT EXISTS for ALTER TYPE ADD VALUE
--- Run these only if the values don't exist
-DO $$ BEGIN
-    ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'intercompany_profit';
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'income_expense';
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'currency_translation';
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'deferred_tax';
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'minority_interest';
-EXCEPTION
-    WHEN duplicate_object THEN null;
+-- Extend adjustment_type enum with new values (if the enum type exists)
+-- Skip if using TEXT column instead of enum
+DO $$ 
+BEGIN
+    -- Check if adjustment_type is an enum type
+    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'adjustment_type') THEN
+        -- Add new values if they don't exist
+        BEGIN
+            ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'intercompany_profit';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'income_expense';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'currency_translation';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'deferred_tax';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+        BEGIN
+            ALTER TYPE adjustment_type ADD VALUE IF NOT EXISTS 'minority_interest';
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END;
+    ELSE
+        RAISE NOTICE 'adjustment_type enum does not exist - skipping (likely using TEXT column)';
+    END IF;
 END $$;
 
 -- Add new columns to consolidation_entries table
