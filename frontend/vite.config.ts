@@ -20,9 +20,17 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
+        manualChunks: (id) => {
+          // Put recharts in vendor chunk to avoid initialization order issues
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts')) {
+              return 'vendor';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor';
+            }
+            return 'vendor';
+          }
         },
       },
     },

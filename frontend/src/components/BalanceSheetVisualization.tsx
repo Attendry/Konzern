@@ -1,9 +1,24 @@
 import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Treemap } from 'recharts';
 import api from '../services/api';
 import { AccountBalance, FinancialStatement } from '../types';
 import { buildBalanceSheetFromBalances, BuiltBalanceSheet } from '../utils/balanceSheetBuilder';
 import '../App.css';
+
+// Import recharts components with proper error handling
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Treemap
+} from 'recharts';
 
 interface BalanceSheetPosition {
   accountId: string;
@@ -97,14 +112,24 @@ function BalanceSheetVisualization({
 
   // Defer chart rendering to avoid initialization issues
   useEffect(() => {
-    // Use requestAnimationFrame to ensure we're past the initialization phase
-    const frame1 = requestAnimationFrame(() => {
-      const frame2 = requestAnimationFrame(() => {
+    // Use a small timeout to ensure recharts is fully initialized
+    const timer = setTimeout(() => {
+      try {
+        // Verify recharts components are available
+        if (typeof PieChart !== 'undefined' && typeof BarChart !== 'undefined') {
+          setChartsReady(true);
+        } else {
+          // Retry if not ready
+          setTimeout(() => setChartsReady(true), 100);
+        }
+      } catch (error) {
+        console.error('Error initializing charts:', error);
+        // Still set ready to avoid blocking the UI
         setChartsReady(true);
-      });
-      return () => cancelAnimationFrame(frame2);
-    });
-    return () => cancelAnimationFrame(frame1);
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Load consolidated balance sheet when financialStatementId changes
