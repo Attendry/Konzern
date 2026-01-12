@@ -205,7 +205,9 @@ ALTER TABLE ic_reconciliations ENABLE ROW LEVEL SECURITY;
 
 -- Create policy for ic_reconciliations (adjust based on your auth setup)
 -- This allows all operations for authenticated users
-CREATE POLICY IF NOT EXISTS "Enable all access for authenticated users" 
+-- Drop existing policy first if it exists
+DROP POLICY IF EXISTS "Enable all access for authenticated users" ON ic_reconciliations;
+CREATE POLICY "Enable all access for authenticated users" 
 ON ic_reconciliations 
 FOR ALL 
 USING (true) 
