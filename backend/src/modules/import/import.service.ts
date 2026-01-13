@@ -508,6 +508,112 @@ export class ImportService {
     return isNaN(parsed) ? undefined : parsed;
   }
 
+  /**
+   * Import Excel with custom column mapping from the wizard
+   */
+  async importExcelWithMapping(
+    file: MulterFile,
+    options: {
+      financialStatementId: string;
+      sheetName?: string;
+      columnMapping: Record<string, string>; // excelColumn -> systemField
+    },
+  ): Promise<{ imported: number; errors: string[]; warnings: string[] }> {
+    try {
+      if (!file || !file.buffer) {
+        throw new BadRequestException('Datei ist leer oder ungültig');
+      }
+
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        throw new BadRequestException('Excel-Datei enthält keine Arbeitsblätter');
+      }
+
+      const sheetName = options.sheetName || workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) {
+        throw new BadRequestException(`Arbeitsblatt "${sheetName}" nicht gefunden`);
+      }
+
+      const rawData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+      if (!rawData || rawData.length === 0) {
+        throw new BadRequestException('Excel-Datei enthält keine Daten');
+      }
+
+      // Reverse the mapping: systemField -> excelColumn
+      const reverseMapping: Record<string, string> = {};
+      for (const [excelCol, sysField] of Object.entries(options.columnMapping)) {
+        reverseMapping[sysField] = excelCol;
+      }
+
+      // Validate required fields
+      if (!reverseMapping.accountNumber) {
+        throw new BadRequestException('Kontonummer-Spalte muss zugeordnet werden');
+      }
+
+      // Map rows using the custom mapping
+      const data: ImportRow[] = [];
+      const errors: string[] = [];
+
+      rawData.forEach((row, index) => {
+        try {
+          const accountNumber = row[reverseMapping.accountNumber];
+          if (!accountNumber) {
+            errors.push(`Zeile ${index + 2}: Kontonummer fehlt`);
+            return;
+          }
+
+          const importRow: ImportRow = {
+            accountNumber: String(accountNumber).trim(),
+            accountName: reverseMapping.accountName 
+              ? String(row[reverseMapping.accountName] || '').trim() || undefined 
+              : undefined,
+            debit: reverseMapping.debit 
+              ? this.parseNumber(row[reverseMapping.debit]) 
+              : undefined,
+            credit: reverseMapping.credit 
+              ? this.parseNumber(row[reverseMapping.credit]) 
+              : undefined,
+            balance: reverseMapping.balance 
+              ? this.parseNumber(row[reverseMapping.balance]) 
+              : undefined,
+            isIntercompany: reverseMapping.isIntercompany 
+              ? this.parseBoolean(row[reverseMapping.isIntercompany]) 
+              : undefined,
+            company: reverseMapping.partnerCompanyId 
+              ? String(row[reverseMapping.partnerCompanyId] || '').trim() || undefined 
+              : undefined,
+          };
+
+          // Calculate balance if only debit/credit provided
+          if (importRow.balance === undefined && (importRow.debit !== undefined || importRow.credit !== undefined)) {
+            importRow.balance = (importRow.debit || 0) - (importRow.credit || 0);
+          }
+
+          data.push(importRow);
+        } catch (error: any) {
+          errors.push(`Zeile ${index + 2}: ${error.message}`);
+        }
+      });
+
+      if (data.length === 0) {
+        throw new BadRequestException('Keine gültigen Datenzeilen gefunden. ' + errors.join('; '));
+      }
+
+      const result = await this.processImportData(data, options.financialStatementId);
+      return {
+        ...result,
+        errors: [...errors, ...result.errors],
+        warnings: result.warnings || [],
+      };
+    } catch (error: any) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Fehler beim Verarbeiten der Excel-Datei: ${error.message}`);
+    }
+  }
+
   async getImportTemplate(): Promise<Buffer> {
     // Versuche das Konsolidierungs-Muster-Template zu laden
     const fs = require('fs');

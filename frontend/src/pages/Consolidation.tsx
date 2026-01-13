@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { consolidationService } from '../services/consolidationService';
 import { financialStatementService } from '../services/financialStatementService';
 import { companyService } from '../services/companyService';
+import { reportService } from '../services/reportService';
 import { 
   FinancialStatement, 
   ConsolidationEntry, 
@@ -25,9 +26,11 @@ import '../App.css';
 type EntryTab = 'all' | 'manual' | 'pending';
 
 function Consolidation() {
+  const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedStatementId, setSelectedStatementId] = useState<string>('');
+  const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
   const [entries, setEntries] = useState<ConsolidationEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingStatements, setLoadingStatements] = useState(true);
@@ -247,6 +250,47 @@ function Consolidation() {
     return <span className={`entry-source ${source}`}>{labels[source]}</span>;
   };
 
+  // Export handlers
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    if (!selectedStatementId) {
+      showError('Bitte wählen Sie zuerst einen Jahresabschluss aus');
+      return;
+    }
+    
+    setExporting(format);
+    try {
+      let blob: Blob;
+      let filename: string;
+      const statement = statements.find(s => s.id === selectedStatementId);
+      const fiscalYear = statement?.fiscalYear || 'export';
+      
+      if (format === 'excel') {
+        blob = await reportService.exportToExcel(selectedStatementId);
+        filename = `Konzernabschluss_${fiscalYear}.xlsx`;
+      } else {
+        blob = await reportService.exportToPdf(selectedStatementId);
+        filename = `Konzernabschluss_${fiscalYear}.pdf`;
+      }
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      success(`${format.toUpperCase()} Export erfolgreich heruntergeladen`);
+    } catch (error: any) {
+      console.error(`Export error (${format}):`, error);
+      showError(`Export fehlgeschlagen: ${error.response?.data?.message || error.message || 'Unbekannter Fehler'}`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const handleCalculate = async () => {
     if (!selectedStatementId) {
       showError('Bitte wählen Sie einen Jahresabschluss aus');
@@ -273,9 +317,15 @@ function Consolidation() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-6)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <h1>Konsolidierung</h1>
-        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
+          <button
+            className="button button-primary"
+            onClick={() => navigate('/konsolidierung-assistent')}
+          >
+            🧙 Assistent
+          </button>
           <button
             className="button button-secondary"
             onClick={() => setShowFirstConsolidationWizard(true)}
@@ -289,13 +339,35 @@ function Consolidation() {
             {showMinorityDashboard ? 'Minderheiten ausblenden' : 'Minderheitenanteile'}
           </button>
           {selectedStatementId && (
-            <Link
-              to={`/consolidated-notes/${selectedStatementId}`}
-              className="button button-primary"
-              style={{ textDecoration: 'none' }}
-            >
-              Konzernanhang anzeigen
-            </Link>
+            <>
+              <button
+                className="button button-secondary"
+                onClick={() => handleExport('excel')}
+                disabled={exporting !== null}
+              >
+                {exporting === 'excel' ? '⏳ Exportiere...' : '📊 Excel Export'}
+              </button>
+              <button
+                className="button button-secondary"
+                onClick={() => handleExport('pdf')}
+                disabled={exporting !== null}
+              >
+                {exporting === 'pdf' ? '⏳ Exportiere...' : '📄 PDF Export'}
+              </button>
+              <button
+                className="button button-primary"
+                onClick={() => navigate(`/konzernabschluss/${selectedStatementId}`)}
+              >
+                📈 Konzernabschluss ansehen
+              </button>
+              <Link
+                to={`/consolidated-notes/${selectedStatementId}`}
+                className="button button-secondary"
+                style={{ textDecoration: 'none' }}
+              >
+                Konzernanhang
+              </Link>
+            </>
           )}
         </div>
       </div>

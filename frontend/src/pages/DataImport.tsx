@@ -4,10 +4,15 @@ import { financialStatementService } from '../services/financialStatementService
 import { companyService } from '../services/companyService';
 import { FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
+import { ExcelMappingWizard } from '../components/ExcelMappingWizard';
+import { BatchImportWizard } from '../components/BatchImportWizard';
 import '../App.css';
+
+type ImportMode = 'quick' | 'wizard' | 'batch';
 
 function DataImport() {
   const { success, error: showError } = useToastContext();
+  const [importMode, setImportMode] = useState<ImportMode>('quick');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'excel' | 'csv'>('excel');
   const [financialStatementId, setFinancialStatementId] = useState<string>('');
@@ -25,6 +30,7 @@ function DataImport() {
   });
   const [companies, setCompanies] = useState<any[]>([]);
   const [creating, setCreating] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
     loadStatements();
@@ -137,13 +143,128 @@ function DataImport() {
     }
   };
 
+  const handleWizardComplete = (wizardResult: { imported: number; errors: string[]; warnings: string[] }) => {
+    setResult(wizardResult);
+    setShowWizard(false);
+    success(`Import erfolgreich: ${wizardResult.imported} Datensätze importiert`);
+  };
+
+  const selectedStatement = statements.find(s => s.id === financialStatementId);
+
   return (
     <div>
       <h1>Datenimport</h1>
 
+      {/* Import Mode Toggle */}
+      <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-4)', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 'var(--font-weight-medium)' }}>Import-Modus:</span>
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+            <button
+              className={`button ${importMode === 'quick' ? 'button-primary' : 'button-secondary'}`}
+              onClick={() => { setImportMode('quick'); setShowWizard(false); }}
+            >
+              ⚡ Schnell-Import
+            </button>
+            <button
+              className={`button ${importMode === 'wizard' ? 'button-primary' : 'button-secondary'}`}
+              onClick={() => setImportMode('wizard')}
+            >
+              🧙 Import-Assistent
+            </button>
+            <button
+              className={`button ${importMode === 'batch' ? 'button-primary' : 'button-secondary'}`}
+              onClick={() => setImportMode('batch')}
+            >
+              📚 Multi-Unternehmen
+            </button>
+          </div>
+          <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+            {importMode === 'quick' 
+              ? 'Standard-Spaltenformat (Kontonummer, Soll, Haben)' 
+              : importMode === 'wizard'
+              ? 'Flexible Spaltenzuordnung für beliebige Excel-Formate'
+              : 'Eine Excel-Datei mit mehreren Blättern (je Unternehmen)'}
+          </span>
+        </div>
+      </div>
+
+      {/* Batch Import Mode */}
+      {importMode === 'batch' && (
+        <div className="card">
+          <div className="card-header">
+            <h2>📚 Multi-Unternehmen Import</h2>
+          </div>
+          <BatchImportWizard
+            fiscalYear={new Date().getFullYear()}
+            onComplete={() => {
+              setImportMode('quick');
+              loadStatements();
+            }}
+            onCancel={() => setImportMode('quick')}
+          />
+        </div>
+      )}
+
+      {/* Wizard Mode */}
+      {importMode === 'wizard' && showWizard && selectedStatement && (
+        <div className="card">
+          <ExcelMappingWizard
+            financialStatementId={financialStatementId}
+            companyName={selectedStatement.company?.name || 'Unbekannt'}
+            fiscalYear={selectedStatement.fiscalYear}
+            onImportComplete={handleWizardComplete}
+            onCancel={() => setShowWizard(false)}
+          />
+        </div>
+      )}
+
+      {/* Wizard Mode - Statement Selection */}
+      {importMode === 'wizard' && !showWizard && (
+        <div className="card">
+          <div className="card-header">
+            <h2>🧙 Import-Assistent</h2>
+          </div>
+          <p style={{ marginBottom: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
+            Der Import-Assistent ermöglicht das Importieren von Excel-Dateien mit beliebiger Spaltenstruktur.
+            Sie können die Spalten flexibel den Systemfeldern zuordnen.
+          </p>
+          
+          <div className="form-group">
+            <label>Jahresabschluss auswählen *</label>
+            {loadingStatements ? (
+              <p>Lade Jahresabschlüsse...</p>
+            ) : (
+              <select
+                value={financialStatementId}
+                onChange={(e) => setFinancialStatementId(e.target.value)}
+                required
+              >
+                <option value="">-- Bitte wählen --</option>
+                {statements.map((statement) => (
+                  <option key={statement.id} value={statement.id}>
+                    {statement.company?.name || 'Unbekannt'} - {statement.fiscalYear}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          
+          <button
+            className="button button-primary"
+            onClick={() => setShowWizard(true)}
+            disabled={!financialStatementId}
+          >
+            Import-Assistent starten →
+          </button>
+        </div>
+      )}
+
+      {/* Quick Import Mode */}
+      {importMode === 'quick' && (
       <div className="card">
         <div className="card-header">
-          <h2>Datei importieren</h2>
+          <h2>⚡ Schnell-Import</h2>
         </div>
         
         {error && (
@@ -284,6 +405,7 @@ function DataImport() {
           </button>
         </div>
       </div>
+      )}
 
       {result && (
         <div className="card">

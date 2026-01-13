@@ -122,6 +122,46 @@ export class ImportController {
     return this.importService.importCsv(file, importDataDto);
   }
 
+  @Post('excel-mapped')
+  @UseInterceptors(FileInterceptor('file', multerConfig))
+  async importExcelMapped(
+    @UploadedFile() file: MulterFile,
+    @Req() req: Request,
+  ) {
+    console.log('Mapped Excel Import Request:', {
+      hasFile: !!file,
+      fileName: file?.originalname,
+      body: req.body,
+    });
+
+    if (!file) {
+      throw new BadRequestException('Keine Datei hochgeladen');
+    }
+
+    const financialStatementId = req.body?.financialStatementId;
+    const sheetName = req.body?.sheetName;
+    const columnMappingStr = req.body?.columnMapping;
+
+    if (!financialStatementId) {
+      throw new BadRequestException('financialStatementId ist erforderlich');
+    }
+
+    let columnMapping: Record<string, string> = {};
+    try {
+      if (columnMappingStr) {
+        columnMapping = JSON.parse(columnMappingStr);
+      }
+    } catch (e) {
+      throw new BadRequestException('Ungültiges columnMapping Format');
+    }
+
+    return this.importService.importExcelWithMapping(file, {
+      financialStatementId,
+      sheetName,
+      columnMapping,
+    });
+  }
+
   @Get('template')
   async getTemplate(@Res() res: Response) {
     try {

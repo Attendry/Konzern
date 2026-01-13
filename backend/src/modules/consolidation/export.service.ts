@@ -227,60 +227,174 @@ export class ExportService {
   }
 
   /**
-   * Exportiert die konsolidierte Bilanz als XML
+   * Exportiert die konsolidierte Bilanz als XML (einfaches Format)
    */
   async exportToXml(financialStatementId: string): Promise<string> {
+    return this.exportToXbrl(financialStatementId);
+  }
+
+  /**
+   * Exportiert die konsolidierte Bilanz im eBilanz/XBRL Format
+   * Orientiert an der HGB-Taxonomie für Konzernabschlüsse
+   */
+  async exportToXbrl(financialStatementId: string): Promise<string> {
     const report = await this.reportingService.generateConsolidationReport(
       financialStatementId,
-      false,
+      true, // Include comparison for prior year
     );
 
+    // Get company information
+    const { data: statement } = await this.supabase
+      .from('financial_statements')
+      .select('*, companies(*)')
+      .eq('id', financialStatementId)
+      .single();
+
+    const companyName = statement?.companies?.name || 'Konzern';
+    const companyId = statement?.companies?.id || '';
+
+    // Generate XBRL-compliant XML
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<consolidatedBalanceSheet>\n';
-    xml += `  <fiscalYear>${report.fiscalYear}</fiscalYear>\n`;
-    xml += `  <periodStart>${report.periodStart.toISOString()}</periodStart>\n`;
-    xml += `  <periodEnd>${report.periodEnd.toISOString()}</periodEnd>\n`;
-    xml += '  <assets>\n';
-    xml += `    <totalAssets>${report.balanceSheet.assets.totalAssets.toFixed(2)}</totalAssets>\n`;
-    xml += '    <fixedAssets>\n';
+    xml += '<!-- eBilanz Konzernabschluss nach HGB -->\n';
+    xml += '<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance"\n';
+    xml += '            xmlns:xlink="http://www.w3.org/1999/xlink"\n';
+    xml += '            xmlns:hgb-konzern="http://www.xbrl.de/taxonomies/hgb-konzern"\n';
+    xml += '            xmlns:iso4217="http://www.xbrl.org/2003/iso4217">\n\n';
+
+    // Context - Current Period
+    xml += `  <!-- Kontexte -->\n`;
+    xml += `  <xbrli:context id="CurrentPeriod">\n`;
+    xml += `    <xbrli:entity>\n`;
+    xml += `      <xbrli:identifier scheme="http://www.handelsregister.de">${this.escapeXml(companyName)}</xbrli:identifier>\n`;
+    xml += `    </xbrli:entity>\n`;
+    xml += `    <xbrli:period>\n`;
+    xml += `      <xbrli:startDate>${report.periodStart.toISOString().split('T')[0]}</xbrli:startDate>\n`;
+    xml += `      <xbrli:endDate>${report.periodEnd.toISOString().split('T')[0]}</xbrli:endDate>\n`;
+    xml += `    </xbrli:period>\n`;
+    xml += `  </xbrli:context>\n\n`;
+
+    // Context - Prior Period (if comparison available)
+    if (report.comparison) {
+      xml += `  <xbrli:context id="PriorPeriod">\n`;
+      xml += `    <xbrli:entity>\n`;
+      xml += `      <xbrli:identifier scheme="http://www.handelsregister.de">${this.escapeXml(companyName)}</xbrli:identifier>\n`;
+      xml += `    </xbrli:entity>\n`;
+      xml += `    <xbrli:period>\n`;
+      xml += `      <xbrli:instant>${report.comparison.priorYear}-12-31</xbrli:instant>\n`;
+      xml += `    </xbrli:period>\n`;
+      xml += `  </xbrli:context>\n\n`;
+    }
+
+    // Unit for EUR
+    xml += `  <xbrli:unit id="EUR">\n`;
+    xml += `    <xbrli:measure>iso4217:EUR</xbrli:measure>\n`;
+    xml += `  </xbrli:unit>\n\n`;
+
+    // Company Information
+    xml += `  <!-- Unternehmensinformationen -->\n`;
+    xml += `  <hgb-konzern:nameKonzernmutter contextRef="CurrentPeriod">${this.escapeXml(companyName)}</hgb-konzern:nameKonzernmutter>\n`;
+    xml += `  <hgb-konzern:geschaeftsjahr contextRef="CurrentPeriod">${report.fiscalYear}</hgb-konzern:geschaeftsjahr>\n`;
+    xml += `  <hgb-konzern:bilanzstichtag contextRef="CurrentPeriod">${report.periodEnd.toISOString().split('T')[0]}</hgb-konzern:bilanzstichtag>\n\n`;
+
+    // AKTIVA
+    xml += `  <!-- AKTIVA (§ 266 HGB) -->\n`;
+    xml += `  <hgb-konzern:summeAktiva contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.assets.totalAssets.toFixed(2)}</hgb-konzern:summeAktiva>\n`;
+    
+    // Anlagevermögen
+    const fixedAssetsTotal = report.balanceSheet.assets.fixedAssets.reduce((sum, a) => sum + a.balance, 0);
+    xml += `  <hgb-konzern:anlagevermoegen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${fixedAssetsTotal.toFixed(2)}</hgb-konzern:anlagevermoegen>\n`;
+    
+    // Einzelpositionen Anlagevermögen
     for (const asset of report.balanceSheet.assets.fixedAssets) {
-      xml += `      <position>\n`;
-      xml += `        <accountNumber>${asset.accountNumber}</accountNumber>\n`;
-      xml += `        <accountName>${this.escapeXml(asset.accountName)}</accountName>\n`;
-      xml += `        <balance>${asset.balance.toFixed(2)}</balance>\n`;
-      xml += `      </position>\n`;
+      xml += `  <hgb-konzern:anlageposition contextRef="CurrentPeriod" unitRef="EUR" decimals="2">\n`;
+      xml += `    <!-- ${this.escapeXml(asset.accountName)} (${asset.accountNumber}) -->\n`;
+      xml += `    ${asset.balance.toFixed(2)}\n`;
+      xml += `  </hgb-konzern:anlageposition>\n`;
     }
-    xml += '    </fixedAssets>\n';
-    xml += '    <currentAssets>\n';
-    for (const asset of report.balanceSheet.assets.currentAssets) {
-      xml += `      <position>\n`;
-      xml += `        <accountNumber>${asset.accountNumber}</accountNumber>\n`;
-      xml += `        <accountName>${this.escapeXml(asset.accountName)}</accountName>\n`;
-      xml += `        <balance>${asset.balance.toFixed(2)}</balance>\n`;
-      xml += `      </position>\n`;
+    
+    // Umlaufvermögen
+    const currentAssetsTotal = report.balanceSheet.assets.currentAssets.reduce((sum, a) => sum + a.balance, 0);
+    xml += `  <hgb-konzern:umlaufvermoegen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${currentAssetsTotal.toFixed(2)}</hgb-konzern:umlaufvermoegen>\n`;
+    
+    // Goodwill
+    if (report.balanceSheet.assets.goodwill > 0) {
+      xml += `  <hgb-konzern:geschaeftsOderFirmenwert contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.assets.goodwill.toFixed(2)}</hgb-konzern:geschaeftsOderFirmenwert>\n`;
     }
-    xml += '    </currentAssets>\n';
-    xml += `    <goodwill>${report.balanceSheet.assets.goodwill.toFixed(2)}</goodwill>\n`;
-    xml += '  </assets>\n';
-    xml += '  <liabilities>\n';
-    xml += `    <totalLiabilities>${report.balanceSheet.liabilities.totalLiabilities.toFixed(2)}</totalLiabilities>\n`;
-    xml += '    <equity>\n';
-    xml += `      <parentCompanyEquity>${report.balanceSheet.liabilities.equity.parentCompany
-      .reduce((sum, e) => sum + e.balance, 0)
-      .toFixed(2)}</parentCompanyEquity>\n`;
-    xml += `      <minorityInterests>${report.balanceSheet.liabilities.equity.minorityInterests.toFixed(2)}</minorityInterests>\n`;
-    xml += '    </equity>\n';
-    xml += '  </liabilities>\n';
-    xml += '  <overview>\n';
-    xml += `    <totalEliminations>${(
-      report.overview.eliminations.intercompanyProfits.totalAmount +
-      report.overview.eliminations.debtConsolidation.totalAmount +
-      report.overview.eliminations.capitalConsolidation.totalAmount
-    ).toFixed(2)}</totalEliminations>\n`;
-    xml += `    <minorityInterests>${report.overview.minorityInterests.total.toFixed(2)}</minorityInterests>\n`;
-    xml += `    <goodwill>${report.overview.goodwill.total.toFixed(2)}</goodwill>\n`;
-    xml += '  </overview>\n';
-    xml += '</consolidatedBalanceSheet>';
+    xml += `\n`;
+
+    // PASSIVA
+    xml += `  <!-- PASSIVA (§ 266 HGB) -->\n`;
+    xml += `  <hgb-konzern:summePassiva contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.totalLiabilities.toFixed(2)}</hgb-konzern:summePassiva>\n`;
+    
+    // Eigenkapital
+    const parentEquity = report.balanceSheet.liabilities.equity.parentCompany.reduce((sum, e) => sum + e.balance, 0);
+    const totalEquity = parentEquity + report.balanceSheet.liabilities.equity.minorityInterests;
+    xml += `  <hgb-konzern:eigenkapital contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${totalEquity.toFixed(2)}</hgb-konzern:eigenkapital>\n`;
+    xml += `  <hgb-konzern:eigenkapitalMutterunternehmen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${parentEquity.toFixed(2)}</hgb-konzern:eigenkapitalMutterunternehmen>\n`;
+    
+    // Minderheitenanteile (§ 307 HGB)
+    if (report.balanceSheet.liabilities.equity.minorityInterests !== 0) {
+      xml += `  <hgb-konzern:anteileAndererGesellschafter contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.equity.minorityInterests.toFixed(2)}</hgb-konzern:anteileAndererGesellschafter>\n`;
+    }
+    
+    // Rückstellungen
+    const provisionsTotal = report.balanceSheet.liabilities.provisions.reduce((sum, p) => sum + p.balance, 0);
+    xml += `  <hgb-konzern:rueckstellungen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${provisionsTotal.toFixed(2)}</hgb-konzern:rueckstellungen>\n`;
+    
+    // Verbindlichkeiten
+    const liabilitiesTotal = report.balanceSheet.liabilities.liabilities.reduce((sum, l) => sum + l.balance, 0);
+    xml += `  <hgb-konzern:verbindlichkeiten contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${liabilitiesTotal.toFixed(2)}</hgb-konzern:verbindlichkeiten>\n\n`;
+
+    // Konsolidierungsangaben
+    xml += `  <!-- Konsolidierungsangaben (§§ 301-307 HGB) -->\n`;
+    xml += `  <hgb-konzern:konsolidierung>\n`;
+    
+    // Kapitalkonsolidierung
+    xml += `    <hgb-konzern:kapitalkonsolidierung>\n`;
+    xml += `      <hgb-konzern:anzahlBuchungen>${report.overview.eliminations.capitalConsolidation.count}</hgb-konzern:anzahlBuchungen>\n`;
+    xml += `      <hgb-konzern:betrag unitRef="EUR" decimals="2">${report.overview.eliminations.capitalConsolidation.totalAmount.toFixed(2)}</hgb-konzern:betrag>\n`;
+    xml += `      <hgb-konzern:hgbParagraph>§ 301 HGB</hgb-konzern:hgbParagraph>\n`;
+    xml += `    </hgb-konzern:kapitalkonsolidierung>\n`;
+    
+    // Schuldenkonsolidierung
+    xml += `    <hgb-konzern:schuldenkonsolidierung>\n`;
+    xml += `      <hgb-konzern:anzahlBuchungen>${report.overview.eliminations.debtConsolidation.count}</hgb-konzern:anzahlBuchungen>\n`;
+    xml += `      <hgb-konzern:betrag unitRef="EUR" decimals="2">${report.overview.eliminations.debtConsolidation.totalAmount.toFixed(2)}</hgb-konzern:betrag>\n`;
+    xml += `      <hgb-konzern:forderungenEliminiert unitRef="EUR" decimals="2">${report.overview.eliminations.debtConsolidation.receivablesEliminated.toFixed(2)}</hgb-konzern:forderungenEliminiert>\n`;
+    xml += `      <hgb-konzern:verbindlichkeitenEliminiert unitRef="EUR" decimals="2">${report.overview.eliminations.debtConsolidation.payablesEliminated.toFixed(2)}</hgb-konzern:verbindlichkeitenEliminiert>\n`;
+    xml += `      <hgb-konzern:hgbParagraph>§ 303 HGB</hgb-konzern:hgbParagraph>\n`;
+    xml += `    </hgb-konzern:schuldenkonsolidierung>\n`;
+    
+    // Zwischenergebniseliminierung
+    xml += `    <hgb-konzern:zwischenergebniseliminierung>\n`;
+    xml += `      <hgb-konzern:anzahlBuchungen>${report.overview.eliminations.intercompanyProfits.count}</hgb-konzern:anzahlBuchungen>\n`;
+    xml += `      <hgb-konzern:betrag unitRef="EUR" decimals="2">${report.overview.eliminations.intercompanyProfits.totalAmount.toFixed(2)}</hgb-konzern:betrag>\n`;
+    xml += `      <hgb-konzern:hgbParagraph>§ 304 HGB</hgb-konzern:hgbParagraph>\n`;
+    xml += `    </hgb-konzern:zwischenergebniseliminierung>\n`;
+    
+    xml += `  </hgb-konzern:konsolidierung>\n\n`;
+
+    // Goodwill und Minderheiten
+    xml += `  <!-- Geschäfts- oder Firmenwert (§ 309 HGB) -->\n`;
+    xml += `  <hgb-konzern:goodwillGesamt contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.overview.goodwill.total.toFixed(2)}</hgb-konzern:goodwillGesamt>\n\n`;
+
+    xml += `  <!-- Minderheitenanteile (§ 307 HGB) -->\n`;
+    xml += `  <hgb-konzern:minderheitenanteileGesamt contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.overview.minorityInterests.total.toFixed(2)}</hgb-konzern:minderheitenanteileGesamt>\n`;
+
+    // Prior year comparison if available
+    if (report.comparison) {
+      xml += `\n  <!-- Vorjahresvergleich -->\n`;
+      for (const change of report.comparison.changes) {
+        xml += `  <hgb-konzern:vorjahresvergleich position="${this.escapeXml(change.position)}">\n`;
+        xml += `    <hgb-konzern:laufendesJahr unitRef="EUR" decimals="2">${change.currentYear.toFixed(2)}</hgb-konzern:laufendesJahr>\n`;
+        xml += `    <hgb-konzern:vorjahr unitRef="EUR" decimals="2">${change.previousYear.toFixed(2)}</hgb-konzern:vorjahr>\n`;
+        xml += `    <hgb-konzern:veraenderung unitRef="EUR" decimals="2">${change.change.toFixed(2)}</hgb-konzern:veraenderung>\n`;
+        xml += `    <hgb-konzern:veraenderungProzent>${change.changePercent.toFixed(2)}</hgb-konzern:veraenderungProzent>\n`;
+        xml += `  </hgb-konzern:vorjahresvergleich>\n`;
+      }
+    }
+
+    xml += `\n</xbrli:xbrl>`;
 
     return xml;
   }

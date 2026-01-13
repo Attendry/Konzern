@@ -4,6 +4,8 @@ import CompanyManagement from './pages/CompanyManagement';
 import DataImport from './pages/DataImport';
 import Consolidation from './pages/Consolidation';
 import ConsolidationCirclePage from './pages/ConsolidationCirclePage';
+import ConsolidatedReportPage from './pages/ConsolidatedReportPage';
+import ConsolidationWizardPage from './pages/ConsolidationWizardPage';
 import FinancialStatement from './pages/FinancialStatement';
 import ConsolidatedNotes from './pages/ConsolidatedNotes';
 import { ToastProvider } from './contexts/ToastContext';
@@ -37,6 +39,9 @@ function App() {
               <NavLink to="/consolidation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 Konsolidierung
               </NavLink>
+              <NavLink to="/konzernabschluss" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                📊 Konzernabschluss
+              </NavLink>
             </nav>
           </aside>
           <main className="main-content">
@@ -47,6 +52,9 @@ function App() {
                 <Route path="/import" element={<DataImport />} />
                 <Route path="/consolidation-circle" element={<ConsolidationCirclePage />} />
                 <Route path="/consolidation" element={<Consolidation />} />
+                <Route path="/konzernabschluss" element={<ConsolidatedReportPage />} />
+                <Route path="/konzernabschluss/:id" element={<ConsolidatedReportPage />} />
+                <Route path="/konsolidierung-assistent" element={<ConsolidationWizardPage />} />
                 <Route path="/financial-statements/:id" element={<FinancialStatement />} />
                 <Route path="/consolidated-notes/:id" element={<ConsolidatedNotes />} />
               </Routes>

@@ -10,6 +10,7 @@ import { AdvancedTable, TableColumn } from '../components/AdvancedTable';
 import { Tooltip } from '../components/Tooltip';
 import { SmartSuggestions, useSmartSuggestions } from '../components/SmartSuggestions';
 import { ContextualHelp } from '../components/ContextualHelp';
+import { ConsolidationStatusDashboard } from '../components/ConsolidationStatusDashboard';
 import '../App.css';
 
 function Dashboard() {
@@ -182,6 +183,16 @@ function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Consolidation Status Dashboard */}
+      {companies.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <h2>Konsolidierungsstatus</h2>
+          </div>
+          <ConsolidationStatusDashboard />
+        </div>
+      )}
 
       <div className="card">
         <div className="card-header">
