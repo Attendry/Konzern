@@ -24,7 +24,7 @@ const PlausibilityChecks = () => {
   // Check State
   const [checks, setChecks] = useState<PlausibilityCheck[]>([]);
   const [checkSummary, setCheckSummary] = useState<PlausibilityCheckSummary | null>(null);
-  const [checkRuns, setCheckRuns] = useState<PlausibilityCheckRun[]>([]);
+  const [_checkRuns, setCheckRuns] = useState<PlausibilityCheckRun[]>([]);
   const [runningChecks, setRunningChecks] = useState(false);
 
   // Variance State

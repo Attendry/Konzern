@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react';
 import '../App.css';
 
 interface MetricCardProps {
-  label: string;
-  value: number;
+  label?: string;
+  title?: string; // Alias for label
+  value: number | string;
   previousValue?: number;
   trend?: 'up' | 'down' | 'neutral';
   format?: (value: number) => string;
   icon?: React.ReactNode;
   onClick?: () => void;
   color?: string;
+  subtitle?: string;
 }
 
 export function MetricCard({
   label,
+  title,
   value,
   previousValue,
   trend,
@@ -21,20 +24,28 @@ export function MetricCard({
   icon,
   onClick,
   color,
+  subtitle,
 }: MetricCardProps) {
   const [displayValue, setDisplayValue] = useState(0);
+  const displayLabel = label || title || '';
+  const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+  const isStringValue = typeof value === 'string' && isNaN(parseFloat(value));
 
   useEffect(() => {
+    if (isStringValue) {
+      setDisplayValue(0);
+      return;
+    }
     const duration = 1000;
     const steps = 60;
-    const increment = value / steps;
+    const increment = numericValue / steps;
     const stepDuration = duration / steps;
 
     let current = 0;
     const timer = setInterval(() => {
       current += increment;
-      if (current >= value) {
-        setDisplayValue(value);
+      if (current >= numericValue) {
+        setDisplayValue(numericValue);
         clearInterval(timer);
       } else {
         setDisplayValue(Math.floor(current));
@@ -42,9 +53,9 @@ export function MetricCard({
     }, stepDuration);
 
     return () => clearInterval(timer);
-  }, [value]);
+  }, [numericValue, isStringValue]);
 
-  const change = previousValue ? ((value - previousValue) / previousValue) * 100 : 0;
+  const change = previousValue ? ((numericValue - previousValue) / previousValue) * 100 : 0;
   const isPositive = change > 0;
   const displayTrend = trend || (previousValue ? (isPositive ? 'up' : 'down') : 'neutral');
 
@@ -55,12 +66,15 @@ export function MetricCard({
       style={color ? { '--metric-color': color } as React.CSSProperties : undefined}
     >
       <div className="metric-card-header">
-        <span className="metric-card-label">{label}</span>
+        <span className="metric-card-label">{displayLabel}</span>
         {icon && <span className="metric-card-icon">{icon}</span>}
       </div>
       <div className="metric-card-value" style={color ? { color } : undefined}>
-        {format(displayValue)}
+        {isStringValue ? value : format(displayValue)}
       </div>
+      {subtitle && (
+        <div className="metric-card-subtitle">{subtitle}</div>
+      )}
       {previousValue !== undefined && (
         <div className={`metric-card-trend trend-${displayTrend}`}>
           <span className="trend-icon">{displayTrend === 'up' ? '↑' : displayTrend === 'down' ? '↓' : '—'}</span>

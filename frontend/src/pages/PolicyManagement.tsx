@@ -33,7 +33,7 @@ const PolicyManagement = () => {
   // Mappings State
   const [mappings, setMappings] = useState<GaapHgbMapping[]>([]);
   const [mappingSummary, setMappingSummary] = useState<MappingSummary | null>(null);
-  const [gaapStandards, setGaapStandards] = useState<CategoryMeta[]>([]);
+  const [_gaapStandards, setGaapStandards] = useState<CategoryMeta[]>([]);
 
   // Wahlrechte State
   const [wahlrechte, setWahlrechte] = useState<HgbWahlrecht[]>([]);

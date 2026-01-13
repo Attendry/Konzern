@@ -4,7 +4,6 @@ import {
   konzernanhangService, 
   KonzernanhangDocument, 
   KonzernanhangSection, 
-  NoteSectionStatus,
   ExportFormat,
   ExportMetadata,
 } from '../services/konzernanhangService';
@@ -32,7 +31,7 @@ const statusColors: Record<string, string> = {
 };
 
 // Disclosure type labels
-const disclosureLabels: Record<string, string> = {
+const _disclosureLabels: Record<string, string> = {
   consolidation_scope: 'Konsolidierungskreis',
   consolidation_methods: 'Konsolidierungsgrundsätze',
   accounting_policies: 'Bilanzierungs- und Bewertungsmethoden',
@@ -55,7 +54,7 @@ export default function KonzernanhangPage() {
   
   const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>([]);
   const [selectedFsId, setSelectedFsId] = useState<string>(id || '');
-  const [document, setDocument] = useState<KonzernanhangDocument | null>(null);
+  const [anhangDoc, setAnhangDoc] = useState<KonzernanhangDocument | null>(null);
   const [sections, setSections] = useState<KonzernanhangSection[]>([]);
   const [exportHistory, setExportHistory] = useState<ExportMetadata[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +95,7 @@ export default function KonzernanhangPage() {
     setError(null);
     try {
       const doc = await konzernanhangService.getCurrentDocument(selectedFsId);
-      setDocument(doc);
+      setAnhangDoc(doc);
       
       if (doc) {
         const [sectionsData, exportsData] = await Promise.all([
@@ -122,7 +121,7 @@ export default function KonzernanhangPage() {
     setError(null);
     try {
       const result = await konzernanhangService.createAndGenerate(selectedFsId);
-      setDocument(result.document);
+      setAnhangDoc(result.document);
       setSections(result.sections);
       setActiveTab('sections');
     } catch (err: any) {
@@ -133,11 +132,11 @@ export default function KonzernanhangPage() {
   };
 
   const handleRegenerate = async () => {
-    if (!document) return;
+    if (!anhangDoc) return;
     setGenerating(true);
     setError(null);
     try {
-      const newSections = await konzernanhangService.generateSections(document.id);
+      const newSections = await konzernanhangService.generateSections(anhangDoc.id);
       setSections(newSections);
     } catch (err: any) {
       setError(err.message || 'Fehler beim Neu-Generieren');
@@ -147,21 +146,21 @@ export default function KonzernanhangPage() {
   };
 
   const handleExport = async (format: ExportFormat) => {
-    if (!document) return;
+    if (!anhangDoc) return;
     setExporting(true);
     try {
-      const blob = await konzernanhangService.exportDocument(document.id, format);
+      const blob = await konzernanhangService.exportDocument(anhangDoc.id, format);
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = window.document.createElement('a');
       a.href = url;
-      a.download = `konzernanhang_${document.fiscalYear}_v${document.version}.${format}`;
-      document.body.appendChild(a);
+      a.download = `konzernanhang_${anhangDoc.fiscalYear}_v${anhangDoc.version}.${format}`;
+      window.document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
       
       // Refresh export history
-      const history = await konzernanhangService.getExportHistory(document.id);
+      const history = await konzernanhangService.getExportHistory(anhangDoc.id);
       setExportHistory(history);
       setShowExportModal(false);
     } catch (err: any) {
@@ -172,28 +171,28 @@ export default function KonzernanhangPage() {
   };
 
   const handleReviewDocument = async () => {
-    if (!document) return;
+    if (!anhangDoc) return;
     try {
       const updated = await konzernanhangService.reviewDocument(
-        document.id,
+        anhangDoc.id,
         'current-user-id', // In production, get from auth context
         'Aktueller Benutzer',
       );
-      setDocument(updated);
+      setAnhangDoc(updated);
     } catch (err: any) {
       setError(err.message || 'Fehler beim Prüfen');
     }
   };
 
   const handleApproveDocument = async () => {
-    if (!document) return;
+    if (!anhangDoc) return;
     try {
       const updated = await konzernanhangService.approveDocument(
-        document.id,
+        anhangDoc.id,
         'current-user-id',
         'Aktueller Benutzer',
       );
-      setDocument(updated);
+      setAnhangDoc(updated);
     } catch (err: any) {
       setError(err.message || 'Fehler beim Freigeben');
     }
@@ -265,7 +264,7 @@ export default function KonzernanhangPage() {
             ))}
           </select>
           
-          {!document && selectedFsId && (
+          {!anhangDoc && selectedFsId && (
             <button
               className="btn btn-primary"
               onClick={handleGenerate}
@@ -275,7 +274,7 @@ export default function KonzernanhangPage() {
             </button>
           )}
           
-          {document && (
+          {anhangDoc && (
             <>
               <button
                 className="btn btn-secondary"
@@ -304,7 +303,7 @@ export default function KonzernanhangPage() {
       )}
 
       {/* No document state */}
-      {!document && selectedFsId && !loading && (
+      {!anhangDoc && selectedFsId && !loading && (
         <div className="empty-state-card">
           <div className="empty-icon">📄</div>
           <h2>Kein Konzernanhang vorhanden</h2>
@@ -320,26 +319,26 @@ export default function KonzernanhangPage() {
       )}
 
       {/* Document exists */}
-      {document && (
+      {anhangDoc && (
         <>
           {/* Stats */}
           <div className="metrics-grid">
             <MetricCard
               title="Status"
-              value={statusLabels[document.status]}
-              subtitle={`Version ${document.version}`}
+              value={statusLabels[anhangDoc.status]}
+              subtitle={`Version ${anhangDoc.version}`}
               trend="neutral"
             />
             <MetricCard
               title="Abschnitte"
-              value={`${document.completedSections}/${document.totalSections}`}
-              subtitle={`${Math.round((document.completedSections / document.totalSections) * 100) || 0}% abgeschlossen`}
-              trend={document.completedSections === document.totalSections ? "up" : "neutral"}
+              value={`${anhangDoc.completedSections}/${anhangDoc.totalSections}`}
+              subtitle={`${Math.round((anhangDoc.completedSections / anhangDoc.totalSections) * 100) || 0}% abgeschlossen`}
+              trend={anhangDoc.completedSections === anhangDoc.totalSections ? "up" : "neutral"}
             />
             <MetricCard
               title="Erstellt"
-              value={formatDate(document.generatedAt)}
-              subtitle={document.generatedByName || 'System'}
+              value={formatDate(anhangDoc.generatedAt)}
+              subtitle={anhangDoc.generatedByName || 'System'}
               trend="neutral"
             />
             <MetricCard
@@ -384,40 +383,40 @@ export default function KonzernanhangPage() {
                   <div className="info-grid">
                     <div className="info-row">
                       <span className="info-label">Titel:</span>
-                      <span className="info-value">{document.documentTitle}</span>
+                      <span className="info-value">{anhangDoc.documentTitle}</span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Geschäftsjahr:</span>
-                      <span className="info-value">{document.fiscalYear}</span>
+                      <span className="info-value">{anhangDoc.fiscalYear}</span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Berichtszeitraum:</span>
                       <span className="info-value">
-                        {formatDate(document.periodStart)} - {formatDate(document.periodEnd)}
+                        {formatDate(anhangDoc.periodStart)} - {formatDate(anhangDoc.periodEnd)}
                       </span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Status:</span>
                       <span 
                         className="status-badge" 
-                        style={{ backgroundColor: statusColors[document.status] }}
+                        style={{ backgroundColor: statusColors[anhangDoc.status] }}
                       >
-                        {statusLabels[document.status]}
+                        {statusLabels[anhangDoc.status]}
                       </span>
                     </div>
-                    {document.reviewedAt && (
+                    {anhangDoc.reviewedAt && (
                       <div className="info-row">
                         <span className="info-label">Geprüft:</span>
                         <span className="info-value">
-                          {formatDateTime(document.reviewedAt)} von {document.reviewedByName}
+                          {formatDateTime(anhangDoc.reviewedAt)} von {anhangDoc.reviewedByName}
                         </span>
                       </div>
                     )}
-                    {document.approvedAt && (
+                    {anhangDoc.approvedAt && (
                       <div className="info-row">
                         <span className="info-label">Freigegeben:</span>
                         <span className="info-value">
-                          {formatDateTime(document.approvedAt)} von {document.approvedByName}
+                          {formatDateTime(anhangDoc.approvedAt)} von {anhangDoc.approvedByName}
                         </span>
                       </div>
                     )}
@@ -428,17 +427,17 @@ export default function KonzernanhangPage() {
                 <div className="workflow-actions">
                   <h3>Workflow</h3>
                   <div className="workflow-buttons">
-                    {document.status === 'draft' && (
+                    {anhangDoc.status === 'draft' && (
                       <button className="btn btn-primary" onClick={handleReviewDocument}>
                         Zur Prüfung einreichen
                       </button>
                     )}
-                    {document.status === 'reviewed' && (
+                    {anhangDoc.status === 'reviewed' && (
                       <button className="btn btn-success" onClick={handleApproveDocument}>
                         Freigeben
                       </button>
                     )}
-                    {document.status === 'finalized' && (
+                    {anhangDoc.status === 'finalized' && (
                       <span className="finalized-badge">✓ Freigegeben</span>
                     )}
                   </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { lineageService, LineageGraph, LineageGraphNode, DataLineageNode, PruefpfadDocumentation, DocumentationStats, PruefpfadStatus } from '../services/lineageService';
+import { useParams, useNavigate } from 'react-router-dom';
+import { lineageService, LineageGraph, LineageGraphNode, DataLineageNode, PruefpfadDocumentation, DocumentationStats } from '../services/lineageService';
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement } from '../types';
 import { MetricCard } from '../components/MetricCard';
@@ -63,7 +63,7 @@ const nodeTypeColors: Record<string, string> = {
 
 export default function DataLineage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   
   const [financialStatement, setFinancialStatement] = useState<FinancialStatement | null>(null);
   const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>([]);
@@ -72,7 +72,7 @@ export default function DataLineage() {
   const [stats, setStats] = useState<DocumentationStats | null>(null);
   const [documentation, setDocumentation] = useState<PruefpfadDocumentation[]>([]);
   const [selectedNode, setSelectedNode] = useState<LineageGraphNode | null>(null);
-  const [nodeDetails, setNodeDetails] = useState<DataLineageNode | null>(null);
+  const [_nodeDetails, setNodeDetails] = useState<DataLineageNode | null>(null);
   const [nodeDocumentation, setNodeDocumentation] = useState<PruefpfadDocumentation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
