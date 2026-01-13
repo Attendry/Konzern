@@ -3038,3 +3038,637 @@
     gap: var(--spacing-4);
   }
 }
+
+/* =============================================
+   PHASE 3: Deferred Tax Dashboard
+============================================= */
+
+.deferred-tax-dashboard {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+}
+
+.deferred-tax-dashboard .dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.deferred-tax-dashboard .dashboard-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.deferred-tax-dashboard .summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
+}
+
+.deferred-tax-dashboard .summary-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4);
+  text-align: center;
+}
+
+.deferred-tax-dashboard .summary-card h4 {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.deferred-tax-dashboard .summary-card .amount {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.deferred-tax-dashboard .summary-card .amount.positive {
+  color: var(--color-success);
+}
+
+.deferred-tax-dashboard .summary-card .amount.negative {
+  color: var(--color-error);
+}
+
+.deferred-tax-dashboard .summary-card.positive {
+  border-left: 3px solid var(--color-success);
+}
+
+.deferred-tax-dashboard .summary-card.negative {
+  border-left: 3px solid var(--color-error);
+}
+
+.deferred-tax-dashboard .calculation-controls {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: flex-end;
+  margin-bottom: var(--spacing-6);
+  padding: var(--spacing-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.deferred-tax-dashboard .tax-rate-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.deferred-tax-dashboard .tax-rate-input label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.deferred-tax-dashboard .tax-rate-input input {
+  width: 100px;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+}
+
+.deferred-tax-dashboard .source-breakdown {
+  margin-bottom: var(--spacing-6);
+}
+
+.deferred-tax-dashboard .source-breakdown h3,
+.deferred-tax-dashboard .deferred-tax-list h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4);
+}
+
+.deferred-tax-dashboard .breakdown-table,
+.deferred-tax-dashboard .data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.deferred-tax-dashboard .breakdown-table th,
+.deferred-tax-dashboard .breakdown-table td,
+.deferred-tax-dashboard .data-table th,
+.deferred-tax-dashboard .data-table td {
+  padding: var(--spacing-3);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.deferred-tax-dashboard .breakdown-table th,
+.deferred-tax-dashboard .data-table th {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+}
+
+.deferred-tax-dashboard .text-right {
+  text-align: right;
+}
+
+.deferred-tax-dashboard .hgb-note {
+  margin-top: var(--spacing-6);
+  padding: var(--spacing-4);
+  background: var(--color-bg-secondary);
+  border-left: 3px solid var(--color-accent-blue);
+  border-radius: var(--radius-md);
+}
+
+.deferred-tax-dashboard .hgb-note h4 {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.deferred-tax-dashboard .hgb-note p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* =============================================
+   PHASE 3: Compliance Dashboard
+============================================= */
+
+.compliance-dashboard {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+}
+
+.compliance-dashboard .dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.compliance-dashboard .compliance-summary {
+  display: flex;
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+  padding: var(--spacing-6);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.compliance-dashboard .progress-overview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  flex-shrink: 0;
+}
+
+.compliance-dashboard .progress-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: conic-gradient(var(--color, var(--color-success)) var(--progress, 0%), var(--color-border) var(--progress, 0%));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.compliance-dashboard .progress-circle::before {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: var(--color-bg-primary);
+  border-radius: 50%;
+}
+
+.compliance-dashboard .progress-circle .percent {
+  position: relative;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.compliance-dashboard .progress-details h3 {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--font-size-lg);
+}
+
+.compliance-dashboard .progress-details p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.compliance-dashboard .progress-details .warning {
+  color: var(--color-warning);
+  margin-top: var(--spacing-2);
+}
+
+.compliance-dashboard .status-cards {
+  display: flex;
+  gap: var(--spacing-4);
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.compliance-dashboard .status-card {
+  text-align: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  min-width: 80px;
+}
+
+.compliance-dashboard .status-card .count {
+  display: block;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.compliance-dashboard .status-card .label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.compliance-dashboard .status-card.completed .count { color: var(--color-success); }
+.compliance-dashboard .status-card.in-progress .count { color: var(--color-warning); }
+.compliance-dashboard .status-card.not-started .count { color: var(--color-text-secondary); }
+.compliance-dashboard .status-card.overdue .count { color: var(--color-error); }
+
+.compliance-dashboard .category-progress {
+  margin-bottom: var(--spacing-6);
+}
+
+.compliance-dashboard .category-progress h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4);
+}
+
+.compliance-dashboard .category-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.compliance-dashboard .category-bar-item .category-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-1);
+}
+
+.compliance-dashboard .category-bar-item .progress-bar {
+  height: 8px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.compliance-dashboard .category-bar-item .progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.compliance-dashboard .controls {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+  margin-bottom: var(--spacing-6);
+}
+
+.compliance-dashboard .filter-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.compliance-dashboard .filter-control label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.compliance-dashboard .filter-control select {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-primary);
+}
+
+.compliance-dashboard .checklist h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4);
+}
+
+.compliance-dashboard .checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.compliance-dashboard .checklist-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
+}
+
+.compliance-dashboard .checklist-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.compliance-dashboard .checklist-item.mandatory {
+  border-left: 3px solid var(--color-accent-purple);
+}
+
+.compliance-dashboard .checklist-item .item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  cursor: pointer;
+  background: var(--color-bg-primary);
+}
+
+.compliance-dashboard .checklist-item .item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex: 1;
+}
+
+.compliance-dashboard .checklist-item .item-code {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-accent-blue);
+  min-width: 60px;
+}
+
+.compliance-dashboard .checklist-item .item-description {
+  font-size: var(--font-size-sm);
+}
+
+.compliance-dashboard .checklist-item .mandatory-badge {
+  font-size: var(--font-size-xs);
+  background: var(--color-accent-purple);
+  color: white;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+}
+
+.compliance-dashboard .checklist-item .item-status select {
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  border: none;
+  cursor: pointer;
+}
+
+.compliance-dashboard .checklist-item .item-details {
+  padding: var(--spacing-4);
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
+}
+
+.compliance-dashboard .checklist-item .item-details p {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-sm);
+}
+
+.compliance-dashboard .checklist-item .item-details strong {
+  color: var(--color-text-secondary);
+}
+
+.compliance-dashboard .next-due-alert {
+  margin-top: var(--spacing-6);
+  padding: var(--spacing-4);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+}
+
+.compliance-dashboard .next-due-alert h4 {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-base);
+}
+
+.compliance-dashboard .next-due-alert p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+/* =============================================
+   PHASE 3: Audit Trail
+============================================= */
+
+.audit-trail {
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+}
+
+.audit-trail .audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.audit-trail .audit-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.audit-trail .audit-filters {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+  margin-bottom: var(--spacing-6);
+  flex-wrap: wrap;
+}
+
+.audit-trail .filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.audit-trail .filter-group label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.audit-trail .filter-group select {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-primary);
+}
+
+.audit-trail .audit-timeline {
+  position: relative;
+  padding-left: var(--spacing-8);
+}
+
+.audit-trail .audit-timeline::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.audit-trail .timeline-item {
+  position: relative;
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: box-shadow var(--transition-fast);
+}
+
+.audit-trail .timeline-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.audit-trail .timeline-marker {
+  position: absolute;
+  left: calc(-1 * var(--spacing-8) + 8px);
+  top: var(--spacing-4);
+  width: 24px;
+  height: 24px;
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+}
+
+.audit-trail .timeline-item.action-create .timeline-marker { border-color: var(--color-success); }
+.audit-trail .timeline-item.action-update .timeline-marker { border-color: var(--color-accent-blue); }
+.audit-trail .timeline-item.action-delete .timeline-marker { border-color: var(--color-error); }
+.audit-trail .timeline-item.action-approve .timeline-marker { border-color: var(--color-success); }
+.audit-trail .timeline-item.action-reject .timeline-marker { border-color: var(--color-error); }
+
+.audit-trail .timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2);
+}
+
+.audit-trail .timeline-header .timestamp {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.audit-trail .timeline-header .action-badge {
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-medium);
+}
+
+.audit-trail .action-badge.create { background: rgba(34, 197, 94, 0.15); color: var(--color-success); }
+.audit-trail .action-badge.update { background: rgba(11, 140, 238, 0.15); color: var(--color-accent-blue); }
+.audit-trail .action-badge.delete { background: rgba(239, 68, 68, 0.15); color: var(--color-error); }
+.audit-trail .action-badge.approve { background: rgba(34, 197, 94, 0.15); color: var(--color-success); }
+.audit-trail .action-badge.reject { background: rgba(239, 68, 68, 0.15); color: var(--color-error); }
+
+.audit-trail .timeline-body .description {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--font-size-sm);
+}
+
+.audit-trail .timeline-body .user {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.audit-trail .timeline-details {
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.audit-trail .timeline-details h4 {
+  margin: 0 0 var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.audit-trail .timeline-details dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-2);
+  margin: 0 0 var(--spacing-4);
+  font-size: var(--font-size-sm);
+}
+
+.audit-trail .timeline-details dt {
+  color: var(--color-text-secondary);
+}
+
+.audit-trail .timeline-details code {
+  background: var(--color-bg-primary);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+.audit-trail .changes h5 {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-sm);
+}
+
+.audit-trail .changes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.audit-trail .changes-table th,
+.audit-trail .changes-table td {
+  padding: var(--spacing-2);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.audit-trail .changes-table .old-value {
+  color: var(--color-error);
+  text-decoration: line-through;
+}
+
+.audit-trail .changes-table .new-value {
+  color: var(--color-success);
+}
+
+.audit-trail .audit-summary {
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}

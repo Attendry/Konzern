@@ -258,3 +258,203 @@ export interface CurrencyTranslationDifference {
   createdAt: string;
   updatedAt: string;
 }
+
+// ============================================
+// PHASE 3: Deferred Taxes (§ 306 HGB)
+// ============================================
+
+export type TemporaryDifferenceType = 'deductible' | 'taxable';
+
+export type DeferredTaxSource = 
+  | 'capital_consolidation'
+  | 'debt_consolidation'
+  | 'intercompany_profit'
+  | 'income_expense'
+  | 'hidden_reserves'
+  | 'goodwill'
+  | 'pension_provisions'
+  | 'valuation_adjustment'
+  | 'other';
+
+export type DeferredTaxStatus = 'active' | 'reversed' | 'written_off';
+
+export interface DeferredTax {
+  id: string;
+  financialStatementId: string;
+  companyId: string;
+  differenceType: TemporaryDifferenceType;
+  source: DeferredTaxSource;
+  description: string;
+  temporaryDifferenceAmount: number;
+  taxRate: number;
+  deferredTaxAmount: number;
+  priorYearAmount?: number;
+  changeAmount?: number;
+  affectsEquity: boolean;
+  expectedReversalYear?: number;
+  originatingEntryId?: string;
+  deferredTaxEntryId?: string;
+  status: DeferredTaxStatus;
+  hgbNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DeferredTaxSummary {
+  totalDeferredTaxAssets: number;
+  totalDeferredTaxLiabilities: number;
+  netDeferredTax: number;
+  changeFromPriorYear: number;
+  bySource: {
+    source: DeferredTaxSource;
+    assets: number;
+    liabilities: number;
+  }[];
+}
+
+// ============================================
+// PHASE 3: Audit Trail
+// ============================================
+
+export type AuditAction = 
+  | 'create' | 'update' | 'delete' 
+  | 'approve' | 'reject' | 'reverse' | 'submit'
+  | 'import' | 'export' | 'calculate'
+  | 'login' | 'logout';
+
+export type AuditEntityType = 
+  | 'company' | 'financial_statement' | 'account_balance'
+  | 'consolidation_entry' | 'participation' | 'exchange_rate'
+  | 'intercompany_transaction' | 'deferred_tax' | 'ic_reconciliation'
+  | 'user' | 'system';
+
+export interface AuditLog {
+  id: string;
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
+  action: AuditAction;
+  entityType: AuditEntityType;
+  entityId?: string;
+  entityName?: string;
+  financialStatementId?: string;
+  companyId?: string;
+  beforeState?: Record<string, any>;
+  afterState?: Record<string, any>;
+  changes?: Record<string, { from: any; to: any }>;
+  metadata?: Record<string, any>;
+  ipAddress?: string;
+  description?: string;
+  createdAt: string;
+}
+
+// ============================================
+// PHASE 3: Compliance Checklist
+// ============================================
+
+export type ChecklistItemStatus = 
+  | 'not_started' 
+  | 'in_progress' 
+  | 'completed' 
+  | 'not_applicable' 
+  | 'requires_review';
+
+export type ComplianceCategory = 
+  | 'capital_consolidation'
+  | 'debt_consolidation'
+  | 'intercompany_profit'
+  | 'income_expense'
+  | 'deferred_tax'
+  | 'minority_interest'
+  | 'uniform_valuation'
+  | 'currency_translation'
+  | 'consolidation_circle'
+  | 'equity_method'
+  | 'notes_disclosure'
+  | 'general_compliance';
+
+export interface ComplianceChecklistItem {
+  id: string;
+  financialStatementId: string;
+  category: ComplianceCategory;
+  itemCode: string;
+  description: string;
+  hgbReference?: string;
+  requirement?: string;
+  status: ChecklistItemStatus;
+  isMandatory: boolean;
+  priority: number;
+  notes?: string;
+  evidence?: string;
+  relatedEntityIds?: string[];
+  completedByUserId?: string;
+  completedAt?: string;
+  reviewedByUserId?: string;
+  reviewedAt?: string;
+  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ComplianceSummary {
+  totalItems: number;
+  completed: number;
+  inProgress: number;
+  notStarted: number;
+  overdue: number;
+  percentComplete: number;
+  byCategory: {
+    category: ComplianceCategory;
+    total: number;
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+    notApplicable: number;
+    requiresReview: number;
+    percentComplete: number;
+  }[];
+  mandatoryComplete: boolean;
+  nextDueItem?: ComplianceChecklistItem;
+}
+
+// ============================================
+// PHASE 3: Equity Method (§ 312 HGB)
+// ============================================
+
+export interface EquityMethodResult {
+  participationId: string;
+  subsidiaryName: string;
+  participationPercentage: number;
+  openingCarryingValue: number;
+  shareOfProfit: number;
+  dividendsReceived: number;
+  goodwillAmortization: number;
+  otherAdjustments: number;
+  closingCarryingValue: number;
+  entries: ConsolidationEntry[];
+}
+
+// ============================================
+// PHASE 3: Proportional Consolidation (§ 310 HGB)
+// ============================================
+
+export interface ProportionalConsolidationResult {
+  companyId: string;
+  companyName: string;
+  participationPercentage: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  totalEquity: number;
+  totalRevenue: number;
+  totalExpenses: number;
+  proportionalAssets: number;
+  proportionalLiabilities: number;
+  proportionalEquity: number;
+  proportionalRevenue: number;
+  proportionalExpenses: number;
+  icEliminationsAssets: number;
+  icEliminationsLiabilities: number;
+  icEliminationsRevenue: number;
+  icEliminationsExpenses: number;
+  entries: ConsolidationEntry[];
+}
