@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DeferredTax, DeferredTaxSummary, DeferredTaxSource, TemporaryDifferenceType } from '../types';
+import { DeferredTax, DeferredTaxSummary, DeferredTaxSource } from '../types';
 import deferredTaxService from '../services/deferredTaxService';
 import { useToast } from '../contexts/ToastContext';
 

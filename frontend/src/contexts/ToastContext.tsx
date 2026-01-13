@@ -30,3 +30,6 @@ export function useToastContext() {
   }
   return context;
 }
+
+// Alias for convenience - allows using `useToast` from context
+export { useToastContext as useToast };
