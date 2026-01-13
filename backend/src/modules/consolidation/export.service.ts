@@ -280,7 +280,7 @@ export class ExportService {
       xml += `      <xbrli:identifier scheme="http://www.handelsregister.de">${this.escapeXml(companyName)}</xbrli:identifier>\n`;
       xml += `    </xbrli:entity>\n`;
       xml += `    <xbrli:period>\n`;
-      xml += `      <xbrli:instant>${report.comparison.priorYear}-12-31</xbrli:instant>\n`;
+      xml += `      <xbrli:instant>${report.fiscalYear - 1}-12-31</xbrli:instant>\n`;
       xml += `    </xbrli:period>\n`;
       xml += `  </xbrli:context>\n\n`;
     }
@@ -725,41 +725,5 @@ export class ExportService {
       'requires_review': 'Prüfung erforderlich',
     };
     return translations[status] || status;
-  }
-
-  /**
-   * Export to XBRL format (simplified)
-   */
-  async exportToXbrl(financialStatementId: string): Promise<string> {
-    const report = await this.reportingService.generateConsolidationReport(
-      financialStatementId,
-      false,
-    );
-
-    // Simplified XBRL - in production would use full XBRL taxonomy
-    let xbrl = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xbrl += '<xbrl xmlns="http://www.xbrl.org/2003/instance"\n';
-    xbrl += '      xmlns:hgb="http://www.hgb.de/taxonomy"\n';
-    xbrl += '      xmlns:iso4217="http://www.xbrl.org/2003/iso4217">\n';
-    xbrl += '  <context id="CurrentYear">\n';
-    xbrl += `    <period><startDate>${report.periodStart.toISOString().split('T')[0]}</startDate>`;
-    xbrl += `<endDate>${report.periodEnd.toISOString().split('T')[0]}</endDate></period>\n`;
-    xbrl += '  </context>\n';
-    xbrl += '  <unit id="EUR"><measure>iso4217:EUR</measure></unit>\n';
-    
-    // Assets
-    xbrl += `  <hgb:Bilanzsumme contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.assets.totalAssets}</hgb:Bilanzsumme>\n`;
-    xbrl += `  <hgb:Anlagevermoegen contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.assets.fixedAssets.reduce((s: number, a: any) => s + a.balance, 0)}</hgb:Anlagevermoegen>\n`;
-    xbrl += `  <hgb:Umlaufvermoegen contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.assets.currentAssets.reduce((s: number, a: any) => s + a.balance, 0)}</hgb:Umlaufvermoegen>\n`;
-    xbrl += `  <hgb:Geschaeftswert contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.assets.goodwill}</hgb:Geschaeftswert>\n`;
-    
-    // Liabilities
-    xbrl += `  <hgb:SummePassiva contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.totalLiabilities}</hgb:SummePassiva>\n`;
-    xbrl += `  <hgb:Eigenkapital contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.equity.parentCompany.reduce((s: number, e: any) => s + e.balance, 0)}</hgb:Eigenkapital>\n`;
-    xbrl += `  <hgb:Minderheitenanteile contextRef="CurrentYear" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.equity.minorityInterests}</hgb:Minderheitenanteile>\n`;
-    
-    xbrl += '</xbrl>';
-
-    return xbrl;
   }
 }

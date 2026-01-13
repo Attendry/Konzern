@@ -8,7 +8,7 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ComplianceChecklistService } from './compliance-checklist.service';
+import { ComplianceChecklistService, ComplianceSummary } from './compliance-checklist.service';
 import { ChecklistItemStatus, ComplianceCategory } from '../../entities/compliance-checklist.entity';
 
 class UpdateChecklistItemDto {
@@ -78,7 +78,7 @@ export class ComplianceController {
   @Get('summary/:financialStatementId')
   async getComplianceSummary(
     @Param('financialStatementId') financialStatementId: string,
-  ) {
+  ): Promise<ComplianceSummary> {
     return this.complianceService.getComplianceSummary(financialStatementId);
   }
 

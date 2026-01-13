@@ -29,7 +29,7 @@ interface ComplianceProgress {
   percentComplete: number;
 }
 
-interface ComplianceSummary {
+export interface ComplianceSummary {
   totalItems: number;
   completed: number;
   inProgress: number;
