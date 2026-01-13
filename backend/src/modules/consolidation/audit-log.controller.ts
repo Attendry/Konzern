@@ -7,7 +7,7 @@ import {
 import { AuditLogService } from './audit-log.service';
 import { AuditAction, AuditEntityType } from '../../entities/audit-log.entity';
 
-@Controller('api/audit')
+@Controller('audit')
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
 

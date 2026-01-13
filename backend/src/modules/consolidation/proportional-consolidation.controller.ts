@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ProportionalConsolidationService } from './proportional-consolidation.service';
 
-@Controller('api/consolidation/proportional')
+@Controller('consolidation/proportional')
 export class ProportionalConsolidationController {
   constructor(
     private readonly proportionalService: ProportionalConsolidationService,

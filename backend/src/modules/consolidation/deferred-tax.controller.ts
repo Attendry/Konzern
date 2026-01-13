@@ -38,7 +38,7 @@ class UpdateDeferredTaxDto {
   hgbNote?: string;
 }
 
-@Controller('api/consolidation/deferred-taxes')
+@Controller('consolidation/deferred-taxes')
 export class DeferredTaxController {
   constructor(private readonly deferredTaxService: DeferredTaxService) {}
 

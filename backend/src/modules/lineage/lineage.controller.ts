@@ -56,7 +56,7 @@ class VerifyDocumentationDto {
   verificationNotes?: string;
 }
 
-@Controller('api/lineage')
+@Controller('lineage')
 export class LineageController {
   constructor(private readonly lineageService: LineageService) {}
 

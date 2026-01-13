@@ -49,7 +49,7 @@ class ExportDocumentDto {
   recipient?: string;
 }
 
-@Controller('api/konzernanhang')
+@Controller('konzernanhang')
 export class KonzernanhangController {
   constructor(
     private readonly dokumentService: KonzernanhangDocumentService,

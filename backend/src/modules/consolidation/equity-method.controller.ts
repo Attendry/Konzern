@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { EquityMethodService } from './equity-method.service';
 
-@Controller('api/consolidation/equity-method')
+@Controller('consolidation/equity-method')
 export class EquityMethodController {
   constructor(private readonly equityMethodService: EquityMethodService) {}
 

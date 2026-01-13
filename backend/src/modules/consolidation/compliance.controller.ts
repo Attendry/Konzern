@@ -37,7 +37,7 @@ class AddCustomItemDto {
   dueDate?: string;
 }
 
-@Controller('api/compliance')
+@Controller('compliance')
 export class ComplianceController {
   constructor(private readonly complianceService: ComplianceChecklistService) {}
 
