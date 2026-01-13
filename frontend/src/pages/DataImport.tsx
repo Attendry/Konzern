@@ -164,19 +164,19 @@ function DataImport() {
               className={`button ${importMode === 'quick' ? 'button-primary' : 'button-secondary'}`}
               onClick={() => { setImportMode('quick'); setShowWizard(false); }}
             >
-              ⚡ Schnell-Import
+              Schnell-Import
             </button>
             <button
               className={`button ${importMode === 'wizard' ? 'button-primary' : 'button-secondary'}`}
               onClick={() => setImportMode('wizard')}
             >
-              🧙 Import-Assistent
+              Import-Assistent
             </button>
             <button
               className={`button ${importMode === 'batch' ? 'button-primary' : 'button-secondary'}`}
               onClick={() => setImportMode('batch')}
             >
-              📚 Multi-Unternehmen
+              Multi-Unternehmen
             </button>
           </div>
           <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
@@ -193,7 +193,7 @@ function DataImport() {
       {importMode === 'batch' && (
         <div className="card">
           <div className="card-header">
-            <h2>📚 Multi-Unternehmen Import</h2>
+            <h2>Multi-Unternehmen Import</h2>
           </div>
           <BatchImportWizard
             fiscalYear={new Date().getFullYear()}
@@ -223,7 +223,7 @@ function DataImport() {
       {importMode === 'wizard' && !showWizard && (
         <div className="card">
           <div className="card-header">
-            <h2>🧙 Import-Assistent</h2>
+            <h2>Import-Assistent</h2>
           </div>
           <p style={{ marginBottom: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
             Der Import-Assistent ermöglicht das Importieren von Excel-Dateien mit beliebiger Spaltenstruktur.
@@ -264,7 +264,7 @@ function DataImport() {
       {importMode === 'quick' && (
       <div className="card">
         <div className="card-header">
-          <h2>⚡ Schnell-Import</h2>
+          <h2>Schnell-Import</h2>
         </div>
         
         {error && (

@@ -280,7 +280,7 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
                 </>
               ) : (
                 <>
-                  <div className="dropzone-icon">📚</div>
+                  <div className="dropzone-icon">+</div>
                   <p>Excel-Datei mit mehreren Blättern hierher ziehen</p>
                   <p className="file-types">Jedes Blatt = ein Unternehmen</p>
                 </>
@@ -320,7 +320,7 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 'var(--font-weight-medium)' }}>📋 {mapping.sheetName}</div>
+                    <div style={{ fontWeight: 'var(--font-weight-medium)' }}>{mapping.sheetName}</div>
                     <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                       {mapping.rowCount} Zeilen
                     </div>

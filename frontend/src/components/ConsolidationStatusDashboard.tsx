@@ -146,7 +146,7 @@ export function ConsolidationStatusDashboard({
             <div className={`status-card ${isReadyForConsolidation ? 'complete' : 'pending'}`}>
               <div className="status-header">
                 <div className="status-title">Datenvollständigkeit</div>
-                <div className="status-icon">{isReadyForConsolidation ? '✅' : '📊'}</div>
+                <div className="status-icon">{isReadyForConsolidation ? '●' : '○'}</div>
               </div>
               <div className="progress-bar-container">
                 <div className="progress-bar" style={{ width: `${completionPercent}%` }}></div>
@@ -171,7 +171,7 @@ export function ConsolidationStatusDashboard({
             <div className={`status-card ${isReadyForConsolidation ? 'complete' : 'pending'}`}>
               <div className="status-header">
                 <div className="status-title">Konsolidierungsbereit</div>
-                <div className="status-icon">{isReadyForConsolidation ? '🚀' : '⏳'}</div>
+                <div className="status-icon">{isReadyForConsolidation ? '→' : '...'}</div>
               </div>
               <div className="status-details">
                 {isReadyForConsolidation ? (
@@ -196,7 +196,7 @@ export function ConsolidationStatusDashboard({
             <div className="status-card">
               <div className="status-header">
                 <div className="status-title">Konzernstruktur</div>
-                <div className="status-icon">🏢</div>
+                <div className="status-icon">#</div>
               </div>
               <div className="status-details">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginTop: 'var(--spacing-3)' }}>
@@ -232,7 +232,7 @@ export function ConsolidationStatusDashboard({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
                     <span className={`status-dot ${status.hasData ? 'complete' : 'missing'}`}></span>
                     <span className="company-name">
-                      {status.isParent ? '👑 ' : '└ '}
+                      {status.isParent ? '' : '└ '}
                       {status.company.name}
                     </span>
                     {!status.isParent && status.ownershipPercentage && (
@@ -277,26 +277,26 @@ export function ConsolidationStatusDashboard({
               className="button button-secondary"
               onClick={() => navigate('/companies')}
             >
-              🏢 Unternehmen verwalten
+              Unternehmen verwalten
             </button>
             <button
               className="button button-secondary"
               onClick={() => navigate('/import')}
             >
-              📤 Daten importieren
+              Daten importieren
             </button>
             <button
               className="button button-secondary"
               onClick={() => navigate('/consolidation-circle')}
             >
-              🔗 Konsolidierungskreis
+              Konsolidierungskreis
             </button>
             {isReadyForConsolidation && (
               <button
                 className="button button-primary"
                 onClick={() => navigate('/konsolidierung-assistent')}
               >
-                🧙 Konsolidierung starten
+                Konsolidierung starten
               </button>
             )}
           </div>

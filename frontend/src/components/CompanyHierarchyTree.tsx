@@ -162,7 +162,7 @@ function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHier
     return (
       <div className="hierarchy-card">
         <div className="hierarchy-empty">
-          <div className="hierarchy-empty-icon">🏢</div>
+          <div className="hierarchy-empty-icon">—</div>
           <div className="hierarchy-empty-title">Keine Unternehmenshierarchie verfügbar</div>
           <div className="hierarchy-empty-desc">
             Erstellen Sie Unternehmen und definieren Sie Beziehungen, um eine Hierarchie anzuzeigen.

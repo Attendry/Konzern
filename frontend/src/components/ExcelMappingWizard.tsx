@@ -338,7 +338,7 @@ export function ExcelMappingWizard({
               onDrop={handleFileDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <div className="dropzone-icon">📁</div>
+              <div className="dropzone-icon">+</div>
               <p>Datei hierher ziehen oder klicken zum Auswählen</p>
               <p className="file-types">Unterstützte Formate: .xlsx, .xls</p>
               <input
@@ -374,7 +374,7 @@ export function ExcelMappingWizard({
                   onClick={() => handleSheetSelect(name)}
                   style={{ justifyContent: 'flex-start', padding: 'var(--spacing-4)' }}
                 >
-                  <span style={{ marginRight: 'var(--spacing-3)' }}>📋</span>
+                  <span style={{ marginRight: 'var(--spacing-3)' }}></span>
                   {name}
                   <span style={{ marginLeft: 'auto', opacity: 0.6 }}>Blatt {idx + 1}</span>
                 </button>
@@ -397,7 +397,7 @@ export function ExcelMappingWizard({
                 {mappings.map((mapping) => (
                   <div key={mapping.excelColumn} className="mapping-row">
                     <div className="excel-column">
-                      <span>📊</span>
+                      <span></span>
                       {mapping.excelColumn}
                     </div>
                     <div className="arrow">→</div>

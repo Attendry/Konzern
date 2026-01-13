@@ -145,7 +145,7 @@ function ConsolidationObligationCheck({
               ? result.exceptions.length > 0
                 ? '⚠️ Konsolidierungspflicht mit Ausnahmen'
                 : '❌ Konsolidierungspflicht besteht'
-              : '✅ Keine Konsolidierungspflicht'}
+              : 'Keine Konsolidierungspflicht'}
           </strong>
         </div>
         {result.reason && (
@@ -206,7 +206,7 @@ function ConsolidationObligationCheck({
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
         <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'rgba(11, 140, 238, 0.1)', border: '1px solid var(--color-info)' }}>
-          <h3 style={{ marginBottom: 'var(--spacing-3)', color: 'var(--color-info)' }}>💡 Empfehlungen</h3>
+          <h3 style={{ marginBottom: 'var(--spacing-3)', color: 'var(--color-info)' }}>Empfehlungen</h3>
           <ul style={{ paddingLeft: 'var(--spacing-5)' }}>
             {result.recommendations.map((recommendation, index) => (
               <li key={index} style={{ marginBottom: 'var(--spacing-2)' }}>{recommendation}</li>

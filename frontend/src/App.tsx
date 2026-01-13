@@ -40,7 +40,7 @@ function App() {
                 Konsolidierung
               </NavLink>
               <NavLink to="/konzernabschluss" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                📊 Konzernabschluss
+                Konzernabschluss
               </NavLink>
             </nav>
           </aside>

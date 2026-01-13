@@ -252,7 +252,7 @@ function ConsolidatedReportPage() {
         {/* Balance Check */}
         <div className={`balance-check ${bs.isBalanced ? 'balanced' : 'unbalanced'}`}>
           {bs.isBalanced ? (
-            <span>✅ Bilanz ist ausgeglichen</span>
+            <span>Bilanz ist ausgeglichen</span>
           ) : (
             <span>⚠️ Bilanz nicht ausgeglichen - Differenz: {formatCurrency(bs.balanceDifference)}</span>
           )}
@@ -632,21 +632,21 @@ function ConsolidatedReportPage() {
             onClick={() => handleExport('excel')}
             disabled={!report || exporting !== null}
           >
-            {exporting === 'excel' ? '⏳ Exportiere...' : '📊 Excel Export'}
+            {exporting === 'excel' ? 'Exportiere...' : 'Excel Export'}
           </button>
           <button
             className="button button-secondary"
             onClick={() => handleExport('pdf')}
             disabled={!report || exporting !== null}
           >
-            {exporting === 'pdf' ? '⏳ Exportiere...' : '📄 PDF Export'}
+            {exporting === 'pdf' ? 'Exportiere...' : 'PDF Export'}
           </button>
           <button
             className="button button-secondary"
             onClick={() => handleExport('xbrl')}
             disabled={!report || exporting !== null}
           >
-            {exporting === 'xbrl' ? '⏳ Exportiere...' : '📁 eBilanz/XBRL'}
+            {exporting === 'xbrl' ? 'Exportiere...' : 'eBilanz/XBRL'}
           </button>
         </div>
       </div>
@@ -708,25 +708,25 @@ function ConsolidatedReportPage() {
               className={`tab-button ${activeTab === 'balance-sheet' ? 'active' : ''}`}
               onClick={() => setActiveTab('balance-sheet')}
             >
-              📋 Konzernbilanz
+              Konzernbilanz
             </button>
             <button
               className={`tab-button ${activeTab === 'income-statement' ? 'active' : ''}`}
               onClick={() => setActiveTab('income-statement')}
             >
-              📈 Konzern-GuV
+              Konzern-GuV
             </button>
             <button
               className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
-              🏢 Übersicht
+              Übersicht
             </button>
             <button
               className={`tab-button ${activeTab === 'comparison' ? 'active' : ''}`}
               onClick={() => setActiveTab('comparison')}
             >
-              📊 Vorjahresvergleich
+              Vorjahresvergleich
             </button>
           </div>
 

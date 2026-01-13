@@ -324,7 +324,7 @@ function Consolidation() {
             className="button button-primary"
             onClick={() => navigate('/konsolidierung-assistent')}
           >
-            🧙 Assistent
+            Assistent
           </button>
           <button
             className="button button-secondary"
@@ -345,20 +345,20 @@ function Consolidation() {
                 onClick={() => handleExport('excel')}
                 disabled={exporting !== null}
               >
-                {exporting === 'excel' ? '⏳ Exportiere...' : '📊 Excel Export'}
+                {exporting === 'excel' ? 'Exportiere...' : 'Excel Export'}
               </button>
               <button
                 className="button button-secondary"
                 onClick={() => handleExport('pdf')}
                 disabled={exporting !== null}
               >
-                {exporting === 'pdf' ? '⏳ Exportiere...' : '📄 PDF Export'}
+                {exporting === 'pdf' ? 'Exportiere...' : 'PDF Export'}
               </button>
               <button
                 className="button button-primary"
                 onClick={() => navigate(`/konzernabschluss/${selectedStatementId}`)}
               >
-                📈 Konzernabschluss ansehen
+                Konzernabschluss ansehen
               </button>
               <Link
                 to={`/consolidated-notes/${selectedStatementId}`}
@@ -583,21 +583,21 @@ function Consolidation() {
                               onClick={() => handleEditEntry(entry)}
                               title="Bearbeiten"
                             >
-                              ✏️
+                              Bearbeiten
                             </button>
                             <button
                               className="button button-secondary"
                               onClick={() => handleSubmitForApproval(entry.id)}
                               title="Zur Freigabe einreichen"
                             >
-                              📤
+                              Einreichen
                             </button>
                             <button
                               className="button button-secondary"
                               onClick={() => handleDeleteEntry(entry.id)}
                               title="Löschen"
                             >
-                              🗑️
+                              Löschen
                             </button>
                           </>
                         )}
@@ -608,14 +608,14 @@ function Consolidation() {
                               onClick={() => handleApproveEntry(entry.id)}
                               title="Freigeben"
                             >
-                              ✅
+                              Freigeben
                             </button>
                             <button
                               className="button button-secondary"
                               onClick={() => handleRejectEntry(entry.id)}
                               title="Ablehnen"
                             >
-                              ❌
+                              Ablehnen
                             </button>
                           </>
                         )}

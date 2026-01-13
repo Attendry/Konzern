@@ -62,7 +62,7 @@ export function SmartSuggestions({
         >
           <div className="smart-suggestion-content">
             <span className="smart-suggestion-icon">
-              {suggestion.type === 'tip' ? '💡' : suggestion.type === 'warning' ? '⚠️' : 'ℹ️'}
+              {suggestion.type === 'tip' ? 'Tipp' : suggestion.type === 'warning' ? '!' : 'i'}
             </span>
             <span className="smart-suggestion-message">{suggestion.message}</span>
           </div>

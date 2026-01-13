@@ -163,11 +163,11 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
   const readiness = getConsolidationReadiness();
 
   const steps = [
-    { id: 'companies', label: 'Konzernstruktur', icon: '🏢' },
-    { id: 'dataImport', label: 'Datenprüfung', icon: '📊' },
-    { id: 'participations', label: 'Beteiligungen', icon: '🔗' },
-    { id: 'consolidation', label: 'Konsolidierung', icon: '⚙️' },
-    { id: 'review', label: 'Abschluss', icon: '✅' },
+    { id: 'companies', label: 'Konzernstruktur', icon: '1' },
+    { id: 'dataImport', label: 'Datenprüfung', icon: '2' },
+    { id: 'participations', label: 'Beteiligungen', icon: '3' },
+    { id: 'consolidation', label: 'Konsolidierung', icon: '4' },
+    { id: 'review', label: 'Abschluss', icon: '5' },
   ];
 
   return (
@@ -203,7 +203,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
         {!loading && currentStep === 'companies' && (
           <>
-            <h2>🏢 Konzernstruktur definieren</h2>
+            <h2>Konzernstruktur definieren</h2>
             <p className="step-description">
               Wählen Sie das Mutterunternehmen und überprüfen Sie die Konzernstruktur.
             </p>
@@ -239,7 +239,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
                 <h3>Konzernstruktur</h3>
                 <div className="company-status-list">
                   <div className="company-status-item">
-                    <span className="company-name">👑 {parentCompany?.name}</span>
+                    <span className="company-name">{parentCompany?.name} (Muttergesellschaft)</span>
                     <span className="badge badge-info">Mutterunternehmen</span>
                   </div>
                   {subsidiaries.length > 0 ? (
@@ -267,7 +267,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
         {!loading && currentStep === 'dataImport' && (
           <>
-            <h2>📊 Datenprüfung</h2>
+            <h2>Datenprüfung</h2>
             <p className="step-description">
               Überprüfen Sie, ob alle Unternehmen Bilanzdaten für {selectedFiscalYear} haben.
             </p>
@@ -279,7 +279,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
                 return (
                   <div key={company.id} className="company-status-item">
                     <span className="company-name">
-                      {company.id === parentCompanyId ? '👑 ' : '└ '}
+                      {company.id === parentCompanyId ? '' : '└ '}
                       {company.name}
                     </span>
                     <div className="company-status">
@@ -323,7 +323,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
         {!loading && currentStep === 'participations' && (
           <>
-            <h2>🔗 Beteiligungsverhältnisse</h2>
+            <h2>Beteiligungsverhältnisse</h2>
             <p className="step-description">
               Überprüfen Sie die Beteiligungsquoten und Konsolidierungsart.
             </p>
@@ -366,7 +366,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
             <div style={{ marginTop: 'var(--spacing-6)', padding: 'var(--spacing-4)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)' }}>
               <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                💡 Für detaillierte Beteiligungsverwaltung nutzen Sie die 
+                Für detaillierte Beteiligungsverwaltung nutzen Sie die 
                 <a href="/consolidation-circle" style={{ marginLeft: 'var(--spacing-1)' }}>
                   Konsolidierungskreis-Seite
                 </a>
@@ -377,7 +377,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
         {!loading && currentStep === 'consolidation' && (
           <>
-            <h2>⚙️ Konsolidierung durchführen</h2>
+            <h2>Konsolidierung durchführen</h2>
             <p className="step-description">
               Wählen Sie den Jahresabschluss und starten Sie die Konsolidierung.
             </p>
@@ -421,7 +421,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
                   Konsolidiere...
                 </>
               ) : (
-                '🚀 Konsolidierung starten'
+                'Konsolidierung starten'
               )}
             </button>
           </>
@@ -429,7 +429,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
         {!loading && currentStep === 'review' && (
           <>
-            <h2>✅ Konsolidierung abgeschlossen</h2>
+            <h2>Konsolidierung abgeschlossen</h2>
             <p className="step-description">
               Die Konsolidierung wurde erfolgreich durchgeführt.
             </p>
@@ -466,7 +466,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
                 className="button button-primary"
                 onClick={handleComplete}
               >
-                📊 Konzernabschluss ansehen
+                Konzernabschluss ansehen
               </button>
             </div>
           </>
