@@ -140,15 +140,17 @@ export function ExcelMappingWizard({
 
   const processSheet = (wb: XLSX.WorkBook, sheetName: string) => {
     const sheet = wb.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json<ParsedRow>(sheet, { header: 1 });
+    // When using header: 1, data comes back as array of arrays
+    const rawData = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
     
-    if (jsonData.length < 2) {
+    if (rawData.length < 2) {
       showError('Die Tabelle enthält keine Daten');
       return;
     }
 
     // First row as headers
-    const headers = (jsonData[0] as any[]).map((h, i) => String(h || `Spalte ${i + 1}`));
+    const headerRow = rawData[0] as any[];
+    const headers = headerRow.map((h: any, i: number) => String(h || `Spalte ${i + 1}`));
     
     // Create initial mappings with suggestions
     const initialMappings: ColumnMapping[] = headers.map(header => ({
@@ -159,13 +161,14 @@ export function ExcelMappingWizard({
     setMappings(initialMappings);
     
     // Parse data rows
-    const rows: ParsedRow[] = jsonData.slice(1).map((row: any[]) => {
+    const dataRows = rawData.slice(1) as any[][];
+    const rows: ParsedRow[] = dataRows.map((row: any[]) => {
       const rowObj: ParsedRow = {};
       headers.forEach((header, i) => {
         rowObj[header] = row[i] ?? null;
       });
       return rowObj;
-    }).filter(row => Object.values(row).some(v => v !== null && v !== ''));
+    }).filter((row: ParsedRow) => Object.values(row).some(v => v !== null && v !== ''));
 
     setPreviewData({
       headers,

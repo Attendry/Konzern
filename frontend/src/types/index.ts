@@ -21,6 +21,7 @@ export interface Company {
   legalForm?: string;
   parentCompanyId?: string | null;
   isConsolidated: boolean;
+  ownershipPercentage?: number;
   // Phase 2 extensions
   consolidationType?: ConsolidationType;
   exclusionReason?: ExclusionReason | null;

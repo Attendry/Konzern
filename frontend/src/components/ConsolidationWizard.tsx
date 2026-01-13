@@ -179,7 +179,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
       {/* Progress Steps */}
       <div className="wizard-steps">
-        {steps.map((step, index) => (
+        {steps.map((step) => (
           <div
             key={step.id}
             className={`wizard-step ${stepStatus[step.id as WizardStep]} ${currentStep === step.id ? 'active' : ''}`}

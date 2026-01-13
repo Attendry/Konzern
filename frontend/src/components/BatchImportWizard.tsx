@@ -84,7 +84,7 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
       setWorkbook(wb);
 
       // Create sheet mappings with auto-detection
-      const mappings: SheetMapping[] = wb.SheetNames.map(sheetName => {
+      const mappings: SheetMapping[] = wb.SheetNames.map((sheetName: string) => {
         const sheet = wb.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         const rowCount = Math.max(0, data.length - 1); // Exclude header row
@@ -399,7 +399,7 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
             )}
 
             <div style={{ marginTop: 'var(--spacing-4)' }}>
-              {sheetMappings.map((mapping, index) => (
+              {sheetMappings.map((mapping) => (
                 <div 
                   key={mapping.sheetName}
                   style={{
