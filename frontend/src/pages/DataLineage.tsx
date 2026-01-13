@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { lineageService, LineageGraph, LineageGraphNode, DataLineageNode, PruefpfadDocumentation, DocumentationStats } from '../services/lineageService';
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement } from '../types';
@@ -63,7 +63,7 @@ const nodeTypeColors: Record<string, string> = {
 
 export default function DataLineage() {
   const { id } = useParams<{ id: string }>();
-  const _navigate = useNavigate();
+  // Navigation available via useNavigate() if needed
   
   const [financialStatement, setFinancialStatement] = useState<FinancialStatement | null>(null);
   const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>([]);

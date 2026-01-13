@@ -30,24 +30,7 @@ const statusColors: Record<string, string> = {
   superseded: '#6b7280',
 };
 
-// Disclosure type labels
-const _disclosureLabels: Record<string, string> = {
-  consolidation_scope: 'Konsolidierungskreis',
-  consolidation_methods: 'Konsolidierungsgrundsätze',
-  accounting_policies: 'Bilanzierungs- und Bewertungsmethoden',
-  goodwill: 'Geschäfts- oder Firmenwert',
-  minority_interests: 'Anteile anderer Gesellschafter',
-  intercompany_transactions: 'Zwischengesellschaftsgeschäfte',
-  currency_translation: 'Währungsumrechnung',
-  deferred_taxes: 'Latente Steuern',
-  contingent_liabilities: 'Eventualverbindlichkeiten',
-  employees: 'Arbeitnehmer',
-  board_compensation: 'Organbezüge',
-  significant_events: 'Wesentliche Ereignisse',
-  subsequent_events: 'Ereignisse nach dem Bilanzstichtag',
-  related_parties: 'Nahestehende Unternehmen',
-  segment_reporting: 'Segmentberichterstattung',
-};
+// Disclosure type labels defined in konzernanhangService.ts
 
 export default function KonzernanhangPage() {
   const { id } = useParams<{ id: string }>();
