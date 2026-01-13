@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConsolidationService } from './consolidation.service';
 import { ConsolidationController } from './consolidation.controller';
 import { ConsolidationObligationController } from './consolidation-obligation.controller';
@@ -32,12 +32,21 @@ import { AuditLogService } from './audit-log.service';
 import { ComplianceChecklistService } from './compliance-checklist.service';
 import { EquityMethodService } from './equity-method.service';
 import { ProportionalConsolidationService } from './proportional-consolidation.service';
+// Phase 4 Services
+import { KonzernanhangDocumentService } from './konzernanhang-document.service';
+import { KonzernanhangExportService } from './konzernanhang-export.service';
+import { KonzernanhangController } from './konzernanhang.controller';
 
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CompanyModule } from '../company/company.module';
+import { LineageModule } from '../lineage/lineage.module';
 
 @Module({
-  imports: [SupabaseModule, CompanyModule],
+  imports: [
+    SupabaseModule,
+    CompanyModule,
+    forwardRef(() => LineageModule), // Phase 4: Data Lineage Integration
+  ],
   controllers: [
     ConsolidationController,
     ConsolidationObligationController,
@@ -51,6 +60,8 @@ import { CompanyModule } from '../company/company.module';
     ComplianceController,
     EquityMethodController,
     ProportionalConsolidationController,
+    // Phase 4 Controllers
+    KonzernanhangController,
   ],
   providers: [
     ConsolidationService,
@@ -73,6 +84,9 @@ import { CompanyModule } from '../company/company.module';
     ComplianceChecklistService,
     EquityMethodService,
     ProportionalConsolidationService,
+    // Phase 4 Services
+    KonzernanhangDocumentService,
+    KonzernanhangExportService,
   ],
   exports: [
     ConsolidationService,
@@ -95,6 +109,9 @@ import { CompanyModule } from '../company/company.module';
     ComplianceChecklistService,
     EquityMethodService,
     ProportionalConsolidationService,
+    // Phase 4 Services
+    KonzernanhangDocumentService,
+    KonzernanhangExportService,
   ],
 })
 export class ConsolidationModule {}

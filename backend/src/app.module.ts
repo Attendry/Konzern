@@ -7,6 +7,9 @@ import { ImportModule } from './modules/import/import.module';
 import { SupabaseModule } from './modules/supabase/supabase.module';
 import { HealthModule } from './modules/health/health.module';
 import { ParticipationModule } from './modules/participation/participation.module';
+import { LineageModule } from './modules/lineage/lineage.module';
+import { ControlsModule } from './modules/controls/controls.module';
+import { PolicyModule } from './modules/policy/policy.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { ParticipationModule } from './modules/participation/participation.modul
     ConsolidationModule,
     ImportModule,
     ParticipationModule,
+    LineageModule, // Phase 4: Data Lineage + Prüfpfad
+    ControlsModule, // Phase 4: Plausibility & Controls Engine
+    PolicyModule, // Phase 4: Accounting Policy & Rules Layer
   ],
 })
 export class AppModule {}

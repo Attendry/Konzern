@@ -55,6 +55,8 @@ export function ExchangeRateManager() {
         rateType: filterType || undefined,
         fiscalYear: filterYear || undefined,
       });
+      // Debug: log the actual data structure received
+      console.log('Exchange rates data:', JSON.stringify(data.slice(0, 2), null, 2));
       setRates(data);
     } catch (error: any) {
       console.error('Error loading rates:', error);
@@ -278,20 +280,42 @@ export function ExchangeRateManager() {
               </tr>
             </thead>
             <tbody>
-              {rates.map((rate) => (
+              {rates.map((rate: any) => {
+                // Handle both camelCase and snake_case field names
+                const fromCurrency = rate.fromCurrency || rate.from_currency || '—';
+                const toCurrency = rate.toCurrency || rate.to_currency || '—';
+                const rateDate = rate.rateDate || rate.rate_date;
+                const rateType = rate.rateType || rate.rate_type;
+                const rateSource = rate.rateSource || rate.rate_source || '—';
+                const rateValue = typeof rate.rate === 'number' ? rate.rate : parseFloat(rate.rate) || 0;
+                
+                // Format date safely
+                let formattedDate = '—';
+                if (rateDate) {
+                  const dateObj = new Date(rateDate);
+                  if (!isNaN(dateObj.getTime())) {
+                    formattedDate = dateObj.toLocaleDateString('de-DE');
+                  }
+                }
+                
+                return (
                 <tr key={rate.id}>
-                  <td style={{ fontWeight: 'var(--font-weight-medium)' }}>{rate.fromCurrency}</td>
-                  <td style={{ fontWeight: 'var(--font-weight-medium)' }}>{rate.toCurrency}</td>
-                  <td>{new Date(rate.rateDate).toLocaleDateString('de-DE')}</td>
+                  <td style={{ fontWeight: 'var(--font-weight-medium)', fontFamily: 'var(--font-family-mono)' }}>
+                    {fromCurrency}
+                  </td>
+                  <td style={{ fontWeight: 'var(--font-weight-medium)', fontFamily: 'var(--font-family-mono)' }}>
+                    {toCurrency}
+                  </td>
+                  <td>{formattedDate}</td>
                   <td style={{ fontFamily: 'var(--font-family-mono)' }}>
-                    {rate.rate.toFixed(6)}
+                    {rateValue.toFixed(6)}
                   </td>
                   <td>
                     <span className="badge badge-info">
-                      {RATE_TYPE_LABELS[rate.rateType]}
+                      {RATE_TYPE_LABELS[rateType as RateType] || rateType || '—'}
                     </span>
                   </td>
-                  <td style={{ textTransform: 'capitalize' }}>{rate.rateSource}</td>
+                  <td style={{ textTransform: 'capitalize' }}>{rateSource}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
                       <button
@@ -311,7 +335,8 @@ export function ExchangeRateManager() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

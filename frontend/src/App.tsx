@@ -8,6 +8,10 @@ import ConsolidatedReportPage from './pages/ConsolidatedReportPage';
 import ConsolidationWizardPage from './pages/ConsolidationWizardPage';
 import FinancialStatement from './pages/FinancialStatement';
 import ConsolidatedNotes from './pages/ConsolidatedNotes';
+import DataLineage from './pages/DataLineage';
+import KonzernanhangPage from './pages/KonzernanhangPage';
+import PlausibilityChecks from './pages/PlausibilityChecks';
+import PolicyManagement from './pages/PolicyManagement';
 import { ToastProvider } from './contexts/ToastContext';
 import { CommandPalette } from './components/CommandPalette';
 import { DarkModeToggle } from './components/DarkModeToggle';
@@ -42,6 +46,18 @@ function App() {
               <NavLink to="/konzernabschluss" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 Konzernabschluss
               </NavLink>
+              <NavLink to="/lineage" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                Prüfpfad
+              </NavLink>
+              <NavLink to="/konzernanhang" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                Konzernanhang
+              </NavLink>
+              <NavLink to="/controls" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                Kontrollen
+              </NavLink>
+              <NavLink to="/policies" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                Richtlinien
+              </NavLink>
             </nav>
           </aside>
           <main className="main-content">
@@ -57,6 +73,13 @@ function App() {
                 <Route path="/konsolidierung-assistent" element={<ConsolidationWizardPage />} />
                 <Route path="/financial-statements/:id" element={<FinancialStatement />} />
                 <Route path="/consolidated-notes/:id" element={<ConsolidatedNotes />} />
+                <Route path="/lineage" element={<DataLineage />} />
+                <Route path="/lineage/:id" element={<DataLineage />} />
+                <Route path="/konzernanhang" element={<KonzernanhangPage />} />
+                <Route path="/konzernanhang/:id" element={<KonzernanhangPage />} />
+                <Route path="/controls" element={<PlausibilityChecks />} />
+                <Route path="/controls/:financialStatementId" element={<PlausibilityChecks />} />
+                <Route path="/policies" element={<PolicyManagement />} />
               </Routes>
             </PageTransition>
           </main>

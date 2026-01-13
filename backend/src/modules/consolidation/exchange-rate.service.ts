@@ -75,7 +75,7 @@ export class ExchangeRateService {
     }
 
     // Map snake_case to camelCase for frontend
-    return (data || []).map(this.mapToExchangeRate);
+    return (data || []).map((row) => this.mapToExchangeRate(row));
   }
 
   /**
