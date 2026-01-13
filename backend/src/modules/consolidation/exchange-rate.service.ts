@@ -74,7 +74,28 @@ export class ExchangeRateService {
       throw new BadRequestException(`Fehler beim Laden der Wechselkurse: ${error.message}`);
     }
 
-    return data || [];
+    // Map snake_case to camelCase for frontend
+    return (data || []).map(this.mapToExchangeRate);
+  }
+
+  /**
+   * Map database row (snake_case) to frontend format (camelCase)
+   */
+  private mapToExchangeRate(row: any): any {
+    return {
+      id: row.id,
+      fromCurrency: row.from_currency,
+      toCurrency: row.to_currency,
+      rateDate: row.rate_date,
+      rate: parseFloat(row.rate),
+      rateType: row.rate_type,
+      rateSource: row.rate_source,
+      fiscalYear: row.fiscal_year,
+      fiscalMonth: row.fiscal_month,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
   }
 
   /**
@@ -178,7 +199,7 @@ export class ExchangeRateService {
       result = data;
     }
 
-    return result;
+    return this.mapToExchangeRate(result);
   }
 
   /**
@@ -372,6 +393,25 @@ export class ExchangeRateService {
       throw new BadRequestException(`Fehler: ${error.message}`);
     }
 
-    return data || [];
+    // Map snake_case to camelCase
+    return (data || []).map(row => ({
+      id: row.id,
+      companyId: row.company_id,
+      financialStatementId: row.financial_statement_id,
+      fiscalYear: row.fiscal_year,
+      sourceCurrency: row.source_currency,
+      targetCurrency: row.target_currency,
+      spotRate: parseFloat(row.spot_rate),
+      averageRate: parseFloat(row.average_rate),
+      historicalRate: row.historical_rate ? parseFloat(row.historical_rate) : null,
+      balanceSheetDifference: parseFloat(row.balance_sheet_difference),
+      incomeStatementDifference: parseFloat(row.income_statement_difference),
+      equityDifference: parseFloat(row.equity_difference),
+      totalDifference: parseFloat(row.total_difference),
+      cumulativeDifference: parseFloat(row.cumulative_difference),
+      consolidationEntryId: row.consolidation_entry_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
   }
 }
