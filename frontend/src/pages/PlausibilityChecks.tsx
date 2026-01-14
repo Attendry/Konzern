@@ -183,17 +183,17 @@ const PlausibilityChecks = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'passed':
-        return '✓';
+        return '[OK]';
       case 'failed':
-        return '✗';
+        return '[Fehler]';
       case 'warning':
         return '⚠';
       case 'skipped':
         return '○';
       case 'acknowledged':
-        return '👁';
+        return '[Anzeigen]';
       case 'waived':
-        return '✓✓';
+        return '[OK OK]';
       default:
         return '?';
     }
@@ -270,7 +270,7 @@ const PlausibilityChecks = () => {
 
       {error && (
         <div className="error-banner">
-          <span>⚠️</span>
+          <span>[Warnung]</span>
           <span>{error}</span>
           <button onClick={() => setError(null)}>×</button>
         </div>
@@ -282,7 +282,7 @@ const PlausibilityChecks = () => {
           className={`tab-button ${activeTab === 'checks' ? 'active' : ''}`}
           onClick={() => setActiveTab('checks')}
         >
-          <span className="tab-icon">✓</span>
+          <span className="tab-icon">[OK]</span>
           Plausibilitätsprüfungen
           {checkSummary && (checkSummary.failed > 0 || checkSummary.warnings > 0) && (
             <span className="tab-badge warning">
@@ -294,7 +294,7 @@ const PlausibilityChecks = () => {
           className={`tab-button ${activeTab === 'variances' ? 'active' : ''}`}
           onClick={() => setActiveTab('variances')}
         >
-          <span className="tab-icon">📊</span>
+          <span className="tab-icon">[Chart]</span>
           Varianzanalyse
           {varianceSummary && varianceSummary.unexplainedCount > 0 && (
             <span className="tab-badge info">
@@ -306,7 +306,7 @@ const PlausibilityChecks = () => {
           className={`tab-button ${activeTab === 'exceptions' ? 'active' : ''}`}
           onClick={() => setActiveTab('exceptions')}
         >
-          <span className="tab-icon">⚠️</span>
+          <span className="tab-icon">[Warnung]</span>
           Ausnahmeberichte
           {exceptionSummary && exceptionSummary.openCount > 0 && (
             <span className="tab-badge error">
@@ -551,7 +551,7 @@ const PlausibilityChecks = () => {
                           <td>
                             {variance.explanation ? (
                               <div className="explanation-preview">
-                                <span className="explained-icon">✓</span>
+                                <span className="explained-icon">[OK]</span>
                                 {variance.explanation.substring(0, 50)}...
                               </div>
                             ) : (
@@ -780,7 +780,7 @@ const PlausibilityChecks = () => {
                       if (comment) handleAcknowledgeCheck(selectedCheck.id, comment);
                     }}
                   >
-                    👁 Zur Kenntnis nehmen
+                    Zur Kenntnis nehmen
                   </button>
                   <button
                     className="btn btn-primary"
@@ -789,7 +789,7 @@ const PlausibilityChecks = () => {
                       if (reason) handleWaiveCheck(selectedCheck.id, reason);
                     }}
                   >
-                    ✓ Ausnahme genehmigen
+                    Ausnahme genehmigen
                   </button>
                 </>
               )}

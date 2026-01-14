@@ -405,15 +405,15 @@ export function ExcelMappingWizard({
       {/* Steps Indicator */}
       <div className="wizard-steps">
         <div className={`wizard-step ${step === 'upload' ? 'active' : file ? 'completed' : ''}`}>
-          <div className="step-circle">{file ? '✓' : '1'}</div>
+          <div className="step-circle">{file ? '[OK]' : '1'}</div>
           <span className="step-label">Datei wählen</span>
         </div>
         <div className={`wizard-step ${step === 'sheet-select' ? 'active' : selectedSheet ? 'completed' : ''}`}>
-          <div className="step-circle">{selectedSheet ? '✓' : '2'}</div>
+          <div className="step-circle">{selectedSheet ? '[OK]' : '2'}</div>
           <span className="step-label">Blatt wählen</span>
         </div>
         <div className={`wizard-step ${step === 'mapping' ? 'active' : validation ? 'completed' : ''}`}>
-          <div className="step-circle">{validation ? '✓' : '3'}</div>
+          <div className="step-circle">{validation ? '[OK]' : '3'}</div>
           <span className="step-label">Spalten zuordnen</span>
         </div>
         <div className={`wizard-step ${step === 'preview' || step === 'importing' ? 'active' : ''}`}>
@@ -587,7 +587,7 @@ export function ExcelMappingWizard({
                       fontSize: 'var(--font-size-sm)',
                     }}
                   >
-                    {msg.type === 'error' ? '❌' : '⚠️'} Zeile {msg.row}: {msg.message}
+                    {msg.type === 'error' ? '[Fehler]' : '[Warnung]'} Zeile {msg.row}: {msg.message}
                   </div>
                 ))}
                 {validation.messages.length > 20 && (

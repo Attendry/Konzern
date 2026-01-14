@@ -104,7 +104,7 @@ export function DeconsolidationModal({
             marginBottom: 'var(--spacing-4)',
           }}>
             <p style={{ color: 'var(--color-error)', fontWeight: 'var(--font-weight-medium)', margin: 0 }}>
-              ⚠️ Achtung: Die Entkonsolidierung entfernt das Tochterunternehmen dauerhaft aus dem Konsolidierungskreis. 
+              Achtung: Die Entkonsolidierung entfernt das Tochterunternehmen dauerhaft aus dem Konsolidierungskreis. 
               Dieser Vorgang kann nicht rückgängig gemacht werden.
             </p>
           </div>
@@ -211,7 +211,7 @@ export function DeconsolidationModal({
               margin: '0 auto var(--spacing-4)',
               fontSize: '2rem',
             }}>
-              ✓
+              [OK]
             </div>
             <h3>Entkonsolidierung abgeschlossen!</h3>
           </div>

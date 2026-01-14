@@ -158,7 +158,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
             onClick={handleCreateReconciliations}
             disabled={creating}
           >
-            {creating ? 'Erstelle...' : '🔍 IC-Transaktionen abgleichen'}
+            {creating ? 'Erstelle...' : 'IC-Transaktionen abgleichen'}
           </button>
         </div>
 
@@ -301,7 +301,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
                             title="Differenz erklären"
                             style={{ padding: 'var(--spacing-1) var(--spacing-2)', fontSize: 'var(--font-size-xs)' }}
                           >
-                            📝
+                            Bearbeiten
                           </button>
                           <button
                             className="button button-primary"
@@ -309,7 +309,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
                             title="Ausgleichsbuchung erstellen"
                             style={{ padding: 'var(--spacing-1) var(--spacing-2)', fontSize: 'var(--font-size-xs)' }}
                           >
-                            ⚖️
+                            Ausgleichen
                           </button>
                         </>
                       )}
@@ -320,7 +320,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
                           title="Bearbeiten"
                           style={{ padding: 'var(--spacing-1) var(--spacing-2)', fontSize: 'var(--font-size-xs)' }}
                         >
-                          ✏️
+                          Bearbeiten
                         </button>
                       )}
                       {recon.clearingEntryId && (
@@ -328,7 +328,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
                           title="Ausgleichsbuchung vorhanden"
                           style={{ color: 'var(--color-success)' }}
                         >
-                          ✅
+                          [OK]
                         </span>
                       )}
                     </div>

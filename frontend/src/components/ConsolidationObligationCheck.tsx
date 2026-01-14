@@ -143,8 +143,8 @@ function ConsolidationObligationCheck({
           <strong style={{ fontSize: '1.2rem' }}>
             {result.isObligatory
               ? result.exceptions.length > 0
-                ? '⚠️ Konsolidierungspflicht mit Ausnahmen'
-                : '❌ Konsolidierungspflicht besteht'
+                ? '[Warnung] Konsolidierungspflicht mit Ausnahmen'
+                : '[Fehler] Konsolidierungspflicht besteht'
               : 'Keine Konsolidierungspflicht'}
           </strong>
         </div>
@@ -194,7 +194,7 @@ function ConsolidationObligationCheck({
       {/* Warnings */}
       {result.warnings.length > 0 && (
         <div className="error-message" style={{ marginBottom: 'var(--spacing-4)' }}>
-          <h3 style={{ marginBottom: 'var(--spacing-3)' }}>⚠️ Warnungen</h3>
+          <h3 style={{ marginBottom: 'var(--spacing-3)' }}>Warnungen</h3>
           <ul style={{ paddingLeft: 'var(--spacing-5)' }}>
             {result.warnings.map((warning, index) => (
               <li key={index} style={{ marginBottom: 'var(--spacing-2)' }}>{warning}</li>

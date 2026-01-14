@@ -217,7 +217,7 @@ const DeferredTaxDashboard: React.FC<DeferredTaxDashboardProps> = ({
                       onClick={() => handleDelete(dt.id)}
                       title="Löschen"
                     >
-                      🗑️
+                      Löschen
                     </button>
                   </td>
                 </tr>

@@ -202,7 +202,7 @@ export function FirstConsolidationWizard({
                 fontSize: 'var(--font-size-sm)',
                 fontWeight: 'var(--font-weight-semibold)',
               }}>
-                {step > s ? '✓' : s}
+                {step > s ? '[OK]' : s}
               </span>
               <span style={{ fontSize: 'var(--font-size-sm)' }}>
                 {s === 1 && 'Unternehmen'}
@@ -459,7 +459,7 @@ export function FirstConsolidationWizard({
                 margin: '0 auto var(--spacing-4)',
                 fontSize: '2rem',
               }}>
-                ✓
+                [OK]
               </div>
               <h3>Erstkonsolidierung abgeschlossen!</h3>
             </div>

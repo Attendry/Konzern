@@ -254,7 +254,7 @@ function ConsolidatedReportPage() {
           {bs.isBalanced ? (
             <span>Bilanz ist ausgeglichen</span>
           ) : (
-            <span>⚠️ Bilanz nicht ausgeglichen - Differenz: {formatCurrency(bs.balanceDifference)}</span>
+            <span>[Warnung] Bilanz nicht ausgeglichen - Differenz: {formatCurrency(bs.balanceDifference)}</span>
           )}
         </div>
       </div>

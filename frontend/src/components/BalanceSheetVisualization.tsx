@@ -420,7 +420,7 @@ function BalanceSheetVisualization({
                     fontWeight: 'bold',
                     color: beforeBalanceSheet!.balanceValidation.isBalanced ? '#27ae60' : '#e74c3c'
                   }}>
-                    {beforeBalanceSheet!.balanceValidation.isBalanced ? '✓ Ausgeglichen' : '✗ Nicht ausgeglichen'}
+                    {beforeBalanceSheet!.balanceValidation.isBalanced ? 'Ausgeglichen' : 'Nicht ausgeglichen'}
                   </div>
                 </div>
               </div>
@@ -448,7 +448,7 @@ function BalanceSheetVisualization({
                     fontWeight: 'bold',
                     color: consolidatedBalanceSheet!.balanceValidation.isBalanced ? '#27ae60' : '#e74c3c'
                   }}>
-                    {consolidatedBalanceSheet!.balanceValidation.isBalanced ? '✓ Ausgeglichen' : '✗ Nicht ausgeglichen'}
+                    {consolidatedBalanceSheet!.balanceValidation.isBalanced ? 'Ausgeglichen' : 'Nicht ausgeglichen'}
                   </div>
                 </div>
                 {consolidatedBalanceSheet!.consolidationSummary && (
@@ -487,7 +487,7 @@ function BalanceSheetVisualization({
                 fontWeight: 'bold',
                 color: balanceSheet!.balanceValidation.isBalanced ? '#27ae60' : '#e74c3c'
               }}>
-                {balanceSheet!.balanceValidation.isBalanced ? '✓ Ausgeglichen' : '✗ Nicht ausgeglichen'}
+                {balanceSheet!.balanceValidation.isBalanced ? 'Ausgeglichen' : 'Nicht ausgeglichen'}
               </div>
               {!balanceSheet!.balanceValidation.isBalanced && (
                 <div style={{ fontSize: '0.875rem', color: '#666' }}>

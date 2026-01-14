@@ -26,12 +26,12 @@ const ACTION_LABELS: Record<AuditAction, string> = {
 };
 
 const ACTION_ICONS: Record<AuditAction, string> = {
-  create: '➕',
-  update: '✏️',
-  delete: '🗑️',
+  create: '[Erstellen]',
+  update: '[Aktualisieren]',
+  delete: '[Löschen]',
   approve: 'Freigabe',
-  reject: '❌',
-  reverse: '↩️',
+  reject: '[Ablehnen]',
+  reverse: '[Rückgängig]',
   submit: 'Einreichung',
   import: '📥',
   export: 'Export',
@@ -119,7 +119,7 @@ const AuditTrail: React.FC<AuditTrailProps> = ({
   return (
     <div className="audit-trail">
       <div className="audit-header">
-        <h2>🔍 Audit-Trail</h2>
+        <h2>Audit-Trail</h2>
         {onClose && (
           <button className="btn-close" onClick={onClose}>×</button>
         )}

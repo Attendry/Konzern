@@ -269,15 +269,15 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
       {/* Steps */}
       <div className="wizard-steps">
         <div className={`wizard-step ${step === 'upload' ? 'active' : file ? 'completed' : ''}`}>
-          <div className="step-circle">{file ? '✓' : '1'}</div>
+          <div className="step-circle">{file ? '[OK]' : '1'}</div>
           <span className="step-label">Datei wählen</span>
         </div>
         <div className={`wizard-step ${step === 'mapping' ? 'active' : step === 'importing' || step === 'complete' ? 'completed' : ''}`}>
-          <div className="step-circle">{step === 'importing' || step === 'complete' ? '✓' : '2'}</div>
+          <div className="step-circle">{step === 'importing' || step === 'complete' ? '[OK]' : '2'}</div>
           <span className="step-label">Zuordnung</span>
         </div>
         <div className={`wizard-step ${step === 'importing' || step === 'complete' ? 'active' : ''}`}>
-          <div className="step-circle">{step === 'complete' ? '✓' : '3'}</div>
+          <div className="step-circle">{step === 'complete' ? '[OK]' : '3'}</div>
           <span className="step-label">Import</span>
         </div>
       </div>
@@ -365,7 +365,7 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
 
                   <div>
                     {mapping.financialStatementId ? (
-                      <span className="badge badge-success">✓ Jahresabschluss vorhanden</span>
+                      <span className="badge badge-success">Jahresabschluss vorhanden</span>
                     ) : mapping.companyId ? (
                       <button
                         className="button button-secondary button-sm"
@@ -391,7 +391,7 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
                     color: 'white',
                     fontSize: 'var(--font-size-xs)',
                   }}>
-                    {mapping.financialStatementId ? '✓' : ''}
+                    {mapping.financialStatementId ? '[OK]' : ''}
                   </div>
                 </div>
               ))}
@@ -439,8 +439,8 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
                 >
                   <div style={{ width: '24px' }}>
                     {mapping.status === 'importing' && <div className="spinner" style={{ width: '16px', height: '16px' }}></div>}
-                    {mapping.status === 'success' && <span style={{ color: 'var(--color-success)' }}>✓</span>}
-                    {mapping.status === 'error' && <span style={{ color: 'var(--color-error)' }}>✗</span>}
+                    {mapping.status === 'success' && <span style={{ color: 'var(--color-success)' }}>[OK]</span>}
+                    {mapping.status === 'error' && <span style={{ color: 'var(--color-error)' }}>[Fehler]</span>}
                     {mapping.status === 'pending' && <span style={{ color: 'var(--color-text-secondary)' }}>○</span>}
                   </div>
                   <div style={{ flex: 1 }}>

@@ -140,7 +140,7 @@ const ComplianceDashboard: React.FC<ComplianceDashboardProps> = ({
               <h3>Gesamtfortschritt</h3>
               <p>{summary.completed} von {summary.totalItems} Prüfpunkten abgeschlossen</p>
               {!summary.mandatoryComplete && (
-                <p className="warning">⚠️ Pflichtprüfpunkte noch nicht vollständig</p>
+                <p className="warning">Pflichtprüfpunkte noch nicht vollständig</p>
               )}
             </div>
           </div>

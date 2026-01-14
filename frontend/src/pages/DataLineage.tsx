@@ -618,7 +618,7 @@ export default function DataLineage() {
                       <td>
                         {doc.verifiedAt ? (
                           <span className="verified-badge">
-                            ✓ {doc.verifiedByName}
+                            [Verifiziert] {doc.verifiedByName}
                           </span>
                         ) : (
                           <span className="text-muted">Ausstehend</span>
@@ -626,10 +626,10 @@ export default function DataLineage() {
                       </td>
                       <td>
                         <button className="btn-icon" title="Anzeigen">
-                          👁
+                          Anzeigen
                         </button>
                         <button className="btn-icon" title="Bearbeiten">
-                          ✏️
+                          Bearbeiten
                         </button>
                       </td>
                     </tr>

@@ -191,7 +191,7 @@ export function ExchangeRateManager() {
               disabled={fetching}
               title="Kurse von EZB abrufen"
             >
-              🌐 EZB-Kurse
+              EZB-Kurse
             </button>
             <button
               className="button button-secondary"
@@ -323,14 +323,14 @@ export function ExchangeRateManager() {
                         onClick={() => handleEdit(rate)}
                         style={{ padding: 'var(--spacing-1) var(--spacing-2)' }}
                       >
-                        ✏️
+                        Bearbeiten
                       </button>
                       <button
                         className="button button-secondary"
                         onClick={() => handleDelete(rate.id)}
                         style={{ padding: 'var(--spacing-1) var(--spacing-2)' }}
                       >
-                        🗑️
+                        Löschen
                       </button>
                     </div>
                   </td>

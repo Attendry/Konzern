@@ -185,7 +185,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
             className={`wizard-step ${stepStatus[step.id as WizardStep]} ${currentStep === step.id ? 'active' : ''}`}
           >
             <div className="step-circle">
-              {stepStatus[step.id as WizardStep] === 'complete' ? '✓' : step.icon}
+              {stepStatus[step.id as WizardStep] === 'complete' ? '[OK]' : step.icon}
             </div>
             <span className="step-label">{step.label}</span>
           </div>
@@ -315,7 +315,7 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
 
             {readiness.ready && (
               <div className="success-message" style={{ marginTop: 'var(--spacing-6)' }}>
-                ✓ Alle Unternehmen haben Bilanzdaten für {selectedFiscalYear}
+                Alle Unternehmen haben Bilanzdaten für {selectedFiscalYear}
               </div>
             )}
           </>
@@ -402,10 +402,10 @@ export function ConsolidationWizard({ onComplete, onCancel }: ConsolidationWizar
             <div style={{ marginTop: 'var(--spacing-6)' }}>
               <h3>Konsolidierungsschritte</h3>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                <li style={{ padding: 'var(--spacing-2) 0' }}>✓ Kapitalkonsolidierung (§ 301 HGB)</li>
-                <li style={{ padding: 'var(--spacing-2) 0' }}>✓ Schuldenkonsolidierung (§ 303 HGB)</li>
-                <li style={{ padding: 'var(--spacing-2) 0' }}>✓ Zwischenergebniseliminierung (§ 304 HGB)</li>
-                <li style={{ padding: 'var(--spacing-2) 0' }}>✓ Aufwands-/Ertragskonsolidierung (§ 305 HGB)</li>
+                <li style={{ padding: 'var(--spacing-2) 0' }}>Kapitalkonsolidierung (§ 301 HGB)</li>
+                <li style={{ padding: 'var(--spacing-2) 0' }}>Schuldenkonsolidierung (§ 303 HGB)</li>
+                <li style={{ padding: 'var(--spacing-2) 0' }}>Zwischenergebniseliminierung (§ 304 HGB)</li>
+                <li style={{ padding: 'var(--spacing-2) 0' }}>Aufwands-/Ertragskonsolidierung (§ 305 HGB)</li>
               </ul>
             </div>
 
