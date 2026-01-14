@@ -176,6 +176,12 @@ export class ImportController {
       const template = await Promise.race([templatePromise, timeoutPromise]) as Buffer;
       
       console.log('Template loaded, size:', template.length);
+      
+      // Cache-Control headers to prevent browser caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
