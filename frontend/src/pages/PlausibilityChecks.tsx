@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   controlsService,
   PlausibilityCheck,
@@ -17,6 +17,7 @@ type TabType = 'checks' | 'variances' | 'exceptions' | 'materiality';
 
 const PlausibilityChecks = () => {
   const { financialStatementId } = useParams<{ financialStatementId: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('checks');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -261,6 +262,14 @@ const PlausibilityChecks = () => {
 
   return (
     <div className="plausibility-page">
+      <div style={{ marginBottom: '16px' }}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => navigate('/')}
+        >
+          ← Zurück zum Dashboard
+        </button>
+      </div>
       <div className="page-header">
         <h1>Plausibilitätsprüfungen & Kontrollen</h1>
         <p className="page-subtitle">

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement as FinancialStatementType, AccountBalance } from '../types';
 import BalanceSheetVisualization from '../components/BalanceSheetVisualization';
@@ -8,6 +8,7 @@ import '../App.css';
 
 function FinancialStatement() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [statement, setStatement] = useState<FinancialStatementType | null>(null);
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +81,14 @@ function FinancialStatement() {
 
   return (
     <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)' }}>
+        <button 
+          className="button button-tertiary" 
+          onClick={() => navigate('/')}
+        >
+          ← Zurück zum Dashboard
+        </button>
+      </div>
       <h1>Jahresabschluss</h1>
 
       <div className="card">

@@ -245,7 +245,7 @@ function App() {
 
   const navGroups = [
     {
-      title: 'Uebersicht',
+      title: 'Übersicht',
       items: [
         { path: '/', label: 'Dashboard', icon: Icons.dashboard, end: true },
         { path: '/companies', label: 'Unternehmen', icon: Icons.company },
@@ -269,11 +269,11 @@ function App() {
       title: 'Berichte',
       items: [
         { path: '/konzernanhang', label: 'Konzernanhang', icon: Icons.notes },
-        { path: '/lineage', label: 'Pruefpfad', icon: Icons.auditTrail },
+        { path: '/lineage', label: 'Prüfpfad', icon: Icons.auditTrail },
       ],
     },
     {
-      title: 'Qualitaet',
+      title: 'Qualität',
       items: [
         { path: '/controls', label: 'Kontrollen', icon: Icons.controls },
         { path: '/policies', label: 'Richtlinien', icon: Icons.policies },

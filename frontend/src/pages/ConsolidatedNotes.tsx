@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { consolidatedNotesService, ConsolidatedNotes } from '../services/consolidatedNotesService';
 import '../App.css';
 
 function ConsolidatedNotesPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState<ConsolidatedNotes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +94,14 @@ function ConsolidatedNotesPage() {
 
   return (
     <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <button 
+          className="button button-tertiary" 
+          onClick={() => navigate('/consolidation')}
+        >
+          ← Zurück zur Konsolidierung
+        </button>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1>Konzernanhang</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>

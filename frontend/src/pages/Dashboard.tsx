@@ -124,7 +124,7 @@ function Dashboard() {
         const tooltipContent: Record<string, string> = {
           consolidated: 'Konzernabschluss anzeigen',
           finalized: 'Zur Konsolidierung',
-          draft: 'Daten vervollstaendigen',
+          draft: 'Daten vervollständigen',
           imported: 'Zur Konsolidierung',
         };
         const handleStatusClick = (e: React.MouseEvent) => {
@@ -199,7 +199,7 @@ function Dashboard() {
               subtitle="Unternehmensverwaltung"
             />
             <MetricCard
-              label="Jahresabschluesse"
+              label="Jahresabschlüsse"
               value={statements.length}
               color="var(--color-accent-blue)"
               onClick={() => navigate('/import')}

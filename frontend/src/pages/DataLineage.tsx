@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { lineageService, LineageGraph, LineageGraphNode, DataLineageNode, PruefpfadDocumentation, DocumentationStats } from '../services/lineageService';
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement } from '../types';
@@ -63,7 +63,7 @@ const nodeTypeColors: Record<string, string> = {
 
 export default function DataLineage() {
   const { id } = useParams<{ id: string }>();
-  // Navigation available via useNavigate() if needed
+  const navigate = useNavigate();
   
   const [financialStatement, setFinancialStatement] = useState<FinancialStatement | null>(null);
   const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>([]);
@@ -379,6 +379,16 @@ export default function DataLineage() {
 
   return (
     <div className="data-lineage-page">
+      {/* Back Button */}
+      <div style={{ marginBottom: '16px' }}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => navigate('/')}
+        >
+          ← Zurück zum Dashboard
+        </button>
+      </div>
+
       {/* Header */}
       <div className="page-header">
         <div className="page-header-content">

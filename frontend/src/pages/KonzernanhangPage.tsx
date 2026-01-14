@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   konzernanhangService, 
   KonzernanhangDocument, 
@@ -34,6 +34,7 @@ const statusColors: Record<string, string> = {
 
 export default function KonzernanhangPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   
   const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>([]);
   const [selectedFsId, setSelectedFsId] = useState<string>(id || '');
@@ -194,7 +195,7 @@ export default function KonzernanhangPage() {
       );
       setSections(sections.map(s => s.id === sectionId ? updated : s));
     } catch (err: any) {
-      setError(err.message || 'Fehler beim Pruefen');
+      setError(err.message || 'Fehler beim Prüfen');
     }
   };
 
@@ -253,6 +254,17 @@ export default function KonzernanhangPage() {
 
   return (
     <div className="konzernanhang-page">
+      {/* Back Button */}
+      <div style={{ marginBottom: '16px' }}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => navigate('/')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+        >
+          ← Zurück zum Dashboard
+        </button>
+      </div>
+
       {/* Header */}
       <div className="page-header">
         <div className="page-header-content">
@@ -534,7 +546,7 @@ export default function KonzernanhangPage() {
                                     handleReviewSection(section.id);
                                   }}
                                 >
-                                  Als geprueft markieren
+                                  Als geprüft markieren
                                 </button>
                               )}
                               <button 
