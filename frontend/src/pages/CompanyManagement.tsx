@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { companyService } from '../services/companyService';
 import { Company } from '../types';
 import ConsolidationObligationCheck from '../components/ConsolidationObligationCheck';
@@ -10,6 +11,7 @@ import { useContextMenu, ContextMenuItem, ContextMenu } from '../components/Cont
 import '../App.css';
 
 function CompanyManagement() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { success, error: showError } = useToastContext();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -50,6 +52,19 @@ function CompanyManagement() {
     window.addEventListener('openCompanyForm', handleOpenForm);
     return () => window.removeEventListener('openCompanyForm', handleOpenForm);
   }, []);
+
+  // Handle edit query parameter from URL (e.g., /companies?edit=companyId)
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && companies.length > 0) {
+      const companyToEdit = companies.find(c => c.id === editId);
+      if (companyToEdit) {
+        handleEdit(companyToEdit);
+        // Clear the query parameter after opening the form
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, companies]);
 
   const loadCompanies = async () => {
     setLoading(true);

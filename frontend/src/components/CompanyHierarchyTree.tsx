@@ -2,6 +2,36 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { companyService } from '../services/companyService';
 import '../App.css';
 
+// SVG Icons for company types
+const CompanyIcons = {
+  parent: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 21h18" />
+      <path d="M5 21V7l8-4v18" />
+      <path d="M19 21V11l-6-4" />
+      <path d="M9 9v.01" />
+      <path d="M9 12v.01" />
+      <path d="M9 15v.01" />
+    </svg>
+  ),
+  subsidiary: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M9 9v.01" />
+      <path d="M15 9v.01" />
+      <path d="M9 15v.01" />
+      <path d="M15 15v.01" />
+    </svg>
+  ),
+  standalone: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 8v8" />
+      <path d="M8 12h8" />
+    </svg>
+  ),
+};
+
 interface CompanyHierarchy {
   id: string;
   name: string;
@@ -214,15 +244,15 @@ function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHier
 
       <div className="hierarchy-legend">
         <div className="hierarchy-legend-item">
-          <span className="hierarchy-legend-dot hierarchy-legend-parent" />
+          <span className="hierarchy-legend-icon hierarchy-legend-parent">{CompanyIcons.parent}</span>
           <span>Mutterunternehmen</span>
         </div>
         <div className="hierarchy-legend-item">
-          <span className="hierarchy-legend-dot hierarchy-legend-subsidiary" />
+          <span className="hierarchy-legend-icon hierarchy-legend-subsidiary">{CompanyIcons.subsidiary}</span>
           <span>Tochtergesellschaft</span>
         </div>
         <div className="hierarchy-legend-item">
-          <span className="hierarchy-legend-dot hierarchy-legend-standalone" />
+          <span className="hierarchy-legend-icon hierarchy-legend-standalone">{CompanyIcons.standalone}</span>
           <span>Standalone</span>
         </div>
       </div>
@@ -294,7 +324,7 @@ function TreeView({
           )}
           
           <div className={`hierarchy-node-badge ${node.type}`}>
-            {node.type === 'parent' ? '⬡' : node.type === 'subsidiary' ? '◇' : '○'}
+            {CompanyIcons[node.type] || CompanyIcons.standalone}
           </div>
           
           <div className="hierarchy-node-info">

@@ -47,6 +47,10 @@ export default function KonzernanhangPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'sections' | 'exports'>('overview');
   const [selectedSection, setSelectedSection] = useState<KonzernanhangSection | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingSection, setEditingSection] = useState<KonzernanhangSection | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [savingSection, setSavingSection] = useState(false);
 
   // Load financial statements
   useEffect(() => {
@@ -190,7 +194,31 @@ export default function KonzernanhangPage() {
       );
       setSections(sections.map(s => s.id === sectionId ? updated : s));
     } catch (err: any) {
-      setError(err.message || 'Fehler beim Prüfen');
+      setError(err.message || 'Fehler beim Pruefen');
+    }
+  };
+
+  const handleEditSection = (section: KonzernanhangSection) => {
+    setEditingSection(section);
+    setEditContent(section.contentText || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveSection = async () => {
+    if (!editingSection) return;
+    setSavingSection(true);
+    try {
+      const updated = await konzernanhangService.updateSection(editingSection.id, {
+        contentText: editContent,
+      });
+      setSections(sections.map(s => s.id === editingSection.id ? updated : s));
+      setShowEditModal(false);
+      setEditingSection(null);
+      setEditContent('');
+    } catch (err: any) {
+      setError(err.message || 'Fehler beim Speichern');
+    } finally {
+      setSavingSection(false);
     }
   };
 
@@ -288,7 +316,7 @@ export default function KonzernanhangPage() {
       {/* No document state */}
       {!anhangDoc && selectedFsId && !loading && (
         <div className="empty-state-card">
-          <div className="empty-icon">📄</div>
+          <div className="empty-icon"></div>
           <h2>Kein Konzernanhang vorhanden</h2>
           <p>Für dieses Geschäftsjahr wurde noch kein Konzernanhang erstellt.</p>
           <button
@@ -421,7 +449,7 @@ export default function KonzernanhangPage() {
                       </button>
                     )}
                     {anhangDoc.status === 'finalized' && (
-                      <span className="finalized-badge">✓ Freigegeben</span>
+                      <span className="finalized-badge">Freigegeben</span>
                     )}
                   </div>
                 </div>
@@ -506,10 +534,16 @@ export default function KonzernanhangPage() {
                                     handleReviewSection(section.id);
                                   }}
                                 >
-                                  Als geprüft markieren
+                                  Als geprueft markieren
                                 </button>
                               )}
-                              <button className="btn btn-sm btn-secondary">
+                              <button 
+                                className="btn btn-sm btn-secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditSection(section);
+                                }}
+                              >
                                 Bearbeiten
                               </button>
                             </div>
@@ -581,7 +615,7 @@ export default function KonzernanhangPage() {
               onClick={() => handleExport(ExportFormat.HTML)}
               disabled={exporting}
             >
-              <span className="export-icon">🌐</span>
+              <span className="export-icon">XML</span>
               <span className="export-label">HTML</span>
               <span className="export-desc">Druckfertig</span>
             </button>
@@ -590,7 +624,7 @@ export default function KonzernanhangPage() {
               onClick={() => handleExport(ExportFormat.MARKDOWN)}
               disabled={exporting}
             >
-              <span className="export-icon">📝</span>
+              <span className="export-icon">PDF</span>
               <span className="export-label">Markdown</span>
               <span className="export-desc">Bearbeitbar</span>
             </button>
@@ -599,7 +633,7 @@ export default function KonzernanhangPage() {
               onClick={() => handleExport(ExportFormat.TEXT)}
               disabled={exporting}
             >
-              <span className="export-icon">📄</span>
+              <span className="export-icon">DOC</span>
               <span className="export-label">Text</span>
               <span className="export-desc">Einfach</span>
             </button>
@@ -608,12 +642,74 @@ export default function KonzernanhangPage() {
               onClick={() => handleExport(ExportFormat.JSON)}
               disabled={exporting}
             >
-              <span className="export-icon">📊</span>
+              <span className="export-icon">XLS</span>
               <span className="export-label">JSON</span>
               <span className="export-desc">Daten</span>
             </button>
           </div>
           {exporting && <p className="exporting-text">Exportiere...</p>}
+        </div>
+      </Modal>
+
+      {/* Section Edit Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingSection(null);
+          setEditContent('');
+        }}
+        title={editingSection ? `Abschnitt bearbeiten: ${editingSection.sectionTitle}` : 'Abschnitt bearbeiten'}
+        size="lg"
+      >
+        <div className="edit-modal-content">
+          {editingSection && (
+            <>
+              <div className="edit-section-info">
+                <div className="edit-info-row">
+                  <span className="edit-info-label">Abschnitt:</span>
+                  <span>{editingSection.sectionNumber} - {editingSection.sectionTitle}</span>
+                </div>
+                {editingSection.hgbSection && (
+                  <div className="edit-info-row">
+                    <span className="edit-info-label">HGB-Referenz:</span>
+                    <span className="hgb-badge">{editingSection.hgbSection}</span>
+                  </div>
+                )}
+              </div>
+              <div className="edit-textarea-container">
+                <label htmlFor="section-content">Inhalt:</label>
+                <textarea
+                  id="section-content"
+                  className="edit-textarea"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={15}
+                  placeholder="Geben Sie den Abschnittsinhalt ein..."
+                />
+              </div>
+              <div className="edit-modal-actions">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingSection(null);
+                    setEditContent('');
+                  }}
+                  disabled={savingSection}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveSection}
+                  disabled={savingSection}
+                >
+                  {savingSection ? 'Speichere...' : 'Speichern'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
 
@@ -977,6 +1073,70 @@ export default function KonzernanhangPage() {
           text-align: center;
           color: var(--text-secondary);
           margin-top: 16px;
+        }
+
+        .edit-modal-content {
+          padding: 8px 0;
+        }
+
+        .edit-section-info {
+          background: var(--bg-secondary, #f8fafc);
+          padding: 16px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+        }
+
+        .edit-info-row {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 8px;
+        }
+
+        .edit-info-row:last-child {
+          margin-bottom: 0;
+        }
+
+        .edit-info-label {
+          font-weight: 500;
+          color: var(--text-secondary);
+          min-width: 100px;
+        }
+
+        .edit-textarea-container {
+          margin-bottom: 20px;
+        }
+
+        .edit-textarea-container label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 8px;
+          color: var(--text-primary);
+        }
+
+        .edit-textarea {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid var(--border-color, #e2e8f0);
+          border-radius: 8px;
+          font-family: inherit;
+          font-size: 14px;
+          line-height: 1.6;
+          resize: vertical;
+          min-height: 200px;
+        }
+
+        .edit-textarea:focus {
+          outline: none;
+          border-color: var(--primary, #6366f1);
+          box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .edit-modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          padding-top: 16px;
+          border-top: 1px solid var(--border-color, #e2e8f0);
         }
 
         .empty-state {

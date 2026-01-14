@@ -13,6 +13,39 @@ import {
 } from '../services/policyService';
 import './PolicyManagement.css';
 
+// SVG Icons for tabs
+const TabIcons = {
+  policies: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <line x1="8" y1="10" x2="16" y2="10" />
+      <line x1="8" y1="14" x2="16" y2="14" />
+      <line x1="8" y1="18" x2="12" y2="18" />
+    </svg>
+  ),
+  rules: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  mappings: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  ),
+  wahlrechte: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  ),
+};
+
 type TabType = 'policies' | 'rules' | 'mappings' | 'wahlrechte';
 
 const PolicyManagement = () => {
@@ -180,7 +213,7 @@ const PolicyManagement = () => {
 
       {error && (
         <div className="error-banner">
-          <span>⚠️</span>
+          <span>[Warnung]</span>
           <span>{error}</span>
           <button onClick={() => setError(null)}>×</button>
         </div>
@@ -192,7 +225,7 @@ const PolicyManagement = () => {
           className={`tab-button ${activeTab === 'policies' ? 'active' : ''}`}
           onClick={() => setActiveTab('policies')}
         >
-          <span className="tab-icon">📋</span>
+          <span className="tab-icon">{TabIcons.policies}</span>
           Bilanzierungsrichtlinien
           {policySummary && (
             <span className="tab-badge">{policySummary.activePolicies}</span>
@@ -202,7 +235,7 @@ const PolicyManagement = () => {
           className={`tab-button ${activeTab === 'rules' ? 'active' : ''}`}
           onClick={() => setActiveTab('rules')}
         >
-          <span className="tab-icon">⚙️</span>
+          <span className="tab-icon">{TabIcons.rules}</span>
           Konsolidierungsregeln
           {ruleSummary && (
             <span className="tab-badge">{ruleSummary.activeRules}</span>
@@ -212,7 +245,7 @@ const PolicyManagement = () => {
           className={`tab-button ${activeTab === 'mappings' ? 'active' : ''}`}
           onClick={() => setActiveTab('mappings')}
         >
-          <span className="tab-icon">🔄</span>
+          <span className="tab-icon">{TabIcons.mappings}</span>
           GAAP-Anpassungen
           {mappingSummary && (
             <span className="tab-badge">{mappingSummary.activeMappings}</span>
@@ -222,7 +255,7 @@ const PolicyManagement = () => {
           className={`tab-button ${activeTab === 'wahlrechte' ? 'active' : ''}`}
           onClick={() => setActiveTab('wahlrechte')}
         >
-          <span className="tab-icon">☑️</span>
+          <span className="tab-icon">{TabIcons.wahlrechte}</span>
           HGB-Wahlrechte
           {wahlrechtSummary && (
             <span className="tab-badge">{wahlrechtSummary.totalWahlrechte}</span>
@@ -455,7 +488,7 @@ const PolicyManagement = () => {
                           <td className="code-cell">
                             {mapping.code}
                             {mapping.isMaterial && (
-                              <span className="material-badge" title="Wesentlich">⚠️</span>
+                              <span className="material-badge" title="Wesentlich">[W]</span>
                             )}
                           </td>
                           <td>
@@ -752,10 +785,10 @@ const PolicyManagement = () => {
               <div className="detail-group">
                 <label>Auswirkungen:</label>
                 <div className="affects-list">
-                  {selectedMapping.affectsBalanceSheet && <span>✓ Bilanz</span>}
-                  {selectedMapping.affectsIncomeStatement && <span>✓ GuV</span>}
-                  {selectedMapping.affectsEquity && <span>✓ Eigenkapital</span>}
-                  {selectedMapping.affectsDeferredTax && <span>✓ Latente Steuern</span>}
+                  {selectedMapping.affectsBalanceSheet && <span>[X] Bilanz</span>}
+                  {selectedMapping.affectsIncomeStatement && <span>[X] GuV</span>}
+                  {selectedMapping.affectsEquity && <span>[X] Eigenkapital</span>}
+                  {selectedMapping.affectsDeferredTax && <span>[X] Latente Steuern</span>}
                 </div>
               </div>
               <div className="detail-group">

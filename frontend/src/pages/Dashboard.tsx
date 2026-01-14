@@ -110,15 +110,41 @@ function Dashboard() {
       header: 'Status',
       accessor: (row) => row.status,
       sortable: true,
-      render: (value) => {
+      render: (value, row) => {
         const statusClass =
           value === 'consolidated' ? 'badge-success' :
           value === 'finalized' ? 'badge-warning' :
           'badge-neutral';
+        const statusLabels: Record<string, string> = {
+          consolidated: 'Konsolidiert',
+          finalized: 'Abgeschlossen',
+          draft: 'Entwurf',
+          imported: 'Importiert',
+        };
+        const tooltipContent: Record<string, string> = {
+          consolidated: 'Konzernabschluss anzeigen',
+          finalized: 'Zur Konsolidierung',
+          draft: 'Daten vervollstaendigen',
+          imported: 'Zur Konsolidierung',
+        };
+        const handleStatusClick = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          if (value === 'consolidated') {
+            navigate(`/konzernabschluss/${row.id}`);
+          } else {
+            navigate('/consolidation');
+          }
+        };
         return (
-          <span className={`badge ${statusClass}`}>
-            {value}
-          </span>
+          <Tooltip content={tooltipContent[value] || 'Details anzeigen'} position="top">
+            <span 
+              className={`badge ${statusClass} badge-clickable`}
+              onClick={handleStatusClick}
+              style={{ cursor: 'pointer' }}
+            >
+              {statusLabels[value] || value}
+            </span>
+          </Tooltip>
         );
       },
     },
@@ -169,16 +195,22 @@ function Dashboard() {
               label="Unternehmen"
               value={companies.length}
               color="var(--color-accent-blue)"
+              onClick={() => navigate('/companies')}
+              subtitle="Unternehmensverwaltung"
             />
             <MetricCard
-              label="Jahresabschlüsse"
+              label="Jahresabschluesse"
               value={statements.length}
               color="var(--color-accent-blue)"
+              onClick={() => navigate('/import')}
+              subtitle="Daten importieren"
             />
             <MetricCard
               label="Konsolidiert"
               value={consolidatedCount}
               color="var(--color-success)"
+              onClick={() => navigate('/consolidation')}
+              subtitle="Konsolidierung anzeigen"
             />
           </div>
         )}
@@ -207,7 +239,9 @@ function Dashboard() {
         />
       </div>
 
-      <CompanyHierarchyTree />
+      <CompanyHierarchyTree 
+        onCompanyClick={(companyId) => navigate(`/companies?edit=${companyId}`)}
+      />
     </div>
   );
 }

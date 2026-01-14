@@ -623,9 +623,9 @@ function Consolidation() {
                           <button
                             className="button button-secondary"
                             onClick={() => handleReverseEntry(entry.id)}
-                            title="Stornieren"
+                            title="Buchung stornieren"
                           >
-                            ↩️
+                            Stornieren
                           </button>
                         )}
                       </div>

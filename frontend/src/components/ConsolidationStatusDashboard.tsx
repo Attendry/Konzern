@@ -213,10 +213,18 @@ export function ConsolidationStatusDashboard({
                       {totalCompanies - 1}
                     </div>
                     <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                      Töchter
+                      Toechter
                     </div>
                   </div>
                 </div>
+              </div>
+              <div className="status-action">
+                <button
+                  className="button button-tertiary button-sm"
+                  onClick={() => navigate('/consolidation-circle')}
+                >
+                  Details anzeigen
+                </button>
               </div>
             </div>
           </div>
