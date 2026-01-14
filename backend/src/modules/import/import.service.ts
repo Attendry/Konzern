@@ -194,8 +194,9 @@ export class ImportService {
         try {
           const mappedRow = this.mapExcelRow(row, columnMapping);
           data.push(mappedRow);
-        } catch (error) {
-          errors.push(`Zeile ${index + 2}: ${error.message}`);
+        } catch (error: any) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          errors.push(`Zeile ${index + 2}: ${errorMessage}`);
         }
       });
 
@@ -209,11 +210,12 @@ export class ImportService {
         errors: [...errors, ...result.errors],
         warnings: result.warnings || [],
       };
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException(`Fehler beim Lesen der Excel-Datei: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new BadRequestException(`Fehler beim Lesen der Excel-Datei: ${errorMessage}`);
     }
   }
 
@@ -262,8 +264,9 @@ export class ImportService {
               ),
               company: row.company || row['Unternehmen'] || row['Company'],
             });
-          } catch (error) {
-            parseErrors.push(`Zeile ${rowIndex + 1}: ${error.message}`);
+          } catch (error: any) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            parseErrors.push(`Zeile ${rowIndex + 1}: ${errorMessage}`);
           }
         })
         .on('end', async () => {

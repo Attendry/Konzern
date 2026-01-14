@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { companyService } from '../services/companyService';
 import { financialStatementService } from '../services/financialStatementService';
@@ -24,55 +24,69 @@ function Dashboard() {
     loadData();
   }, []);
 
-  // Add smart suggestions based on data state
-  useEffect(() => {
-    if (!loading) {
-      // Clear existing suggestions
-      const currentSuggestions = [...suggestions];
-      currentSuggestions.forEach(s => removeSuggestion(s.id));
+  // Track if suggestions have been updated for current data state
+  const suggestionsUpdatedRef = useRef(false);
 
-      // Add contextual suggestions
-      if (companies.length === 0) {
-        addSuggestion({
-          id: 'no-companies',
-          message: 'Sie haben noch keine Unternehmen erstellt. Erstellen Sie Ihr erstes Unternehmen, um zu beginnen.',
-          type: 'tip',
-          action: {
-            label: 'Unternehmen erstellen',
-            onClick: () => navigate('/companies'),
-          },
-        });
-      }
+  // Memoize suggestion update function to avoid re-creating on each render
+  const updateSuggestions = useCallback(() => {
+    // Clear existing dashboard suggestions
+    ['no-companies', 'no-statements', 'unconsolidated'].forEach(id => {
+      removeSuggestion(id);
+    });
 
-      if (statements.length === 0 && companies.length > 0) {
+    // Add contextual suggestions
+    if (companies.length === 0) {
+      addSuggestion({
+        id: 'no-companies',
+        message: 'Sie haben noch keine Unternehmen erstellt. Erstellen Sie Ihr erstes Unternehmen, um zu beginnen.',
+        type: 'tip',
+        action: {
+          label: 'Unternehmen erstellen',
+          onClick: () => navigate('/companies'),
+        },
+      });
+    }
+
+    if (statements.length === 0 && companies.length > 0) {
+      addSuggestion({
+        id: 'no-statements',
+        message: 'Sie haben noch keine Jahresabschlüsse. Importieren Sie Daten oder erstellen Sie einen neuen Jahresabschluss.',
+        type: 'info',
+        action: {
+          label: 'Daten importieren',
+          onClick: () => navigate('/import'),
+        },
+      });
+    }
+
+    if (statements.length > 0) {
+      const unconsolidated = statements.filter(s => s.status !== 'consolidated');
+      if (unconsolidated.length > 0) {
         addSuggestion({
-          id: 'no-statements',
-          message: 'Sie haben noch keine Jahresabschlüsse. Importieren Sie Daten oder erstellen Sie einen neuen Jahresabschluss.',
+          id: 'unconsolidated',
+          message: `${unconsolidated.length} Jahresabschluss${unconsolidated.length > 1 ? 'se' : ''} ${unconsolidated.length > 1 ? 'sind' : 'ist'} noch nicht konsolidiert.`,
           type: 'info',
           action: {
-            label: 'Daten importieren',
-            onClick: () => navigate('/import'),
+            label: 'Zur Konsolidierung',
+            onClick: () => navigate('/consolidation'),
           },
         });
       }
-
-      if (statements.length > 0) {
-        const unconsolidated = statements.filter(s => s.status !== 'consolidated');
-        if (unconsolidated.length > 0) {
-          addSuggestion({
-            id: 'unconsolidated',
-            message: `${unconsolidated.length} Jahresabschluss${unconsolidated.length > 1 ? 'se' : ''} ${unconsolidated.length > 1 ? 'sind' : 'ist'} noch nicht konsolidiert.`,
-            type: 'info',
-            action: {
-              label: 'Zur Konsolidierung',
-              onClick: () => navigate('/consolidation'),
-            },
-          });
-        }
-      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, companies.length, statements.length]);
+  }, [companies.length, statements, addSuggestion, removeSuggestion, navigate]);
+
+  // Add smart suggestions based on data state
+  useEffect(() => {
+    if (!loading && !suggestionsUpdatedRef.current) {
+      updateSuggestions();
+      suggestionsUpdatedRef.current = true;
+    }
+  }, [loading, updateSuggestions]);
+
+  // Reset the ref when data changes so suggestions can be updated again
+  useEffect(() => {
+    suggestionsUpdatedRef.current = false;
+  }, [companies.length, statements.length]);
 
   const loadData = async () => {
     try {

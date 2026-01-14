@@ -40,21 +40,30 @@ export const importService = {
   },
 
   downloadTemplate: async (): Promise<void> => {
+    let url: string | null = null;
+    let link: HTMLAnchorElement | null = null;
+    
     try {
       const response = await api.get('/import/template', {
         responseType: 'blob',
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      url = window.URL.createObjectURL(new Blob([response.data]));
+      link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'Konsolidierung_Muster_v3.0.xlsx');
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
     } catch (error: any) {
       console.error('Fehler beim Download:', error);
       throw new Error(`Fehler beim Herunterladen der Vorlage: ${error.message || 'Unbekannter Fehler'}`);
+    } finally {
+      // Cleanup: always revoke URL and remove link to prevent memory leaks
+      if (link && link.parentNode) {
+        link.remove();
+      }
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
     }
   },
 };

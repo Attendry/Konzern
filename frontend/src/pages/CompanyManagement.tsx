@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { companyService } from '../services/companyService';
+import { participationService } from '../services/participationService';
 import { Company } from '../types';
 import ConsolidationObligationCheck from '../components/ConsolidationObligationCheck';
 import { useToastContext } from '../contexts/ToastContext';
@@ -130,13 +131,10 @@ function CompanyManagement() {
     let participationPercentage = 100; // Default
     if (company.parentCompanyId) {
       try {
-        // Fetch participation data from the API
-        const response = await fetch(`/api/consolidation/participations/subsidiary/${company.id}`);
-        if (response.ok) {
-          const participations = await response.json();
-          if (participations && participations.length > 0) {
-            participationPercentage = participations[0].participationPercentage || 100;
-          }
+        // Fetch participation data using the participationService
+        const participations = await participationService.getBySubsidiaryCompany(company.id);
+        if (participations && participations.length > 0) {
+          participationPercentage = participations[0].participationPercentage || 100;
         }
       } catch (error) {
         console.warn('Could not load participation percentage, using default 100%:', error);
@@ -292,6 +290,7 @@ function CompanyManagement() {
                   address: '',
                   legalForm: '',
                   parentCompanyId: null,
+                  participationPercentage: 100,
                   isConsolidated: true,
                 });
               }

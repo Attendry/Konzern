@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { reportService, ConsolidationReport, ConsolidatedIncomeStatement } from '../services/reportService';
 import { financialStatementService } from '../services/financialStatementService';
@@ -27,12 +27,6 @@ function ConsolidatedReportPage() {
     loadStatements();
   }, []);
 
-  useEffect(() => {
-    if (selectedStatementId) {
-      loadReport();
-    }
-  }, [selectedStatementId, showComparison]);
-
   const loadStatements = async () => {
     setLoadingStatements(true);
     try {
@@ -48,7 +42,7 @@ function ConsolidatedReportPage() {
     }
   };
 
-  const loadReport = async () => {
+  const loadReport = useCallback(async () => {
     if (!selectedStatementId) return;
     
     setLoading(true);
@@ -65,7 +59,13 @@ function ConsolidatedReportPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStatementId, showComparison, showError]);
+
+  useEffect(() => {
+    if (selectedStatementId) {
+      loadReport();
+    }
+  }, [selectedStatementId, loadReport]);
 
   const handleExport = async (format: 'excel' | 'pdf' | 'xbrl') => {
     if (!selectedStatementId) return;

@@ -132,6 +132,9 @@ function BalanceSheetVisualization({
     return () => clearTimeout(timer);
   }, []);
 
+  // Track if we have account balances for viewType logic
+  const hasAccountBalances = accountBalances && accountBalances.length > 0;
+
   // Load consolidated balance sheet when financialStatementId changes
   useEffect(() => {
     if (!financialStatementId) return;
@@ -148,7 +151,7 @@ function BalanceSheetVisualization({
           );
           setConsolidatedBalanceSheet(response.data);
           // If we have both, default to 'both' view, otherwise 'after'
-          if (accountBalances && accountBalances.length > 0) {
+          if (hasAccountBalances) {
             setViewType('both');
           } else {
             setViewType('after');
@@ -156,7 +159,7 @@ function BalanceSheetVisualization({
         } catch (consolidatedErr: any) {
           // If consolidated balance sheet doesn't exist, that's okay - we'll show before only
           console.log('No consolidated balance sheet available, showing uploaded data only');
-          if (accountBalances && accountBalances.length > 0) {
+          if (hasAccountBalances) {
             setViewType('before');
           }
         }
@@ -169,8 +172,7 @@ function BalanceSheetVisualization({
     };
 
     loadConsolidated();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [financialStatementId]);
+  }, [financialStatementId, hasAccountBalances]);
 
   // Determine which balance sheet to use
   const balanceSheet = consolidatedBalanceSheet || beforeBalanceSheet;
