@@ -10,6 +10,7 @@ import { ParticipationModule } from './modules/participation/participation.modul
 import { LineageModule } from './modules/lineage/lineage.module';
 import { ControlsModule } from './modules/controls/controls.module';
 import { PolicyModule } from './modules/policy/policy.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PolicyModule } from './modules/policy/policy.module';
     }),
     HealthModule, // Health-Check sollte immer verfügbar sein
     SupabaseModule,
+    AuthModule, // Priority Feature: Authentication
     CompanyModule,
     FinancialStatementModule,
     ConsolidationModule,

@@ -36,6 +36,13 @@ import { ProportionalConsolidationService } from './proportional-consolidation.s
 import { KonzernanhangDocumentService } from './konzernanhang-document.service';
 import { KonzernanhangExportService } from './konzernanhang-export.service';
 import { KonzernanhangController } from './konzernanhang.controller';
+// Priority Features - HGB Compliance
+import { FiscalYearAdjustmentService } from './fiscal-year-adjustment.service';
+import { FiscalYearAdjustmentController } from './fiscal-year-adjustment.controller';
+import { GoodwillAmortizationService } from './goodwill-amortization.service';
+import { GoodwillAmortizationController } from './goodwill-amortization.controller';
+import { ManagementReportService } from './management-report.service';
+import { ManagementReportController } from './management-report.controller';
 
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CompanyModule } from '../company/company.module';
@@ -62,6 +69,10 @@ import { LineageModule } from '../lineage/lineage.module';
     ProportionalConsolidationController,
     // Phase 4 Controllers
     KonzernanhangController,
+    // Priority Features Controllers
+    FiscalYearAdjustmentController,
+    GoodwillAmortizationController,
+    ManagementReportController,
   ],
   providers: [
     ConsolidationService,
@@ -112,6 +123,10 @@ import { LineageModule } from '../lineage/lineage.module';
     // Phase 4 Services
     KonzernanhangDocumentService,
     KonzernanhangExportService,
+    // Priority Features Services
+    FiscalYearAdjustmentService,
+    GoodwillAmortizationService,
+    ManagementReportService,
   ],
 })
 export class ConsolidationModule {}
