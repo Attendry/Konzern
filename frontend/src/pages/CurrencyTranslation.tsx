@@ -10,7 +10,6 @@ function CurrencyTranslation() {
 
   const [loading, setLoading] = useState(true);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
-  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [foreignCompanies, setForeignCompanies] = useState<Company[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -42,7 +41,6 @@ function CurrencyTranslation() {
       ]);
       
       setExchangeRates(ratesData);
-      setAllCompanies(companiesData);
       
       // Filter companies with foreign currency
       const foreign = companiesData.filter(c => c.functionalCurrency && c.functionalCurrency !== 'EUR');
