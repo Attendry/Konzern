@@ -143,10 +143,9 @@ function Dashboard() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', height: '100%' }}>
-      {/* Compact Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
-        <h1 style={{ margin: 0, fontSize: 'var(--font-size-2xl)' }}>Dashboard</h1>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+        <h1>Dashboard</h1>
         <ContextualHelp
           helpId="dashboard-overview"
           title="Dashboard Übersicht"
@@ -156,19 +155,16 @@ function Dashboard() {
         </ContextualHelp>
       </div>
 
-      <SmartSuggestions suggestions={suggestions} maxVisible={2} autoDismiss={false} />
+      <SmartSuggestions suggestions={suggestions} maxVisible={3} autoDismiss={false} />
       
-      {/* Optimized Grid Layout */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
-        gap: 'var(--spacing-3)',
-        marginBottom: 'var(--spacing-4)'
-      }}>
+      <div className="card">
+        <div className="card-header">
+          <h2>Übersicht</h2>
+        </div>
         {loading ? (
           <MetricCardSkeleton count={3} />
         ) : (
-          <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
             <MetricCard
               label="Unternehmen"
               value={companies.length}
@@ -184,51 +180,34 @@ function Dashboard() {
               value={consolidatedCount}
               color="var(--color-success)"
             />
-          </>
+          </div>
         )}
       </div>
 
-      {/* Two Column Layout for Main Content */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
-        gap: 'var(--spacing-4)',
-        alignItems: 'start'
-      }}>
-        {/* Left Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-          {/* Consolidation Status Dashboard */}
-          {companies.length > 0 && (
-            <div className="card" style={{ padding: 'var(--spacing-4)' }}>
-              <div className="card-header" style={{ marginBottom: 'var(--spacing-3)', paddingBottom: 'var(--spacing-2)' }}>
-                <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)' }}>Konsolidierungsstatus</h2>
-              </div>
-              <ConsolidationStatusDashboard />
-            </div>
-          )}
-
-          {/* Company Hierarchy */}
-          <div style={{ flex: 1 }}>
-            <CompanyHierarchyTree />
+      {/* Consolidation Status Dashboard */}
+      {companies.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <h2>Konsolidierungsstatus</h2>
           </div>
+          <ConsolidationStatusDashboard />
         </div>
+      )}
 
-        {/* Right Column */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="card" style={{ padding: 'var(--spacing-4)', flex: 1 }}>
-            <div className="card-header" style={{ marginBottom: 'var(--spacing-3)', paddingBottom: 'var(--spacing-2)' }}>
-              <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)' }}>Letzte Jahresabschlüsse</h2>
-            </div>
-            <AdvancedTable
-              data={statements.slice(0, 10)}
-              columns={statementColumns}
-              loading={loading}
-              emptyMessage="Keine Jahresabschlüsse vorhanden"
-              onRowClick={(row) => navigate(`/financial-statements/${row.id}`)}
-            />
-          </div>
+      <div className="card">
+        <div className="card-header">
+          <h2>Letzte Jahresabschlüsse</h2>
         </div>
+        <AdvancedTable
+          data={statements.slice(0, 10)}
+          columns={statementColumns}
+          loading={loading}
+          emptyMessage="Keine Jahresabschlüsse vorhanden"
+          onRowClick={(row) => navigate(`/financial-statements/${row.id}`)}
+        />
       </div>
+
+      <CompanyHierarchyTree />
     </div>
   );
 }

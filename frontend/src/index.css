@@ -1,39 +1,39 @@
 :root {
-  /* Color Palette - Pink Tones */
-  --color-bg-primary: #fff5f8;
-  --color-bg-secondary: #ffeef5;
-  --color-bg-tertiary: #ffe0eb;
-  --color-bg-hover: #ffd6e5;
-  --color-bg-sidebar: #fff0f5;
-  --color-bg-sidebar-hover: #ffe0eb;
-  --color-bg-sidebar-active: #ffd1e0;
+  /* Color Palette - Notion-inspired */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f7f6f3;
+  --color-bg-tertiary: #f1f1ef;
+  --color-bg-hover: #f5f5f3;
+  --color-bg-sidebar: #ffffff;
+  --color-bg-sidebar-hover: #f5f5f3;
+  --color-bg-sidebar-active: #e9e9e7;
 
   /* Text Colors */
-  --color-text-primary: #4a1a2e;
-  --color-text-secondary: #8b4a6b;
-  --color-text-tertiary: #b87a9a;
-  --color-text-disabled: #d4b8c8;
+  --color-text-primary: #37352f;
+  --color-text-secondary: #787774;
+  --color-text-tertiary: #9b9a97;
+  --color-text-disabled: #c9c8c6;
   --color-text-inverse: #ffffff;
 
   /* Border Colors */
-  --color-border: #ffd1e0;
-  --color-border-hover: #ffb8d1;
-  --color-border-focus: #ec4899;
-  --color-border-error: #f43f5e;
+  --color-border: #e9e9e7;
+  --color-border-hover: #d9d9d7;
+  --color-border-focus: #0b8cee;
+  --color-border-error: #e16259;
 
-  /* Accent Colors - Pink Theme */
-  --color-accent-blue: #ec4899;
-  --color-accent-blue-hover: #db2777;
-  --color-accent-green: #10b981;
-  --color-accent-red: #f43f5e;
-  --color-accent-yellow: #f59e0b;
-  --color-accent-purple: #a855f7;
+  /* Accent Colors */
+  --color-accent-blue: #0b8cee;
+  --color-accent-blue-hover: #0a7cd8;
+  --color-accent-green: #0f7b0f;
+  --color-accent-red: #e16259;
+  --color-accent-yellow: #f7c948;
+  --color-accent-purple: #9065b0;
 
   /* Status Colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #f43f5e;
-  --color-info: #ec4899;
+  --color-success: #0f7b0f;
+  --color-warning: #f7c948;
+  --color-error: #e16259;
+  --color-info: #0b8cee;
 
   /* Typography */
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
@@ -103,43 +103,43 @@
   --breakpoint-2xl: 1536px;
 }
 
-/* Dark Mode Theme - Pink Tones */
+/* Dark Mode Theme */
 [data-theme="dark"] {
-  /* Color Palette - Dark Mode Pink */
-  --color-bg-primary: #2d1a24;
-  --color-bg-secondary: #1f1218;
-  --color-bg-tertiary: #3a2530;
-  --color-bg-hover: #4a2f3d;
-  --color-bg-sidebar: #2d1a24;
-  --color-bg-sidebar-hover: #3a2530;
-  --color-bg-sidebar-active: #4a2f3d;
+  /* Color Palette - Dark Mode */
+  --color-bg-primary: #191919;
+  --color-bg-secondary: #121212;
+  --color-bg-tertiary: #252525;
+  --color-bg-hover: #2d2d2d;
+  --color-bg-sidebar: #191919;
+  --color-bg-sidebar-hover: #2d2d2d;
+  --color-bg-sidebar-active: #363636;
 
   /* Text Colors - Dark Mode */
-  --color-text-primary: #fce7f3;
-  --color-text-secondary: #f9a8d4;
-  --color-text-tertiary: #f472b6;
-  --color-text-disabled: #a8557a;
-  --color-text-inverse: #2d1a24;
+  --color-text-primary: #ebebeb;
+  --color-text-secondary: #a0a0a0;
+  --color-text-tertiary: #6b6b6b;
+  --color-text-disabled: #4a4a4a;
+  --color-text-inverse: #191919;
 
   /* Border Colors - Dark Mode */
-  --color-border: #4a2f3d;
-  --color-border-hover: #5a3f4d;
-  --color-border-focus: #ec4899;
-  --color-border-error: #f43f5e;
+  --color-border: #333333;
+  --color-border-hover: #444444;
+  --color-border-focus: #4da6ff;
+  --color-border-error: #ff6b6b;
 
-  /* Accent Colors - Dark Mode Pink */
-  --color-accent-blue: #ec4899;
-  --color-accent-blue-hover: #f472b6;
-  --color-accent-green: #34d399;
-  --color-accent-red: #f87171;
-  --color-accent-yellow: #fbbf24;
+  /* Accent Colors - Dark Mode (slightly brighter for contrast) */
+  --color-accent-blue: #4da6ff;
+  --color-accent-blue-hover: #6cb8ff;
+  --color-accent-green: #4ade80;
+  --color-accent-red: #ff6b6b;
+  --color-accent-yellow: #fcd34d;
   --color-accent-purple: #c084fc;
 
   /* Status Colors - Dark Mode */
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-error: #f87171;
-  --color-info: #ec4899;
+  --color-success: #4ade80;
+  --color-warning: #fcd34d;
+  --color-error: #ff6b6b;
+  --color-info: #4da6ff;
 
   /* Shadows - Dark Mode (more subtle, different color) */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -206,13 +206,4 @@ a {
 
 a:hover {
   color: var(--color-accent-blue-hover);
-}
-
-/* Pink theme adjustments for better contrast */
-.shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(236, 72, 153, 0.1);
-}
-
-.shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.15), 0 2px 4px -1px rgba(236, 72, 153, 0.1);
 }
