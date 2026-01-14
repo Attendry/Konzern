@@ -16,6 +16,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { CommandPalette } from './components/CommandPalette';
 import { DarkModeToggle } from './components/DarkModeToggle';
 import { PageTransition } from './components/PageTransition';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 function App() {
@@ -65,7 +66,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/companies" element={<CompanyManagement />} />
-                <Route path="/import" element={<DataImport />} />
+                <Route path="/import" element={
+                  <ErrorBoundary>
+                    <DataImport />
+                  </ErrorBoundary>
+                } />
                 <Route path="/consolidation-circle" element={<ConsolidationCirclePage />} />
                 <Route path="/consolidation" element={<Consolidation />} />
                 <Route path="/konzernabschluss" element={<ConsolidatedReportPage />} />

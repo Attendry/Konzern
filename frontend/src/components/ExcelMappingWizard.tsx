@@ -103,6 +103,11 @@ export function ExcelMappingWizard({
   };
 
   const processFile = async (selectedFile: File) => {
+    if (!selectedFile) {
+      showError('Keine Datei ausgewählt');
+      return;
+    }
+
     // Validate file type
     const validTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -120,7 +125,15 @@ export function ExcelMappingWizard({
     
     try {
       const arrayBuffer = await selectedFile.arrayBuffer();
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+        throw new Error('Datei ist leer');
+      }
+
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      if (!wb || !wb.SheetNames || wb.SheetNames.length === 0) {
+        throw new Error('Excel-Datei enthält keine Arbeitsblätter');
+      }
+
       setWorkbook(wb);
       setSheetNames(wb.SheetNames);
       
@@ -132,49 +145,71 @@ export function ExcelMappingWizard({
       } else {
         setStep('sheet-select');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error reading Excel file:', err);
-      showError('Fehler beim Lesen der Excel-Datei');
+      const errorMessage = err?.message || 'Fehler beim Lesen der Excel-Datei';
+      showError(errorMessage);
+      setFile(null);
+      setWorkbook(null);
+      setSheetNames([]);
     }
   };
 
   const processSheet = (wb: XLSX.WorkBook, sheetName: string) => {
-    const sheet = wb.Sheets[sheetName];
-    // When using header: 1, data comes back as array of arrays
-    const rawData = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
-    
-    if (rawData.length < 2) {
-      showError('Die Tabelle enthält keine Daten');
-      return;
-    }
+    try {
+      if (!wb || !wb.Sheets) {
+        throw new Error('Workbook ist ungültig');
+      }
 
-    // First row as headers
-    const headerRow = rawData[0] as any[];
-    const headers = headerRow.map((h: any, i: number) => String(h || `Spalte ${i + 1}`));
-    
-    // Create initial mappings with suggestions
-    const initialMappings: ColumnMapping[] = headers.map(header => ({
-      excelColumn: header,
-      systemField: suggestMapping(header),
-    }));
-    
-    setMappings(initialMappings);
-    
-    // Parse data rows
-    const dataRows = rawData.slice(1) as any[][];
-    const rows: ParsedRow[] = dataRows.map((row: any[]) => {
-      const rowObj: ParsedRow = {};
-      headers.forEach((header, i) => {
-        rowObj[header] = row[i] ?? null;
+      const sheet = wb.Sheets[sheetName];
+      if (!sheet) {
+        throw new Error(`Arbeitsblatt "${sheetName}" nicht gefunden`);
+      }
+
+      // When using header: 1, data comes back as array of arrays
+      const rawData = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+      
+      if (!rawData || rawData.length < 2) {
+        showError('Die Tabelle enthält keine Daten');
+        return;
+      }
+
+      // First row as headers
+      const headerRow = rawData[0] as any[];
+      if (!headerRow || headerRow.length === 0) {
+        showError('Die Tabelle enthält keine Spaltenüberschriften');
+        return;
+      }
+
+      const headers = headerRow.map((h: any, i: number) => String(h || `Spalte ${i + 1}`));
+      
+      // Create initial mappings with suggestions
+      const initialMappings: ColumnMapping[] = headers.map(header => ({
+        excelColumn: header,
+        systemField: suggestMapping(header),
+      }));
+      
+      setMappings(initialMappings);
+      
+      // Parse data rows
+      const dataRows = rawData.slice(1) as any[][];
+      const rows: ParsedRow[] = dataRows.map((row: any[]) => {
+        const rowObj: ParsedRow = {};
+        headers.forEach((header, i) => {
+          rowObj[header] = row[i] ?? null;
+        });
+        return rowObj;
+      }).filter((row: ParsedRow) => Object.values(row).some(v => v !== null && v !== ''));
+
+      setPreviewData({
+        headers,
+        rows: rows.slice(0, 100), // Preview first 100 rows
+        totalRows: rows.length,
       });
-      return rowObj;
-    }).filter((row: ParsedRow) => Object.values(row).some(v => v !== null && v !== ''));
-
-    setPreviewData({
-      headers,
-      rows: rows.slice(0, 100), // Preview first 100 rows
-      totalRows: rows.length,
-    });
+    } catch (err: any) {
+      console.error('Error processing sheet:', err);
+      showError(err?.message || 'Fehler beim Verarbeiten des Arbeitsblatts');
+    }
   };
 
   const handleSheetSelect = (sheetName: string) => {
@@ -243,7 +278,15 @@ export function ExcelMappingWizard({
   };
 
   const handleImport = async () => {
-    if (!file || !previewData) return;
+    if (!file || !previewData) {
+      showError('Datei oder Vorschaudaten fehlen');
+      return;
+    }
+
+    if (!financialStatementId) {
+      showError('Jahresabschluss-ID fehlt');
+      return;
+    }
 
     setImporting(true);
     setStep('importing');
@@ -257,31 +300,75 @@ export function ExcelMappingWizard({
         }
       });
 
+      // Validate that required fields are mapped
+      if (!mappingConfig || Object.keys(mappingConfig).length === 0) {
+        throw new Error('Keine Spaltenzuordnung definiert');
+      }
+
       // Create form data
       const formData = new FormData();
       formData.append('file', file);
       formData.append('financialStatementId', financialStatementId);
       formData.append('fileType', 'excel');
-      formData.append('sheetName', selectedSheet);
+      if (selectedSheet) {
+        formData.append('sheetName', selectedSheet);
+      }
       formData.append('columnMapping', JSON.stringify(mappingConfig));
 
       // Call the import API
-      const response = await fetch('/api/import/excel-mapped', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Import fehlgeschlagen');
+      let response: Response;
+      try {
+        response = await fetch('/api/import/excel-mapped', {
+          method: 'POST',
+          body: formData,
+        });
+      } catch (fetchError: any) {
+        throw new Error(`Netzwerkfehler: ${fetchError.message || 'Verbindung zum Server fehlgeschlagen'}`);
       }
 
-      const result = await response.json();
+      if (!response.ok) {
+        let errorMessage = 'Import fehlgeschlagen';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            } else {
+              errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+          } catch (textError) {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      let result: any;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('Ungültige Antwort vom Server');
+      }
+
+      if (!result || typeof result.imported !== 'number') {
+        throw new Error('Ungültiges Import-Ergebnis vom Server');
+      }
+
       success(`Import erfolgreich: ${result.imported} Datensätze importiert`);
-      onImportComplete(result);
+      onImportComplete({
+        imported: result.imported || 0,
+        errors: result.errors || [],
+        warnings: result.warnings || [],
+      });
     } catch (err: any) {
       console.error('Import error:', err);
-      showError(`Import fehlgeschlagen: ${err.message}`);
+      const errorMessage = err?.message || 'Unbekannter Fehler beim Import';
+      showError(`Import fehlgeschlagen: ${errorMessage}`);
+      // Reset to preview step so user can try again
       setStep('preview');
     } finally {
       setImporting(false);
@@ -298,6 +385,20 @@ export function ExcelMappingWizard({
   const requiredFieldsMapped = SYSTEM_FIELDS
     .filter(f => f.required)
     .every(f => mappings.some(m => m.systemField === f.id));
+
+  // Safety check - ensure component doesn't crash
+  if (!financialStatementId) {
+    return (
+      <div className="import-wizard">
+        <div className="error-message">
+          <strong>Fehler:</strong> Jahresabschluss-ID fehlt
+        </div>
+        <button className="button button-tertiary" onClick={onCancel}>
+          Abbrechen
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="import-wizard">

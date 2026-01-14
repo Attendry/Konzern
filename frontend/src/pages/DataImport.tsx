@@ -106,6 +106,7 @@ function DataImport() {
 
     setLoading(true);
     setResult(null);
+    setError(null);
 
     try {
       let importResult;
@@ -114,7 +115,18 @@ function DataImport() {
       } else {
         importResult = await importService.importCsv(selectedFile, financialStatementId);
       }
-      setResult(importResult);
+      
+      // Validate result structure
+      if (!importResult || typeof importResult.imported !== 'number') {
+        throw new Error('Ungültiges Import-Ergebnis vom Server');
+      }
+
+      setResult({
+        imported: importResult.imported || 0,
+        errors: importResult.errors || [],
+        warnings: importResult.warnings || [],
+      });
+
       if (importResult.errors.length === 0) {
         success(`Erfolgreich ${importResult.imported} Datensätze importiert`);
       } else {
@@ -128,6 +140,8 @@ function DataImport() {
                           'Unbekannter Fehler';
       showError(`Fehler beim Import: ${errorMessage}`);
       setError(`Import fehlgeschlagen: ${errorMessage}`);
+      // Ensure result is set to null on error
+      setResult(null);
     } finally {
       setLoading(false);
     }
@@ -144,12 +158,36 @@ function DataImport() {
   };
 
   const handleWizardComplete = (wizardResult: { imported: number; errors: string[]; warnings: string[] }) => {
-    setResult(wizardResult);
-    setShowWizard(false);
-    success(`Import erfolgreich: ${wizardResult.imported} Datensätze importiert`);
+    try {
+      // Validate result structure
+      if (!wizardResult || typeof wizardResult.imported !== 'number') {
+        console.error('Invalid wizard result:', wizardResult);
+        showError('Ungültiges Import-Ergebnis');
+        setShowWizard(false);
+        return;
+      }
+
+      setResult({
+        imported: wizardResult.imported || 0,
+        errors: wizardResult.errors || [],
+        warnings: wizardResult.warnings || [],
+      });
+      setShowWizard(false);
+      setError(null);
+      success(`Import erfolgreich: ${wizardResult.imported} Datensätze importiert`);
+    } catch (error: any) {
+      console.error('Error handling wizard complete:', error);
+      showError(`Fehler beim Verarbeiten des Import-Ergebnisses: ${error.message || 'Unbekannter Fehler'}`);
+      setShowWizard(false);
+    }
   };
 
   const selectedStatement = statements.find(s => s.id === financialStatementId);
+
+  // Safety check - ensure component doesn't crash
+  if (typeof window === 'undefined') {
+    return null;
+  }
 
   return (
     <div>

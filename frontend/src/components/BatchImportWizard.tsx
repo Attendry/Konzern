@@ -192,9 +192,15 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
 
       try {
         // Extract sheet data and send to backend
-        if (!workbook) throw new Error('Workbook not loaded');
+        if (!workbook) {
+          throw new Error('Workbook nicht geladen');
+        }
         
         const sheet = workbook.Sheets[mapping.sheetName];
+        if (!sheet) {
+          throw new Error(`Blatt "${mapping.sheetName}" nicht gefunden`);
+        }
+
         const newWorkbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(newWorkbook, sheet, mapping.sheetName);
         const buffer = XLSX.write(newWorkbook, { type: 'array', bookType: 'xlsx' });
@@ -203,12 +209,33 @@ export function BatchImportWizard({ fiscalYear, onComplete, onCancel }: BatchImp
 
         const result = await importService.importExcel(sheetFile, mapping.financialStatementId);
         
+        // Validate result
+        if (!result || typeof result.imported !== 'number') {
+          throw new Error('Ungültiges Import-Ergebnis');
+        }
+
         setSheetMappings(prev => prev.map((m, idx) => 
-          idx === i ? { ...m, status: 'success', result } : m
+          idx === i ? { 
+            ...m, 
+            status: 'success', 
+            result: {
+              imported: result.imported || 0,
+              errors: result.errors || [],
+            }
+          } : m
         ));
       } catch (error: any) {
+        console.error(`Error importing sheet ${mapping.sheetName}:`, error);
+        const errorMessage = error?.message || error?.response?.data?.message || 'Unbekannter Fehler';
         setSheetMappings(prev => prev.map((m, idx) => 
-          idx === i ? { ...m, status: 'error', result: { imported: 0, errors: [error.message] } } : m
+          idx === i ? { 
+            ...m, 
+            status: 'error', 
+            result: { 
+              imported: 0, 
+              errors: [errorMessage] 
+            } 
+          } : m
         ));
       }
     }
