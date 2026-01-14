@@ -98,6 +98,10 @@ import { LineageModule } from '../lineage/lineage.module';
     // Phase 4 Services
     KonzernanhangDocumentService,
     KonzernanhangExportService,
+    // Priority Features Services
+    FiscalYearAdjustmentService,
+    GoodwillAmortizationService,
+    ManagementReportService,
   ],
   exports: [
     ConsolidationService,
