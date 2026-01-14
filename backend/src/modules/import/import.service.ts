@@ -621,12 +621,25 @@ export class ImportService {
     
     // process.cwd() ist das Backend-Verzeichnis, also müssen wir ein Verzeichnis höher gehen
     // Versuche verschiedene Pfade - von Backend-Verzeichnis aus
-    const possiblePaths = [
-      path.join(process.cwd(), '..', 'templates', 'Konsolidierung_Muster.xlsx'), // Root/templates (wichtigster Pfad)
-      path.join(process.cwd(), 'templates', 'Konsolidierung_Muster.xlsx'), // Backend/templates (Fallback)
-      path.join(__dirname, '..', '..', '..', '..', 'templates', 'Konsolidierung_Muster.xlsx'), // Von dist aus
-      path.join(__dirname, '..', '..', '..', '..', '..', 'templates', 'Konsolidierung_Muster.xlsx'), // Von src/modules/import aus
+    // Versuche zuerst Version 3.0, dann Fallback auf alte Version
+    const templateNames = [
+      'Konsolidierung_Muster_v3.0.xlsx',
+      'Konsolidierung_Muster.xlsx', // Fallback für alte Version
     ];
+    
+    const basePaths = [
+      path.join(process.cwd(), '..', 'templates'), // Root/templates (wichtigster Pfad)
+      path.join(process.cwd(), 'templates'), // Backend/templates (Fallback)
+      path.join(__dirname, '..', '..', '..', '..', 'templates'), // Von dist aus
+      path.join(__dirname, '..', '..', '..', '..', '..', 'templates'), // Von src/modules/import aus
+    ];
+    
+    const possiblePaths: string[] = [];
+    for (const basePath of basePaths) {
+      for (const templateName of templateNames) {
+        possiblePaths.push(path.join(basePath, templateName));
+      }
+    }
     
     console.log('Suche Template in folgenden Pfaden:');
     console.log('  process.cwd():', process.cwd());

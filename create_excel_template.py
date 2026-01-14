@@ -670,7 +670,7 @@ ws_kontenplan.column_dimensions['C'].width = 50
 ws_kontenplan.column_dimensions['D'].width = 15
 
 # Speichere Datei
-filename = "templates/Konsolidierung_Muster.xlsx"
+filename = "templates/Konsolidierung_Muster_v3.0.xlsx"
 import os
 os.makedirs("templates", exist_ok=True)
 wb.save(filename)

@@ -188,7 +188,7 @@ export class ImportController {
       );
       res.setHeader(
         'Content-Disposition',
-        'attachment; filename=Konsolidierung_Muster.xlsx',
+        'attachment; filename=Konsolidierung_Muster_v3.0.xlsx',
       );
       res.send(template);
     } catch (error: any) {
