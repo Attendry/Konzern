@@ -629,6 +629,7 @@ export class ImportService {
     
     const basePaths = [
       path.join(process.cwd(), 'templates'), // Backend/templates (wichtigster Pfad für Deployment)
+      path.join(process.cwd(), 'dist', 'templates'), // dist/templates (nach Build)
       path.join(process.cwd(), '..', 'templates'), // Root/templates (für lokale Entwicklung)
       path.join(__dirname, '..', '..', '..', 'templates'), // Von dist/modules/import aus
       path.join(__dirname, '..', '..', '..', '..', 'templates'), // Von dist aus
