@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { managementReportService, ManagementReport, ReportSection } from '../services/managementReportService';
+import { managementReportService, ManagementReport } from '../services/managementReportService';
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';

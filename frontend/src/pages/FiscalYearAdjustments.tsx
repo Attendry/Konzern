@@ -1,21 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { fiscalYearAdjustmentService, FiscalYearAdjustment, ValidationResult } from '../services/fiscalYearAdjustmentService';
 import { companyService } from '../services/companyService';
-import { financialStatementService } from '../services/financialStatementService';
-import { Company, FinancialStatement } from '../types';
+import { Company } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
 
 function FiscalYearAdjustments() {
   const { financialStatementId } = useParams<{ financialStatementId?: string }>();
-  const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
 
   const [loading, setLoading] = useState(true);
   const [adjustments, setAdjustments] = useState<FiscalYearAdjustment[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [groupReportingDate, setGroupReportingDate] = useState('');
   const [companiesWithDiffs, setCompaniesWithDiffs] = useState<{ company: any; validation: ValidationResult }[]>([]);
@@ -38,12 +35,8 @@ function FiscalYearAdjustments() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [companiesData, statementsData] = await Promise.all([
-        companyService.getAll(),
-        financialStatementService.getAll(),
-      ]);
+      const companiesData = await companyService.getAll();
       setCompanies(companiesData);
-      setStatements(statementsData);
 
       if (financialStatementId) {
         const adjustmentsData = await fiscalYearAdjustmentService.getByFinancialStatement(financialStatementId);

@@ -1,28 +1,16 @@
 import { useEffect, useState } from 'react';
 import { exchangeRateService } from '../services/exchangeRateService';
-import { ExchangeRate } from '../types';
+import { ExchangeRate, Company } from '../types';
 import { companyService } from '../services/companyService';
-import { Company } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
 import '../App.css';
-
-interface TranslationSummary {
-  companyId: string;
-  companyName: string;
-  sourceCurrency: string;
-  closingRate: number;
-  averageRate: number;
-  totalAssetsSource: number;
-  totalAssetsTarget: number;
-  translationDifference: number;
-}
 
 function CurrencyTranslation() {
   const { success, error: showError } = useToastContext();
 
   const [loading, setLoading] = useState(true);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [foreignCompanies, setForeignCompanies] = useState<Company[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -54,10 +42,10 @@ function CurrencyTranslation() {
       ]);
       
       setExchangeRates(ratesData);
-      setCompanies(companiesData);
+      setAllCompanies(companiesData);
       
       // Filter companies with foreign currency
-      const foreign = companiesData.filter(c => c.currency && c.currency !== 'EUR');
+      const foreign = companiesData.filter(c => c.functionalCurrency && c.functionalCurrency !== 'EUR');
       setForeignCompanies(foreign);
     } catch (err: any) {
       showError(`Fehler beim Laden: ${err.message}`);
@@ -110,7 +98,7 @@ function CurrencyTranslation() {
         rate: parseFloat(rateForm.rate),
         rateDate: rateForm.effectiveDate,
         rateType: rateForm.isAverageRate ? 'average' : 'spot',
-        source: rateForm.source as any,
+        rateSource: rateForm.source,
       });
       setExchangeRates([newRate, ...exchangeRates]);
       setShowAddModal(false);
@@ -201,14 +189,14 @@ function CurrencyTranslation() {
             </thead>
             <tbody>
               {foreignCompanies.map(company => {
-                const rate = latestRates.find(r => r.fromCurrency === company.currency && r.toCurrency === 'EUR');
+                const rate = latestRates.find(r => r.fromCurrency === company.functionalCurrency && r.toCurrency === 'EUR');
                 return (
                   <tr key={company.id}>
                     <td>{company.name}</td>
-                    <td><span className="badge">{company.currency}</span></td>
+                    <td><span className="badge">{company.functionalCurrency}</span></td>
                     <td>
                       {rate ? (
-                        <span>1 {company.currency} = {(rate.rate || 0).toFixed(4)} EUR</span>
+                        <span>1 {company.functionalCurrency} = {(rate.rate || 0).toFixed(4)} EUR</span>
                       ) : (
                         <span className="badge badge-warning">Kein Kurs</span>
                       )}
@@ -296,8 +284,8 @@ function CurrencyTranslation() {
                     </span>
                   </td>
                   <td>
-                    <span className={`badge ${rate.source === 'ecb' ? 'badge-success' : rate.source === 'bundesbank' ? 'badge-info' : 'badge-neutral'}`}>
-                      {rate.source === 'ecb' ? 'EZB' : rate.source === 'bundesbank' ? 'Bundesbank' : 'Manuell'}
+                    <span className={`badge ${rate.rateSource === 'ecb' ? 'badge-success' : rate.rateSource === 'bundesbank' ? 'badge-info' : 'badge-neutral'}`}>
+                      {rate.rateSource === 'ecb' ? 'EZB' : rate.rateSource === 'bundesbank' ? 'Bundesbank' : 'Manuell'}
                     </span>
                   </td>
                   <td>{new Date(rate.rateDate).toLocaleDateString('de-DE')}</td>
@@ -338,8 +326,8 @@ function CurrencyTranslation() {
                 <td>{rate.fromCurrency}/{rate.toCurrency}</td>
                 <td style={{ fontFamily: 'var(--font-mono)' }}>{(rate.rate || 0).toFixed(6)}</td>
                 <td>
-                  <span className={`badge ${rate.source === 'ecb' ? 'badge-success' : 'badge-neutral'}`}>
-                    {rate.source === 'ecb' ? 'EZB' : 'Manuell'}
+                  <span className={`badge ${rate.rateSource === 'ecb' ? 'badge-success' : 'badge-neutral'}`}>
+                    {rate.rateSource === 'ecb' ? 'EZB' : 'Manuell'}
                   </span>
                 </td>
                 <td>
