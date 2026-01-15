@@ -11,6 +11,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
 import { ImportService } from './import.service';
+import { MultiSheetImportService } from './multi-sheet-import.service';
 import { ImportDataDto } from './dto/import-data.dto';
 import { multerConfig } from '../../common/multer.config';
 
@@ -26,7 +27,10 @@ interface MulterFile {
 
 @Controller('import')
 export class ImportController {
-  constructor(private readonly importService: ImportService) {}
+  constructor(
+    private readonly importService: ImportService,
+    private readonly multiSheetImportService: MultiSheetImportService,
+  ) {}
 
   @Post('excel')
   @UseInterceptors(FileInterceptor('file', multerConfig))
@@ -159,6 +163,38 @@ export class ImportController {
       financialStatementId,
       sheetName,
       columnMapping,
+    });
+  }
+
+  @Post('excel-multi-sheet')
+  @UseInterceptors(FileInterceptor('file', multerConfig))
+  async importExcelMultiSheet(
+    @UploadedFile() file: MulterFile,
+    @Req() req: Request,
+  ) {
+    console.log('Multi-Sheet Excel Import Request:', {
+      hasFile: !!file,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      body: req.body,
+    });
+
+    if (!file) {
+      throw new BadRequestException('Keine Datei hochgeladen');
+    }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('Datei ist leer');
+    }
+
+    const fiscalYear = parseInt(req.body?.fiscalYear || new Date().getFullYear().toString());
+    const periodStart = req.body?.periodStart;
+    const periodEnd = req.body?.periodEnd;
+
+    return this.multiSheetImportService.importMultiSheet(file, {
+      fiscalYear,
+      periodStart,
+      periodEnd,
     });
   }
 

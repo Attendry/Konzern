@@ -44,6 +44,26 @@ export class ImportService {
     private validationService: ValidationService,
   ) {}
 
+  /**
+   * Import multiple sheets from Excel template
+   * This method will be called by the controller and should delegate to MultiSheetImportService
+   * Note: MultiSheetImportService is injected separately to avoid circular dependencies
+   */
+  async importMultiSheet(
+    file: MulterFile,
+    options: {
+      fiscalYear: number;
+      periodStart?: string;
+      periodEnd?: string;
+    },
+  ) {
+    // This is a placeholder - the actual implementation is in MultiSheetImportService
+    // The controller should inject MultiSheetImportService directly
+    throw new BadRequestException(
+      'Multi-sheet import should be called via MultiSheetImportService',
+    );
+  }
+
   private get supabase() {
     return this.supabaseService.getClient();
   }
