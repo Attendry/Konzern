@@ -465,17 +465,28 @@ export class ImportService {
         let foundAlternative = false;
         for (let i = 0; i < headers.length; i++) {
           const header = headers[i];
-          const normalized = header.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '');
+          const headerLower = header.toLowerCase();
+          const normalized = headerLower.trim().replace(/\s+/g, '').replace(/[_-]/g, '');
           
-          // Very permissive: if it contains "konto", "account", "nr", "number", or is just "nr"/"no"
-          if (normalized.includes('konto') || 
-              normalized.includes('account') || 
-              normalized.includes('nr') || 
+          // ULTRA-PERMISSIVE: Check every possible variation
+          // Check if header contains "kontonummer" in any form
+          if (headerLower.includes('kontonummer') || 
+              headerLower.includes('konto') || 
+              normalized.includes('kontonummer') ||
+              normalized.includes('konto') ||
+              headerLower.includes('account') || 
+              normalized.includes('account') ||
+              headerLower.includes('nr') || 
+              normalized.includes('nr') ||
+              headerLower.includes('number') ||
               normalized.includes('number') ||
               normalized === 'nr' ||
               normalized === 'no' ||
-              normalized === 'nummer') {
-            console.log(`[ImportService] Found alternative account number column via permissive check: "${header}" (index ${i})`);
+              normalized === 'nummer' ||
+              header === 'Kontonummer' ||
+              header === 'kontonummer' ||
+              header === 'KONTONUMMER') {
+            console.log(`[ImportService] Found alternative account number column via ultra-permissive check: "${header}" (index ${i}, normalized: "${normalized}")`);
             columnMapping.accountNumber.push(header);
             foundAlternative = true;
             break;
