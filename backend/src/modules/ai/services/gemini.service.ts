@@ -84,10 +84,15 @@ export class GeminiService implements OnModuleInit {
         parts: [{ text: m.content }],
       }));
 
-      const chat = this.model.startChat({
-        history,
-        ...(systemPrompt && { systemInstruction: systemPrompt }),
-      });
+      // systemInstruction must be a Content object, not a string
+      const chatConfig: any = { history };
+      if (systemPrompt) {
+        chatConfig.systemInstruction = {
+          parts: [{ text: systemPrompt }],
+        };
+      }
+
+      const chat = this.model.startChat(chatConfig);
 
       const lastMessage = messages[messages.length - 1];
       const result = await chat.sendMessage(lastMessage.content);
