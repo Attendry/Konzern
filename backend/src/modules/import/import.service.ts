@@ -111,9 +111,17 @@ export class ImportService {
       ];
       
       // First check: exact case-insensitive match for "Kontonummer" (most common template column)
+      // Check multiple variations to catch any encoding issues
       let matched = false;
-      if (header.toLowerCase() === 'kontonummer' || header === 'Kontonummer') {
-        console.log(`[ImportService] Exact case-insensitive match for "Kontonummer": "${header}"`);
+      const headerLower = header.toLowerCase();
+      const headerTrimmed = header.trim();
+      
+      if (headerLower === 'kontonummer' || 
+          header === 'Kontonummer' ||
+          headerTrimmed.toLowerCase() === 'kontonummer' ||
+          headerLower.includes('kontonummer') ||
+          headerTrimmed.toLowerCase().includes('kontonummer')) {
+        console.log(`[ImportService] Exact/contains match for "Kontonummer": "${header}" (lower: "${headerLower}")`);
         mapping.accountNumber.push(header);
         matched = true;
       }
@@ -385,22 +393,68 @@ export class ImportService {
 
       // First row should be headers
       const headerRow = rawDataArray[0];
-      console.log(`[ImportService] Header row:`, headerRow);
+      console.log(`[ImportService] ===== HEADER DETECTION DEBUG START =====`);
+      console.log(`[ImportService] Sheet being processed: "${sheetName}"`);
+      console.log(`[ImportService] Total rows in sheet: ${rawDataArray.length}`);
+      console.log(`[ImportService] Header row (raw):`, JSON.stringify(headerRow));
+      console.log(`[ImportService] Header row type:`, Array.isArray(headerRow) ? 'Array' : typeof headerRow);
+      console.log(`[ImportService] Header row length:`, headerRow?.length);
+      console.log(`[ImportService] First 3 rows for context:`, rawDataArray.slice(0, 3).map((r, i) => `Row ${i}: ${JSON.stringify(r)}`));
+      
+      // CRITICAL: Check if we're reading the wrong sheet
+      if (sheetName.toLowerCase().includes('anleitung') || sheetName.toLowerCase().includes('instruction')) {
+        console.error(`[ImportService] *** WARNING: Reading instruction sheet "${sheetName}" instead of data sheet! ***`);
+        // Try to find Bilanzdaten sheet
+        const bilanzSheet = workbook.SheetNames.find(name => 
+          name.toLowerCase().includes('bilanz') || 
+          name.toLowerCase().includes('balance')
+        );
+        if (bilanzSheet) {
+          console.log(`[ImportService] Redirecting to data sheet: "${bilanzSheet}"`);
+          return this.importExcel({ ...file, buffer: file.buffer }, { ...importDataDto, sheetName: bilanzSheet });
+        }
+      }
       
       if (!headerRow || headerRow.length === 0) {
         throw new BadRequestException('Excel-Datei enthält keine Spaltenüberschriften');
       }
+      
+      // CRITICAL: Check if header row looks like data instead of headers
+      // If first "header" is a number or looks like account data, we might be reading wrong row
+      const firstHeaderValue = headerRow[0];
+      if (typeof firstHeaderValue === 'number' || (typeof firstHeaderValue === 'string' && /^\d+$/.test(String(firstHeaderValue).trim()))) {
+        console.warn(`[ImportService] *** WARNING: First header looks like data (${firstHeaderValue}), might be reading wrong row! ***`);
+        // Try to find a row that looks like headers (contains "Kontonummer" or "Unternehmen")
+        for (let rowIdx = 0; rowIdx < Math.min(5, rawDataArray.length); rowIdx++) {
+          const testRow = rawDataArray[rowIdx];
+          const testRowStr = JSON.stringify(testRow).toLowerCase();
+          if (testRowStr.includes('kontonummer') || testRowStr.includes('unternehmen')) {
+            console.log(`[ImportService] Found header-like row at index ${rowIdx}, using that instead`);
+            const actualHeaderRow = rawDataArray[rowIdx];
+            // Replace headerRow with the correct one
+            Object.setPrototypeOf(headerRow, Array.prototype);
+            headerRow.length = 0;
+            headerRow.push(...actualHeaderRow);
+            break;
+          }
+        }
+      }
 
       // Convert headers to strings and clean them
-      const headers = headerRow.map((h: any, i: number) => {
-        // Handle different data types from Excel
+      const headers: string[] = [];
+      for (let i = 0; i < headerRow.length; i++) {
+        const h = headerRow[i];
         let headerStr: string;
+        
+        // Handle different data types from Excel
         if (h === null || h === undefined || h === '') {
           headerStr = `Spalte_${i + 1}`;
         } else if (typeof h === 'number') {
           headerStr = String(h);
         } else if (typeof h === 'string') {
           headerStr = h;
+        } else if (typeof h === 'boolean') {
+          headerStr = String(h);
         } else {
           headerStr = String(h);
         }
@@ -413,8 +467,16 @@ export class ImportService {
           headerStr = `Spalte_${i + 1}`;
         }
         
-        return headerStr;
-      });
+        headers.push(headerStr);
+        
+        // CRITICAL: If this header is "Kontonummer" in any form, log it immediately
+        const testLower = headerStr.toLowerCase();
+        if (testLower === 'kontonummer' || 
+            testLower.includes('kontonummer') ||
+            headerStr === 'Kontonummer') {
+          console.log(`[ImportService] *** FOUND KONTONUMMER at index ${i}: "${headerStr}" (raw: ${JSON.stringify(h)}) ***`);
+        }
+      }
 
       console.log('[ImportService] Raw header row from Excel:', JSON.stringify(headerRow));
       console.log('[ImportService] Detected headers from Excel:', JSON.stringify(headers));
@@ -427,22 +489,33 @@ export class ImportService {
 
       const columnMapping = this.findColumnMapping(headers);
       
-      // DEBUG: Log the exact header that should be "Kontonummer"
-      const kontonummerIndex = headers.findIndex(h => 
-        h.toLowerCase() === 'kontonummer' || 
-        h === 'Kontonummer' ||
-        h.toLowerCase().includes('kontonummer')
-      );
-      if (kontonummerIndex >= 0) {
-        console.log(`[ImportService] DEBUG: Found header at index ${kontonummerIndex}: "${headers[kontonummerIndex]}" - This should be the Kontonummer column!`);
-        // Force add it if not already detected
-        if (columnMapping.accountNumber.length === 0) {
-          console.log(`[ImportService] DEBUG: Forcing addition of "${headers[kontonummerIndex]}" to accountNumber mapping`);
-          columnMapping.accountNumber.push(headers[kontonummerIndex]);
+      // CRITICAL FIX: Force detect "Kontonummer" if it exists in headers
+      // This bypasses all the matching logic and directly checks the headers array
+      console.log(`[ImportService] Checking ${headers.length} headers for "Kontonummer"...`);
+      for (let i = 0; i < headers.length; i++) {
+        const h = headers[i];
+        const hLower = h.toLowerCase();
+        const hTrimmed = h.trim().toLowerCase();
+        
+        // Check every possible variation
+        if (h === 'Kontonummer' ||
+            h === 'kontonummer' ||
+            h === 'KONTONUMMER' ||
+            hLower === 'kontonummer' ||
+            hTrimmed === 'kontonummer' ||
+            hLower.includes('kontonummer') ||
+            hTrimmed.includes('kontonummer')) {
+          console.log(`[ImportService] *** FORCE DETECTED "Kontonummer" at index ${i}: "${h}" ***`);
+          // Force add to mapping if not already there
+          if (!columnMapping.accountNumber.includes(h)) {
+            columnMapping.accountNumber.push(h);
+            console.log(`[ImportService] *** FORCED "${h}" into accountNumber mapping ***`);
+          }
+          break; // Found it, no need to continue
         }
-      } else {
-        console.log(`[ImportService] DEBUG: No header found matching "Kontonummer" exactly. Headers are:`, headers);
       }
+      
+      console.log(`[ImportService] After force detection, accountNumber mapping has ${columnMapping.accountNumber.length} entries:`, columnMapping.accountNumber);
       
       // If still no account number found, try alternative: use first data row to infer headers
       if (columnMapping.accountNumber.length === 0 && rawDataArray.length > 1) {
@@ -526,6 +599,26 @@ export class ImportService {
         }
         
         if (!foundAlternative) {
+          // LAST RESORT: If we have data rows, use the first column that contains numeric data
+          // This is a very permissive fallback that will work even if headers are completely wrong
+          if (rawDataArray.length > 1) {
+            const firstDataRow = rawDataArray[1];
+            console.log('[ImportService] LAST RESORT: Checking first data row for numeric columns:', firstDataRow);
+            
+            for (let i = 0; i < Math.min(headers.length, firstDataRow.length); i++) {
+              const cellValue = String(firstDataRow[i] || '').trim();
+              // Very permissive: any column with numeric data that could be an account number
+              if (cellValue && /^\d+$/.test(cellValue) && cellValue.length >= 2 && cellValue.length <= 20) {
+                console.log(`[ImportService] LAST RESORT: Using column ${i} ("${headers[i]}") with numeric value "${cellValue}" as account number column`);
+                columnMapping.accountNumber.push(headers[i]);
+                foundAlternative = true;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (!foundAlternative) {
           // Check if we're on the wrong sheet (Anleitung)
           if (sheetName.toLowerCase().includes('anleitung') || sheetName.toLowerCase().includes('instruction')) {
             // Try to find Bilanzdaten sheet
@@ -540,12 +633,14 @@ export class ImportService {
             }
           }
           
+          // Final error with all diagnostic information
           throw new BadRequestException(
             `Keine Kontonummer-Spalte gefunden im Blatt "${sheetName}".\n\n` +
             `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
             `Gefundene Spalten in der Datei: ${availableHeaders}\n\n` +
             `Normalisierte Spaltennamen: ${normalizedHeaders}\n\n` +
             `Verfügbare Blätter: ${workbook.SheetNames.join(', ')}\n\n` +
+            `Erste Datenzeile (zur Diagnose): ${rawDataArray.length > 1 ? JSON.stringify(rawDataArray[1]) : 'Keine Daten'}\n\n` +
             `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung oder wählen Sie das Blatt "Bilanzdaten" aus.`
           );
         }
