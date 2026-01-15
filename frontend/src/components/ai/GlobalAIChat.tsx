@@ -1,5 +1,6 @@
 import { useAIChat } from '../../contexts/AIChatContext';
 import { AIChatPanel } from './AIChatPanel';
+import './ai-chat.css';
 
 /**
  * GlobalAIChat - Renders the floating chat button and panel
@@ -16,39 +17,13 @@ export const GlobalAIChat = () => {
       {!isOpen && (
         <button
           onClick={toggleChat}
+          className="ai-chat-fab"
           aria-label="AI Assistent öffnen"
           title="AI Assistent öffnen (Strg+K)"
-          style={{
-            position: 'fixed',
-            right: 24,
-            bottom: 24,
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            backgroundColor: '#1a73e8',
-            color: 'white',
-            border: 'none',
-            boxShadow: '0 4px 12px rgba(26, 115, 232, 0.4)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 28,
-            zIndex: 9998,
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(26, 115, 232, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(26, 115, 232, 0.4)';
-          }}
         >
           <svg 
-            width="28" 
-            height="28" 
+            width="26" 
+            height="26" 
             viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor" 

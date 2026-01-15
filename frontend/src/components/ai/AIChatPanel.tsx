@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAIChat } from '../../contexts/AIChatContext';
+import './ai-chat.css';
 
 /**
  * AIChatPanel - The main chat interface
@@ -50,126 +51,70 @@ export const AIChatPanel = () => {
   };
 
   const suggestions = [
-    'Zeige alle offenen IC-Differenzen',
-    'Wie hoch ist der Konzern-Goodwill?',
-    'Zusammenfassung der Konsolidierung',
-    'Welche Gesellschaften sind konsolidiert?',
+    'Zeige IC-Differenzen',
+    'Konzern-Goodwill?',
+    'Konsolidierungsstatus',
+    'Welche Gesellschaften?',
   ];
 
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      right: 24,
-      bottom: 24,
-      width: 420,
-      height: 580,
-      backgroundColor: 'white',
-      borderRadius: 16,
-      boxShadow: '0 8px 40px rgba(0, 0, 0, 0.2)',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      zIndex: 9999,
-      animation: 'slideUp 0.25s ease-out',
-    }}>
+    <div className="ai-chat-panel">
       {/* Header */}
-      <div style={{
-        padding: '16px 20px',
-        background: 'linear-gradient(135deg, #1a73e8 0%, #1557b0 100%)',
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>🤖</span>
+      <div className="ai-chat-header">
+        <div className="ai-chat-header-left">
+          <div className="ai-chat-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+          </div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: 15 }}>Konzern AI Assistent</div>
-            <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>
-              {financialStatementId ? '● Daten geladen' : '○ Allgemeine Fragen'}
+            <div className="ai-chat-title">Konzern Assistent</div>
+            <div className="ai-chat-subtitle">
+              {financialStatementId ? 'Daten geladen' : 'Allgemeine Fragen'}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="ai-chat-header-actions">
           <button 
             onClick={clearHistory}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              padding: '6px 10px',
-              borderRadius: 6,
-              fontSize: 12,
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            title="Chat leeren"
+            className="ai-chat-btn-icon"
+            title="Neuer Chat"
           >
-            Neu
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
           </button>
           <button 
-            onClick={closeChat} 
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              fontSize: 26,
-              cursor: 'pointer',
-              lineHeight: 1,
-              padding: '0 4px',
-            }}
+            onClick={closeChat}
+            className="ai-chat-btn-icon"
             aria-label="Schließen"
           >
-            ×
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: 20,
-        backgroundColor: '#f8f9fa',
-      }}>
+      <div className="ai-chat-messages">
         {messages.length === 0 && (
           <div>
-            <p style={{ color: '#555', marginBottom: 16, fontSize: 14, lineHeight: 1.5 }}>
-              Wie kann ich Ihnen helfen? Fragen Sie mich zu Konsolidierungsdaten, 
+            <p className="ai-chat-welcome">
+              Wie kann ich helfen? Fragen Sie mich zu Konsolidierungsdaten, 
               IC-Differenzen oder HGB-Themen.
             </p>
-            <p style={{ color: '#888', fontSize: 12, marginBottom: 12 }}>
-              Vorschläge:
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <p className="ai-chat-suggestions-label">Vorschläge</p>
+            <div className="ai-chat-suggestions">
               {suggestions.map((s, i) => (
                 <button
                   key={i}
                   onClick={() => setInput(s)}
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: 12,
-                    backgroundColor: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: 20,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    color: '#333',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#1a73e8';
-                    e.currentTarget.style.color = 'white';
-                    e.currentTarget.style.borderColor = '#1a73e8';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'white';
-                    e.currentTarget.style.color = '#333';
-                    e.currentTarget.style.borderColor = '#ddd';
-                  }}
+                  className="ai-chat-suggestion"
                 >
                   {s}
                 </button>
@@ -181,68 +126,27 @@ export const AIChatPanel = () => {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            style={{
-              marginBottom: 14,
-              display: 'flex',
-              justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            }}
+            className={`ai-chat-message ${msg.role === 'user' ? 'user' : 'assistant'}`}
           >
-            <div style={{
-              maxWidth: '85%',
-              padding: '12px 16px',
-              borderRadius: msg.role === 'user' 
-                ? '18px 18px 4px 18px' 
-                : '18px 18px 18px 4px',
-              backgroundColor: msg.role === 'user' ? '#1a73e8' : 'white',
-              color: msg.role === 'user' ? 'white' : '#333',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              whiteSpace: 'pre-wrap',
-              fontSize: 14,
-              lineHeight: 1.6,
-            }}>
+            <div className="ai-chat-bubble">
               {msg.content}
             </div>
           </div>
         ))}
 
         {isLoading && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 10,
-            color: '#666',
-            padding: '8px 0',
-          }}>
-            <div style={{
-              display: 'flex',
-              gap: 4,
-            }}>
-              {[0, 1, 2].map(i => (
-                <div 
-                  key={i}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: '#1a73e8',
-                    animation: `bounce 1.4s ease-in-out ${i * 0.16}s infinite both`,
-                  }} 
-                />
-              ))}
+          <div className="ai-chat-loading">
+            <div className="ai-chat-loading-dots">
+              <div className="ai-chat-loading-dot" />
+              <div className="ai-chat-loading-dot" />
+              <div className="ai-chat-loading-dot" />
             </div>
-            <span style={{ fontSize: 14 }}>Denkt nach...</span>
+            <span>Denkt nach...</span>
           </div>
         )}
 
         {error && (
-          <div style={{ 
-            padding: 14, 
-            backgroundColor: '#ffebee', 
-            borderRadius: 10,
-            color: '#c62828',
-            fontSize: 13,
-            marginTop: 8,
-          }}>
+          <div className="ai-chat-error">
             <strong>Fehler:</strong> {error}
           </div>
         )}
@@ -251,79 +155,29 @@ export const AIChatPanel = () => {
       </div>
 
       {/* Input */}
-      <div style={{
-        padding: 16,
-        backgroundColor: 'white',
-        borderTop: '1px solid #e8e8e8',
-        display: 'flex',
-        gap: 10,
-      }}>
+      <div className="ai-chat-input-area">
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Frage stellen... (Enter zum Senden)"
+          placeholder="Frage stellen..."
           disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: '12px 16px',
-            borderRadius: 24,
-            border: '1px solid #ddd',
-            outline: 'none',
-            fontSize: 14,
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={(e) => e.currentTarget.style.borderColor = '#1a73e8'}
-          onBlur={(e) => e.currentTarget.style.borderColor = '#ddd'}
+          className="ai-chat-input"
         />
         <button
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
-          style={{
-            width: 48,
-            height: 48,
-            backgroundColor: isLoading || !input.trim() ? '#ccc' : '#1a73e8',
-            color: 'white',
-            border: 'none',
-            borderRadius: '50%',
-            cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background-color 0.2s',
-          }}
+          className="ai-chat-send-btn"
           aria-label="Senden"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="22" y1="2" x2="11" y2="13" />
             <polygon points="22 2 15 22 11 13 2 9 22 2" />
           </svg>
         </button>
       </div>
-
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes bounce {
-          0%, 80%, 100% {
-            transform: scale(0);
-          }
-          40% {
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 };
