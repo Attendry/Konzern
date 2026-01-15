@@ -255,6 +255,66 @@ function BalanceSheetVisualization({
     );
   }
 
+  // Helper to get chart data from a balance sheet - MUST be defined before getCurrentChartData
+  const getChartData = (bs: ConsolidatedBalanceSheet | BuiltBalanceSheet) => {
+    const getPositionAmount = (pos: BalanceSheetPosition): number => {
+      return pos.amount || pos.balance || 0;
+    };
+
+    const assetData = [
+      {
+        name: 'Anlagevermögen',
+        value: bs.assets.fixedAssets.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.fixedAssets,
+      },
+      {
+        name: 'Umlaufvermögen',
+        value: bs.assets.currentAssets.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.currentAssets,
+      },
+      {
+        name: 'Geschäftswert',
+        value: Math.abs(bs.assets.goodwill || 0),
+        color: COLORS.goodwill,
+      },
+      {
+        name: 'Aktive Rechnungsabgrenzung',
+        value: bs.assets.deferredTaxAssets.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.deferredTaxAssets,
+      },
+    ].filter(item => item.value > 0);
+
+    const liabilityData = [
+      {
+        name: 'Eigenkapital',
+        value: bs.liabilities.equity.parentCompany.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.equity,
+      },
+      {
+        name: 'Minderheitsanteile',
+        value: Math.abs(bs.liabilities.equity.minorityInterests || 0),
+        color: COLORS.minorityInterests,
+      },
+      {
+        name: 'Rückstellungen',
+        value: bs.liabilities.provisions.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.provisions,
+      },
+      {
+        name: 'Verbindlichkeiten',
+        value: bs.liabilities.liabilities.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.liabilities,
+      },
+      {
+        name: 'Passive Rechnungsabgrenzung',
+        value: bs.liabilities.deferredTaxLiabilities.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
+        color: COLORS.deferredTaxLiabilities,
+      },
+    ].filter(item => item.value > 0);
+
+    return { assetData, liabilityData };
+  };
+
   // Get chart data based on view type
   const getCurrentChartData = () => {
     if (viewType === 'before' && beforeBalanceSheet) {
@@ -318,66 +378,6 @@ function BalanceSheetVisualization({
       );
     }
     return null;
-  };
-
-  // Helper to get chart data from a balance sheet
-  const getChartData = (bs: ConsolidatedBalanceSheet | BuiltBalanceSheet) => {
-    const getPositionAmount = (pos: BalanceSheetPosition): number => {
-      return pos.amount || pos.balance || 0;
-    };
-
-    const assetData = [
-      {
-        name: 'Anlagevermögen',
-        value: bs.assets.fixedAssets.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.fixedAssets,
-      },
-      {
-        name: 'Umlaufvermögen',
-        value: bs.assets.currentAssets.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.currentAssets,
-      },
-      {
-        name: 'Geschäftswert',
-        value: Math.abs(bs.assets.goodwill || 0),
-        color: COLORS.goodwill,
-      },
-      {
-        name: 'Aktive Rechnungsabgrenzung',
-        value: bs.assets.deferredTaxAssets.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.deferredTaxAssets,
-      },
-    ].filter(item => item.value > 0);
-
-    const liabilityData = [
-      {
-        name: 'Eigenkapital',
-        value: bs.liabilities.equity.parentCompany.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.equity,
-      },
-      {
-        name: 'Minderheitsanteile',
-        value: Math.abs(bs.liabilities.equity.minorityInterests || 0),
-        color: COLORS.minorityInterests,
-      },
-      {
-        name: 'Rückstellungen',
-        value: bs.liabilities.provisions.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.provisions,
-      },
-      {
-        name: 'Verbindlichkeiten',
-        value: bs.liabilities.liabilities.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.liabilities,
-      },
-      {
-        name: 'Passive Rechnungsabgrenzung',
-        value: bs.liabilities.deferredTaxLiabilities.reduce((sum, pos) => sum + Math.abs(getPositionAmount(pos)), 0),
-        color: COLORS.deferredTaxLiabilities,
-      },
-    ].filter(item => item.value > 0);
-
-    return { assetData, liabilityData };
   };
 
   return (

@@ -27,14 +27,14 @@ import { DarkModeToggle } from './components/DarkModeToggle';
 import { PageTransition } from './components/PageTransition';
 import { Sidebar } from './components/Sidebar';
 import { GlobalAIChat } from './components/ai/GlobalAIChat';
-// import { LegalChangeAlerts } from './components/ai/LegalChangeAlerts'; // Temporarily disabled for debugging
+import { LegalChangeAlerts } from './components/ai/LegalChangeAlerts';
 import { useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user: _user } = useAuth(); // Prefixed with _ to suppress unused warning
+  const { user } = useAuth();
 
   const handleSidebarCollapsedChange = useCallback((isCollapsed: boolean) => {
     setSidebarCollapsed(isCollapsed);
@@ -45,8 +45,8 @@ function AppContent() {
       <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Sidebar onCollapsedChange={handleSidebarCollapsedChange} />
         <main className="main-content">
-          {/* Legal Change Alerts - temporarily disabled for debugging */}
-          {/* <LegalChangeAlerts userId={user?.id} /> */}
+          {/* Legal Change Alerts - shown on all pages */}
+          <LegalChangeAlerts userId={user?.id} />
           <PageTransition>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
