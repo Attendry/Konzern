@@ -24,7 +24,7 @@ export class GeminiService implements OnModuleInit {
       return;
     }
 
-    this.modelName = this.configService.get('GEMINI_MODEL') || 'gemini-2.0-flash';
+    this.modelName = this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash';
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
       model: this.modelName,
