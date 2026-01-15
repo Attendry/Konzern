@@ -199,9 +199,9 @@ export class ImportController {
   }
 
   @Get('template')
-  async getTemplate(@Res() res: Response) {
+  async getTemplate(@Res() res: Response, @Query('v') version?: string, @Query('t') timestamp?: string) {
     try {
-      console.log('Template download requested');
+      console.log(`Template download requested (version: ${version || 'unknown'}, timestamp: ${timestamp || 'none'})`);
       
       // Timeout für Template-Laden (10 Sekunden)
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -213,10 +213,17 @@ export class ImportController {
       
       console.log('Template loaded, size:', template.length);
       
-      // Cache-Control headers to prevent browser caching
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      // Aggressive cache-busting headers to prevent any caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Last-Modified', new Date().toUTCString());
+      res.setHeader('ETag', `"${Date.now()}-${template.length}"`);
+      
+      // Add version to filename if provided
+      const filename = version 
+        ? `Konsolidierung_Muster_v${version}.xlsx`
+        : `Konsolidierung_Muster_v3.0.xlsx`;
       
       res.setHeader(
         'Content-Type',
@@ -224,7 +231,7 @@ export class ImportController {
       );
       res.setHeader(
         'Content-Disposition',
-        'attachment; filename=Konsolidierung_Muster_v3.0.xlsx',
+        `attachment; filename="${filename}"`,
       );
       res.send(template);
     } catch (error: any) {

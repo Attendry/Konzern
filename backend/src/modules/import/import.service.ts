@@ -335,25 +335,51 @@ export class ImportService {
       // Smart sheet selection: prefer "Bilanzdaten" if available, otherwise use specified or first sheet
       let sheetName = importDataDto.sheetName;
       if (!sheetName) {
-        // Prefer "Bilanzdaten" sheet (most common data sheet name)
-        const bilanzSheet = workbook.SheetNames.find(name => 
-          name.toLowerCase().includes('bilanz') || 
-          name.toLowerCase().includes('balance') ||
-          name.toLowerCase() === 'bilanzdaten'
-        );
+        // CRITICAL: First, try to find a sheet that actually contains "Kontonummer" in its headers
+        // This is the most reliable way to find the right sheet regardless of order
+        let foundSheetWithKontonummer = null;
+        for (const testSheetName of workbook.SheetNames) {
+          const testWorksheet = workbook.Sheets[testSheetName];
+          if (testWorksheet) {
+            const testData = XLSX.utils.sheet_to_json(testWorksheet, { header: 1, defval: null });
+            if (testData && testData.length > 0) {
+              const testHeaderRow = testData[0];
+              if (Array.isArray(testHeaderRow)) {
+                const headerStr = JSON.stringify(testHeaderRow).toLowerCase();
+                if (headerStr.includes('kontonummer') || headerStr.includes('accountnumber') || headerStr.includes('konto')) {
+                  foundSheetWithKontonummer = testSheetName;
+                  console.log(`[ImportService] Found sheet with Kontonummer: "${testSheetName}"`);
+                  break;
+                }
+              }
+            }
+          }
+        }
         
-        if (bilanzSheet) {
-          sheetName = bilanzSheet;
-          console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (found Bilanz sheet)`);
+        if (foundSheetWithKontonummer) {
+          sheetName = foundSheetWithKontonummer;
+          console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (contains Kontonummer column)`);
         } else {
-          // Skip instruction/info sheets and find first data sheet
-          const skipSheets = ['anleitung', 'instruction', 'info', 'information', 'überblick', 'overview', 'hinweise'];
-          const dataSheet = workbook.SheetNames.find(name => 
-            !skipSheets.some(skip => name.toLowerCase().includes(skip))
+          // Fallback: Prefer "Bilanzdaten" sheet (most common data sheet name)
+          const bilanzSheet = workbook.SheetNames.find(name => 
+            name.toLowerCase().includes('bilanz') || 
+            name.toLowerCase().includes('balance') ||
+            name.toLowerCase() === 'bilanzdaten'
           );
           
-          sheetName = dataSheet || workbook.SheetNames[0];
-          console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (from ${workbook.SheetNames.length} available sheets)`);
+          if (bilanzSheet) {
+            sheetName = bilanzSheet;
+            console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (found Bilanz sheet)`);
+          } else {
+            // Skip instruction/info sheets and find first data sheet
+            const skipSheets = ['anleitung', 'instruction', 'info', 'information', 'überblick', 'overview', 'hinweise'];
+            const dataSheet = workbook.SheetNames.find(name => 
+              !skipSheets.some(skip => name.toLowerCase().includes(skip))
+            );
+            
+            sheetName = dataSheet || workbook.SheetNames[0];
+            console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (from ${workbook.SheetNames.length} available sheets)`);
+          }
         }
       }
       
@@ -1130,8 +1156,9 @@ export class ImportService {
       console.log(`  - ${templatePath}`);
       try {
         if (fs.existsSync(templatePath)) {
+          const stats = fs.statSync(templatePath);
           const templateBuffer = fs.readFileSync(templatePath);
-          console.log(`✓ Template gefunden unter: ${templatePath} (${templateBuffer.length} bytes)`);
+          console.log(`✓ Template gefunden unter: ${templatePath} (${templateBuffer.length} bytes, modified: ${stats.mtime.toISOString()})`);
           return templateBuffer;
         }
       } catch (error: any) {

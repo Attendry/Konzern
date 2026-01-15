@@ -44,13 +44,25 @@ export const importService = {
     let link: HTMLAnchorElement | null = null;
     
     try {
-      const response = await api.get('/import/template', {
+      // Add cache-busting query parameter with timestamp and version
+      const timestamp = Date.now();
+      const version = '3.0';
+      const cacheBuster = `?v=${version}&t=${timestamp}`;
+      
+      const response = await api.get(`/import/template${cacheBuster}`, {
         responseType: 'blob',
+        // Prevent browser caching
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
       });
       url = window.URL.createObjectURL(new Blob([response.data]));
       link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'Konsolidierung_Muster_v3.0.xlsx');
+      // Include timestamp in filename to ensure unique downloads
+      link.setAttribute('download', `Konsolidierung_Muster_v${version}_${timestamp}.xlsx`);
       document.body.appendChild(link);
       link.click();
     } catch (error: any) {
