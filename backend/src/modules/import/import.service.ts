@@ -64,36 +64,64 @@ export class ImportService {
       company: [],
     };
 
+    // Log headers for debugging
+    console.log('[ImportService] Detected headers:', headers);
+
     headers.forEach((header, index) => {
       const normalized = normalize(header);
       const originalLower = header.toLowerCase().trim();
       
-      // Kontonummer - expanded pattern matching with more variations
-      // Match common variations: kontonummer, accountnumber, account_number, account-number, konto, account, etc.
-      // Test both normalized (without spaces/underscores/hyphens) and original (with them)
-      const accountNumberPatterns = [
-        /kontonummer/i,
-        /accountnumber/i,
-        /account_number/i,
-        /account-number/i,
-        /account\s+number/i,
-        /^konto$/i,
-        /^account$/i,
-        /kontonr/i,
-        /kontonumber/i,
-        /accountnr/i,
-        /accountno/i,
-        /accno/i,
-        /accnumber/i,
-        /^kto$/i,
-        /^nr$/i,
-        /^no$/i,
-        /^nummer$/i,
-        /^number$/i,
+      // Also try with common Excel encoding issues removed
+      const cleanedHeader = header.replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); // Remove zero-width spaces
+      const cleanedLower = cleanedHeader.toLowerCase().trim();
+      
+      // Kontonummer - check exact matches first (most common cases)
+      const exactMatches = [
+        'kontonummer', 'accountnumber', 'account_number', 'account-number',
+        'konto', 'account', 'kontonr', 'kontonumber', 'accountnr', 'accountno',
+        'accno', 'accnumber', 'kto', 'nr', 'no', 'nummer', 'number'
       ];
       
-      if (accountNumberPatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
+      if (exactMatches.includes(normalized) || 
+          exactMatches.includes(originalLower) || 
+          exactMatches.includes(cleanedLower)) {
+        console.log(`[ImportService] Exact match for account number column: "${header}"`);
         mapping.accountNumber.push(header);
+      } else {
+        // Kontonummer - expanded pattern matching with more variations
+        // Match common variations: kontonummer, accountnumber, account_number, account-number, konto, account, etc.
+        // Test both normalized (without spaces/underscores/hyphens) and original (with them)
+        const accountNumberPatterns = [
+          /kontonummer/i,
+          /accountnumber/i,
+          /account_number/i,
+          /account-number/i,
+          /account\s+number/i,
+          /^konto$/i,
+          /^account$/i,
+          /kontonr/i,
+          /kontonumber/i,
+          /accountnr/i,
+          /accountno/i,
+          /accno/i,
+          /accnumber/i,
+          /^kto$/i,
+          /^nr$/i,
+          /^no$/i,
+          /^nummer$/i,
+          /^number$/i,
+        ];
+        
+        // Test all variations: normalized, original, and cleaned
+        if (accountNumberPatterns.some(pattern => 
+          pattern.test(normalized) || 
+          pattern.test(originalLower) || 
+          pattern.test(cleanedLower) ||
+          pattern.test(cleanedHeader)
+        )) {
+          console.log(`[ImportService] Pattern match for account number column: "${header}"`);
+          mapping.accountNumber.push(header);
+        }
       }
       // Kontoname - expanded patterns
       const accountNamePatterns = [
@@ -228,23 +256,53 @@ export class ImportService {
       }
 
       // Erste Zeile für Spaltenzuordnung
-      const rawData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
-      if (!rawData || rawData.length === 0) {
+      // Use header: 1 to get array of arrays, then convert to objects with first row as headers
+      const rawDataArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+      if (!rawDataArray || rawDataArray.length === 0) {
         throw new BadRequestException('Excel-Datei enthält keine Daten');
       }
 
-      // Spaltenzuordnung ermitteln
-      const headers = Object.keys(rawData[0] || {});
-      if (headers.length === 0) {
+      // First row should be headers
+      const headerRow = rawDataArray[0];
+      if (!headerRow || headerRow.length === 0) {
         throw new BadRequestException('Excel-Datei enthält keine Spaltenüberschriften');
       }
 
+      // Convert headers to strings and clean them
+      const headers = headerRow.map((h: any, i: number) => {
+        const headerStr = String(h || `Spalte_${i + 1}`).trim();
+        // Remove zero-width spaces and other invisible characters
+        return headerStr.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      });
+
+      console.log('[ImportService] Detected headers from Excel:', headers);
+
       const columnMapping = this.findColumnMapping(headers);
+      
+      // If still no account number found, try alternative: use first data row to infer headers
+      if (columnMapping.accountNumber.length === 0 && rawDataArray.length > 1) {
+        console.warn('[ImportService] No account number column found in headers, trying alternative detection');
+        // Try to find a column that looks like account numbers in the data
+        const firstDataRow = rawDataArray[1];
+        if (firstDataRow) {
+          for (let i = 0; i < Math.min(headers.length, firstDataRow.length); i++) {
+            const cellValue = String(firstDataRow[i] || '').trim();
+            // Check if this cell looks like an account number (numeric, 3-20 chars)
+            if (/^\d{3,20}$/.test(cellValue)) {
+              console.log(`[ImportService] Found potential account number column at index ${i}: "${headers[i]}" with value "${cellValue}"`);
+              columnMapping.accountNumber.push(headers[i]);
+              break;
+            }
+          }
+        }
+      }
       
       // Validierung: Mindestens Kontonummer muss vorhanden sein
       if (columnMapping.accountNumber.length === 0) {
         // Provide helpful error message with available headers
         const availableHeaders = headers.slice(0, 10).join(', ') + (headers.length > 10 ? '...' : '');
+        console.error('[ImportService] Account number column not found. Headers:', headers);
+        console.error('[ImportService] Column mapping result:', columnMapping);
         throw new BadRequestException(
           `Keine Kontonummer-Spalte gefunden.\n\n` +
           `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
@@ -252,6 +310,22 @@ export class ImportService {
           `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung.`
         );
       }
+      
+      console.log('[ImportService] Column mapping successful:', {
+        accountNumber: columnMapping.accountNumber,
+        accountName: columnMapping.accountName,
+        debit: columnMapping.debit,
+        credit: columnMapping.credit,
+      });
+
+      // Convert array format back to object format for mapping
+      const rawData: any[] = rawDataArray.slice(1).map((row: any[]) => {
+        const rowObj: any = {};
+        headers.forEach((header, i) => {
+          rowObj[header] = row[i] ?? null;
+        });
+        return rowObj;
+      });
 
       // Mappe alle Zeilen
       const data: ImportRow[] = [];

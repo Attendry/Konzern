@@ -1,7 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { useToastContext } from '../contexts/ToastContext';
 import * as XLSX from 'xlsx';
+import api from '../services/api';
 import '../App.css';
+
+interface ImportResult {
+  imported: number;
+  errors: string[];
+  warnings?: string[];
+}
 
 interface ColumnMapping {
   excelColumn: string;
@@ -315,43 +322,17 @@ export function ExcelMappingWizard({
       }
       formData.append('columnMapping', JSON.stringify(mappingConfig));
 
-      // Call the import API
-      let response: Response;
-      try {
-        response = await fetch('/api/import/excel-mapped', {
-          method: 'POST',
-          body: formData,
-        });
-      } catch (fetchError: any) {
-        throw new Error(`Netzwerkfehler: ${fetchError.message || 'Verbindung zum Server fehlgeschlagen'}`);
-      }
-
-      if (!response.ok) {
-        let errorMessage = 'Import fehlgeschlagen';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-        } catch (parseError) {
-          // If response is not JSON, try to get text
-          try {
-            const errorText = await response.text();
-            if (errorText) {
-              errorMessage = errorText;
-            } else {
-              errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-            }
-          } catch (textError) {
-            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-          }
-        }
-        throw new Error(errorMessage);
-      }
-
+      // Call the import API using the api service
       let result: any;
       try {
-        result = await response.json();
-      } catch (parseError) {
-        throw new Error('Ungültige Antwort vom Server');
+        const response = await api.post<ImportResult>('/import/excel-mapped', formData);
+        result = response.data;
+      } catch (apiError: any) {
+        const errorMessage = apiError.response?.data?.message || 
+                           apiError.response?.data?.error || 
+                           apiError.message || 
+                           'Import fehlgeschlagen';
+        throw new Error(errorMessage);
       }
 
       if (!result || typeof result.imported !== 'number') {
