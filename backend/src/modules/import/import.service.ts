@@ -334,13 +334,19 @@ export class ImportService {
         throw new BadRequestException('Ungültiger Dateityp. Nur Excel-Dateien (.xlsx, .xls) sind erlaubt.');
       }
 
+      console.log('[ImportService] About to read Excel workbook...');
       const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      console.log('[ImportService] Workbook read successfully');
+      console.log('[ImportService] Sheet names:', workbook.SheetNames);
+      console.log('[ImportService] Number of sheets:', workbook.SheetNames?.length || 0);
+      
       if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
         throw new BadRequestException('Excel-Datei enthält keine Arbeitsblätter');
       }
 
       // Smart sheet selection: prefer "Bilanzdaten" if available, otherwise use specified or first sheet
       let sheetName = importDataDto.sheetName;
+      console.log('[ImportService] Initial sheetName from DTO:', sheetName);
       if (!sheetName) {
         // CRITICAL: First, try to find a sheet that actually contains "Kontonummer" in its headers
         // This is the most reliable way to find the right sheet regardless of order
