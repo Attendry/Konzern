@@ -1018,25 +1018,34 @@ export class ImportService {
     
     console.warn('Konsolidierungs-Template nicht gefunden, erstelle Standard-Template im Speicher');
 
-    // Fallback: Erstelle eine einfache Excel-Vorlage
+    // Fallback: Erstelle eine einfache Excel-Vorlage mit EXACT column names from template
+    // This matches the Python script template exactly
     const templateData = [
       {
-        Unternehmen: 'Mutterunternehmen H',
-        Kontonummer: '1000',
-        Kontoname: 'Kasse',
-        Soll: 1000,
-        Haben: 0,
-        Saldo: 1000,
-        Zwischengesellschaft: false,
+        'Unternehmen': 'Mutterunternehmen H',
+        'Kontonummer': '1000',
+        'Kontoname': 'Kasse',
+        'HGB-Position': 'B.IV',
+        'Kontotyp': 'asset',
+        'Soll': 1000,
+        'Haben': 0,
+        'Saldo': 1000,
+        'Zwischengesellschaft': 'Nein',
+        'Gegenpartei': '',
+        'Bemerkung': '',
       },
       {
-        Unternehmen: 'Mutterunternehmen H',
-        Kontonummer: '2000',
-        Kontoname: 'Bank',
-        Soll: 5000,
-        Haben: 0,
-        Saldo: 5000,
-        Zwischengesellschaft: false,
+        'Unternehmen': 'Mutterunternehmen H',
+        'Kontonummer': '2000',
+        'Kontoname': 'Bank',
+        'HGB-Position': 'B.IV',
+        'Kontotyp': 'asset',
+        'Soll': 5000,
+        'Haben': 0,
+        'Saldo': 5000,
+        'Zwischengesellschaft': 'Nein',
+        'Gegenpartei': '',
+        'Bemerkung': '',
       },
     ];
 
