@@ -58,7 +58,14 @@ async function bootstrap() {
       origin: true, // Allow all origins for now
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Cache-Control',
+        'Pragma',
+        'Expires',
+      ],
       exposedHeaders: ['Content-Length', 'Content-Type'],
       maxAge: 86400, // 24 hours
     });
