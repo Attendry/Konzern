@@ -68,26 +68,41 @@ export class ImportService {
     console.log('[ImportService] Detected headers:', headers);
 
     headers.forEach((header, index) => {
+      // Clean header multiple ways
+      const originalHeader = header;
+      const trimmedHeader = header.trim();
       const normalized = normalize(header);
       const originalLower = header.toLowerCase().trim();
       
       // Also try with common Excel encoding issues removed
       const cleanedHeader = header.replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); // Remove zero-width spaces
       const cleanedLower = cleanedHeader.toLowerCase().trim();
+      const cleanedNormalized = normalize(cleanedHeader);
+      
+      // Log for debugging
+      console.log(`[ImportService] Processing header ${index}: "${header}" -> normalized: "${normalized}", cleaned: "${cleanedLower}"`);
       
       // Kontonummer - check exact matches first (most common cases)
+      // Check ALL variations
       const exactMatches = [
         'kontonummer', 'accountnumber', 'account_number', 'account-number',
         'konto', 'account', 'kontonr', 'kontonumber', 'accountnr', 'accountno',
         'accno', 'accnumber', 'kto', 'nr', 'no', 'nummer', 'number'
       ];
       
-      if (exactMatches.includes(normalized) || 
-          exactMatches.includes(originalLower) || 
-          exactMatches.includes(cleanedLower)) {
-        console.log(`[ImportService] Exact match for account number column: "${header}"`);
-        mapping.accountNumber.push(header);
-      } else {
+      const allVariations = [normalized, originalLower, cleanedLower, cleanedNormalized, trimmedHeader.toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, '')];
+      
+      let matched = false;
+      for (const variation of allVariations) {
+        if (exactMatches.includes(variation)) {
+          console.log(`[ImportService] Exact match for account number column: "${header}" (matched variation: "${variation}")`);
+          mapping.accountNumber.push(header);
+          matched = true;
+          break;
+        }
+      }
+      
+      if (!matched) {
         // Kontonummer - expanded pattern matching with more variations
         // Match common variations: kontonummer, accountnumber, account_number, account-number, konto, account, etc.
         // Test both normalized (without spaces/underscores/hyphens) and original (with them)
@@ -113,14 +128,13 @@ export class ImportService {
         ];
         
         // Test all variations: normalized, original, and cleaned
-        if (accountNumberPatterns.some(pattern => 
-          pattern.test(normalized) || 
-          pattern.test(originalLower) || 
-          pattern.test(cleanedLower) ||
-          pattern.test(cleanedHeader)
-        )) {
-          console.log(`[ImportService] Pattern match for account number column: "${header}"`);
-          mapping.accountNumber.push(header);
+        for (const variation of [normalized, originalLower, cleanedLower, cleanedHeader, header]) {
+          if (accountNumberPatterns.some(pattern => pattern.test(variation))) {
+            console.log(`[ImportService] Pattern match for account number column: "${header}" (matched variation: "${variation}")`);
+            mapping.accountNumber.push(header);
+            matched = true;
+            break;
+          }
         }
       }
       // Kontoname - expanded patterns
@@ -300,15 +314,47 @@ export class ImportService {
       // Validierung: Mindestens Kontonummer muss vorhanden sein
       if (columnMapping.accountNumber.length === 0) {
         // Provide helpful error message with available headers
-        const availableHeaders = headers.slice(0, 10).join(', ') + (headers.length > 10 ? '...' : '');
-        console.error('[ImportService] Account number column not found. Headers:', headers);
-        console.error('[ImportService] Column mapping result:', columnMapping);
-        throw new BadRequestException(
-          `Keine Kontonummer-Spalte gefunden.\n\n` +
-          `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
-          `Verfügbare Spalten in der Datei: ${availableHeaders}\n\n` +
-          `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung.`
-        );
+        const availableHeaders = headers.join(', ');
+        const normalizedHeaders = headers.map(h => {
+          const normalized = h.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '');
+          return `${h} (normalized: "${normalized}")`;
+        }).join(', ');
+        
+        console.error('[ImportService] Account number column not found.');
+        console.error('[ImportService] Original headers:', headers);
+        console.error('[ImportService] Normalized headers:', headers.map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '')));
+        console.error('[ImportService] Column mapping result:', JSON.stringify(columnMapping, null, 2));
+        
+        // Try one more time with a very permissive check - look for any column that might be account number
+        let foundAlternative = false;
+        for (let i = 0; i < headers.length; i++) {
+          const header = headers[i];
+          const normalized = header.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '');
+          
+          // Very permissive: if it contains "konto", "account", "nr", "number", or is just "nr"/"no"
+          if (normalized.includes('konto') || 
+              normalized.includes('account') || 
+              normalized.includes('nr') || 
+              normalized.includes('number') ||
+              normalized === 'nr' ||
+              normalized === 'no' ||
+              normalized === 'nummer') {
+            console.log(`[ImportService] Found alternative account number column via permissive check: "${header}"`);
+            columnMapping.accountNumber.push(header);
+            foundAlternative = true;
+            break;
+          }
+        }
+        
+        if (!foundAlternative) {
+          throw new BadRequestException(
+            `Keine Kontonummer-Spalte gefunden.\n\n` +
+            `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
+            `Gefundene Spalten in der Datei: ${availableHeaders}\n\n` +
+            `Normalisierte Spaltennamen: ${normalizedHeaders}\n\n` +
+            `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung.`
+          );
+        }
       }
       
       console.log('[ImportService] Column mapping successful:', {
