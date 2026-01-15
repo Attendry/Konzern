@@ -54,8 +54,8 @@ export class DataQueryTool implements AgentTool {
     'companies',
     'financial_statements',
     'consolidation_entries',
-    'ic_transactions',
-    'ic_reconciliation',
+    'intercompany_transactions',
+    'ic_reconciliations',
     'participations',
     'plausibility_checks',
   ];
@@ -152,8 +152,8 @@ export class DataQueryTool implements AgentTool {
       return {
         success: true,
         message: 'Query IC transactions',
-        table: 'ic_transactions',
-        columns: ['id', 'sender_company_id', 'receiver_company_id', 'amount', 'transaction_type', 'status'],
+        table: 'intercompany_transactions',
+        columns: ['id', 'from_company_id', 'to_company_id', 'amount', 'transaction_date', 'description'],
         filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
       };
     }
@@ -163,8 +163,8 @@ export class DataQueryTool implements AgentTool {
       return {
         success: true,
         message: 'Query IC reconciliation',
-        table: 'ic_reconciliation',
-        columns: ['id', 'company_a', 'company_b', 'amount_a', 'amount_b', 'difference', 'status'],
+        table: 'ic_reconciliations',
+        columns: ['id', 'company_a_id', 'company_b_id', 'amount_company_a', 'amount_company_b', 'difference_amount', 'status', 'difference_reason'],
         filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
       };
     }
@@ -186,7 +186,7 @@ export class DataQueryTool implements AgentTool {
         success: true,
         message: 'Query consolidation entries',
         table: 'consolidation_entries',
-        columns: ['id', 'entry_type', 'account', 'amount', 'description', 'created_at'],
+        columns: ['id', 'adjustment_type', 'account_id', 'debit_account_id', 'credit_account_id', 'amount', 'description', 'hgb_reference', 'created_at'],
         filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
       };
     }
@@ -197,7 +197,7 @@ export class DataQueryTool implements AgentTool {
         success: true,
         message: 'Query financial statements',
         table: 'financial_statements',
-        columns: ['id', 'company_id', 'period', 'status', 'balance_sheet_data'],
+        columns: ['id', 'company_id', 'fiscal_year', 'period_start', 'period_end', 'status'],
       };
     }
 
@@ -314,7 +314,11 @@ Antworte mit JSON:
       }
 
       // Apply financial statement filter if provided
-      if (financialStatementId && intent.table !== 'companies' && intent.table !== 'participations') {
+      // Note: intercompany_transactions doesn't have financial_statement_id in the base schema
+      if (financialStatementId && 
+          intent.table !== 'companies' && 
+          intent.table !== 'participations' &&
+          intent.table !== 'intercompany_transactions') {
         query = query.eq('financial_statement_id', financialStatementId);
       }
 
@@ -427,14 +431,20 @@ Antworte mit JSON:
    * Format reconciliation result
    */
   private formatReconciliationResult(results: any[]): string {
+    if (!results || results.length === 0) {
+      return 'Keine IC-Abstimmungen gefunden.';
+    }
+    
     let text = '';
-    const withDiff = results.filter(r => Math.abs(r.difference || 0) > 0.01);
+    const withDiff = results.filter(r => Math.abs(r.difference_amount || 0) > 0.01);
     const matched = results.length - withDiff.length;
 
     text += `${matched} abgestimmt | ${withDiff.length} mit Differenz\n\n`;
     
     withDiff.slice(0, 5).forEach((r, i) => {
-      text += `${i + 1}. Differenz: ${this.formatCurrency(r.difference)} (${r.status})\n`;
+      const diff = r.difference_amount || 0;
+      const reason = r.difference_reason ? ` (${r.difference_reason})` : '';
+      text += `${i + 1}. Differenz: ${this.formatCurrency(diff)} - Status: ${r.status}${reason}\n`;
     });
     
     return text;
@@ -464,14 +474,19 @@ Antworte mit JSON:
    * Format entries result
    */
   private formatEntriesResult(results: any[]): string {
+    if (!results || results.length === 0) {
+      return 'Keine Konsolidierungsbuchungen gefunden.';
+    }
+    
     let text = '';
-    const totalAmount = results.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalAmount = results.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     
     text += `Gesamtbetrag: ${this.formatCurrency(totalAmount)}\n\n`;
     
     const byType: Record<string, number> = {};
     results.forEach(e => {
-      byType[e.entry_type] = (byType[e.entry_type] || 0) + 1;
+      const type = e.adjustment_type || 'unknown';
+      byType[type] = (byType[type] || 0) + 1;
     });
     
     for (const [type, count] of Object.entries(byType)) {

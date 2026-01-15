@@ -361,16 +361,18 @@ export class EntryExplanationTool implements AgentTool {
       .from('consolidation_entries')
       .select(`
         id,
-        entry_type,
-        account,
-        debit_account,
-        credit_account,
+        adjustment_type,
+        account_id,
+        debit_account_id,
+        credit_account_id,
         amount,
         description,
-        reference,
+        hgb_reference,
         created_at,
         financial_statement:financial_statements(
-          period,
+          fiscal_year,
+          period_start,
+          period_end,
           company:companies(name)
         )
       `)
@@ -385,15 +387,15 @@ export class EntryExplanationTool implements AgentTool {
     
     return {
       id: data.id,
-      entryType: data.entry_type,
-      account: data.account,
-      debitAccount: data.debit_account,
-      creditAccount: data.credit_account,
+      entryType: data.adjustment_type,
+      account: data.account_id,
+      debitAccount: data.debit_account_id,
+      creditAccount: data.credit_account_id,
       amount: data.amount,
       description: data.description || '',
-      reference: data.reference,
+      reference: data.hgb_reference,
       companyName: fs?.company?.name,
-      period: fs?.period,
+      period: fs ? `${fs.period_start} - ${fs.period_end} (${fs.fiscal_year})` : undefined,
       createdAt: new Date(data.created_at),
     };
   }

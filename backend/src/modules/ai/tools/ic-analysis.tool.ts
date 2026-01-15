@@ -245,13 +245,13 @@ export class ICAnalysisTool implements AgentTool {
     // Get historical cases between these companies
     const { data: historical } = await client
       .from('ic_reconciliations')
-      .select('status, resolution_type')
+      .select('status, difference_reason')
       .or(`and(company_a_id.eq.${recon.company_a_id},company_b_id.eq.${recon.company_b_id}),and(company_a_id.eq.${recon.company_b_id},company_b_id.eq.${recon.company_a_id})`)
       .neq('id', reconciliationId);
 
     const historicalCases = historical?.length || 0;
-    const timingCases = historical?.filter(h => h.resolution_type === 'timing').length || 0;
-    const resolvedCases = historical?.filter(h => h.status === 'resolved').length || 0;
+    const timingCases = historical?.filter(h => h.difference_reason === 'timing').length || 0;
+    const resolvedCases = historical?.filter(h => h.status === 'cleared' || h.status === 'explained' || h.status === 'accepted').length || 0;
 
     return {
       reconciliation: recon,

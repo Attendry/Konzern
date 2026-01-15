@@ -245,9 +245,10 @@ export class VarianceAnalysisTool implements AgentTool {
       .from('financial_statements')
       .select(`
         id,
-        period,
-        company:companies(id, name),
-        balance_sheet_data
+        fiscal_year,
+        period_start,
+        period_end,
+        company:companies(id, name)
       `)
       .eq('id', financialStatementId)
       .single();
@@ -265,20 +266,42 @@ export class VarianceAnalysisTool implements AgentTool {
 
     // Get previous period
     const companyId = (fs.company as any)?.id;
-    const currentYear = new Date(fs.period).getFullYear();
+    const currentYear = fs.fiscal_year;
     
     const { data: previousFs } = await client
       .from('financial_statements')
-      .select('id, period, balance_sheet_data')
+      .select('id, fiscal_year, period_start, period_end')
       .eq('company_id', companyId)
-      .lt('period', fs.period)
-      .order('period', { ascending: false })
+      .lt('fiscal_year', currentYear)
+      .order('fiscal_year', { ascending: false })
       .limit(1)
       .single();
 
-    // Analyze balance sheet changes
-    const currentData = fs.balance_sheet_data || {};
-    const previousData = previousFs?.balance_sheet_data || {};
+    // Get account balances for current and previous period
+    const { data: currentBalances } = await client
+      .from('account_balances')
+      .select('*, accounts(*)')
+      .eq('financial_statement_id', financialStatementId);
+
+    const { data: previousBalances } = previousFs 
+      ? await client
+          .from('account_balances')
+          .select('*, accounts(*)')
+          .eq('financial_statement_id', previousFs.id)
+      : { data: null };
+
+    // Build balance sheet data from account balances
+    const currentData: Record<string, number> = {};
+    (currentBalances || []).forEach((balance: any) => {
+      const accountNumber = balance.accounts?.account_number || balance.account_id;
+      currentData[accountNumber] = Number(balance.balance || 0);
+    });
+
+    const previousData: Record<string, number> = {};
+    (previousBalances || []).forEach((balance: any) => {
+      const accountNumber = balance.accounts?.account_number || balance.account_id;
+      previousData[accountNumber] = Number(balance.balance || 0);
+    });
     
     const significantVariances: Array<{
       account: string;
