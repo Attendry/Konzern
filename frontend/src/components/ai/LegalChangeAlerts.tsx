@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { LegalChangeAlert } from '../../types/legal.types';
+import type { LegalChangeAlert as LegalChangeAlertType } from '../../types/legal.types';
 import { LegalChangeAlert as LegalChangeAlertComponent } from './LegalChangeAlert';
 import aiService from '../../services/aiService';
 import './legal-alerts.css';
@@ -13,7 +13,7 @@ export const LegalChangeAlerts: React.FC<LegalChangeAlertsProps> = ({
   userId,
   maxVisible = 3,
 }) => {
-  const [alerts, setAlerts] = useState<LegalChangeAlert[]>([]);
+  const [alerts, setAlerts] = useState<LegalChangeAlertType[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
@@ -39,7 +39,7 @@ export const LegalChangeAlerts: React.FC<LegalChangeAlertsProps> = ({
     }
   };
 
-  const handleDismiss = (dismissedAlert: LegalChangeAlert) => {
+  const handleDismiss = (dismissedAlert: LegalChangeAlertType) => {
     setAlerts(prev => prev.filter(a => a.change.id !== dismissedAlert.change.id));
   };
 
