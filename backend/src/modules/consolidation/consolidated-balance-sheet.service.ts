@@ -123,9 +123,16 @@ export class ConsolidatedBalanceSheetService {
     }
 
     // 5. Lade alle Konsolidierungsbuchungen
+    // CRITICAL: Specify exact foreign key relationship to avoid "more than one relationship" error
+    // consolidation_entries has multiple FKs to accounts (account_id, debit_account_id, credit_account_id)
     const { data: consolidationEntries, error: entriesError } = await this.supabase
       .from('consolidation_entries')
-      .select('*, accounts(*)')
+      .select(`
+        *,
+        account:accounts!consolidation_entries_account_id_fkey(*),
+        debit_account:accounts!consolidation_entries_debit_account_id_fkey(*),
+        credit_account:accounts!consolidation_entries_credit_account_id_fkey(*)
+      `)
       .eq('financial_statement_id', financialStatementId);
 
     if (entriesError) {
@@ -168,14 +175,18 @@ export class ConsolidatedBalanceSheetService {
     // 8. Wende Konsolidierungsbuchungen an
     let totalEliminationAmount = 0;
     for (const entry of consolidationEntries || []) {
-      const accountId = entry.account_id;
+      // Use account_id (primary account) or fallback to debit_account_id if account_id is null
+      const accountId = entry.account_id || entry.debit_account_id;
       const adjustmentAmount = parseFloat(entry.amount) || 0;
+      
+      // Get account info from the embedded relationship
+      const account = entry.account || entry.debit_account;
 
-      if (consolidatedPositions.has(accountId)) {
+      if (accountId && consolidatedPositions.has(accountId)) {
         const position = consolidatedPositions.get(accountId)!;
         position.balance += adjustmentAmount; // adjustmentAmount ist bereits negativ bei Eliminierungen
         totalEliminationAmount += Math.abs(adjustmentAmount);
-      } else {
+      } else if (accountId && account) {
         // Neue Position durch Konsolidierungsbuchung (z.B. Goodwill)
         const account = entry.accounts;
         if (account) {
