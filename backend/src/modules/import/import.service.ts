@@ -526,227 +526,88 @@ export class ImportService {
         console.log(`[ImportService] Header[${i}]: "${h}" (type: ${typeof headerRow[i]}, original: ${JSON.stringify(headerRow[i])})`);
       });
 
-      const columnMapping = this.findColumnMapping(headers);
+      // SIMPLIFIED APPROACH: Use a combination of header detection and positional fallback
+      // The template structure is known: [Unternehmen, Kontonummer, Kontoname, HGB-Position, Kontotyp, Soll, Haben, Saldo, ...]
+      // So if detection fails, we can safely use positional indices
       
-      console.log(`[ImportService] ========== AFTER findColumnMapping ==========`);
-      console.log(`[ImportService] Column mapping result:`, JSON.stringify(columnMapping, null, 2));
-      console.log(`[ImportService] Account number columns found: ${columnMapping.accountNumber.length}`);
-      console.log(`[ImportService] Account number columns:`, columnMapping.accountNumber);
+      console.log(`[ImportService] ========== HEADER DETECTION ==========`);
+      console.log(`[ImportService] Headers:`, JSON.stringify(headers));
+      console.log(`[ImportService] Sheet: "${sheetName}"`);
       
-      // CRITICAL FIX: Force detect "Kontonummer" if it exists in headers
-      // This bypasses all the matching logic and directly checks the headers array
-      console.log(`[ImportService] ========== FORCE DETECTION START ==========`);
-      console.log(`[ImportService] Checking ${headers.length} headers for "Kontonummer"...`);
-      console.log(`[ImportService] Headers array:`, JSON.stringify(headers));
-      
-      for (let i = 0; i < headers.length; i++) {
-        const h = headers[i];
-        const hLower = h.toLowerCase();
-        const hTrimmed = h.trim().toLowerCase();
-        
-        console.log(`[ImportService] Checking header[${i}]: "${h}" (lower: "${hLower}", trimmed: "${hTrimmed}")`);
-        
-        // Check every possible variation
-        if (h === 'Kontonummer' ||
-            h === 'kontonummer' ||
-            h === 'KONTONUMMER' ||
-            hLower === 'kontonummer' ||
-            hTrimmed === 'kontonummer' ||
-            hLower.includes('kontonummer') ||
-            hTrimmed.includes('kontonummer')) {
-          console.log(`[ImportService] *** FORCE DETECTED "Kontonummer" at index ${i}: "${h}" ***`);
-          // Force add to mapping if not already there
-          if (!columnMapping.accountNumber.includes(h)) {
-            columnMapping.accountNumber.push(h);
-            console.log(`[ImportService] *** FORCED "${h}" into accountNumber mapping ***`);
-          } else {
-            console.log(`[ImportService] *** "${h}" already in accountNumber mapping ***`);
-          }
-          break; // Found it, no need to continue
+      // Build a simple header map for quick lookup (lowercase key -> index)
+      const headerMap: Record<string, number> = {};
+      headers.forEach((h, i) => {
+        const key = String(h || '').toLowerCase().trim();
+        if (key) {
+          headerMap[key] = i;
         }
-      }
+      });
       
-      console.log(`[ImportService] ========== FORCE DETECTION END ==========`);
-      console.log(`[ImportService] After force detection, accountNumber mapping has ${columnMapping.accountNumber.length} entries:`, columnMapping.accountNumber);
+      console.log(`[ImportService] Header map:`, JSON.stringify(headerMap));
       
-      // ULTRA-AGGRESSIVE FALLBACK: If still no account number found, check headers array directly
-      // This is a last resort that should NEVER fail if "Kontonummer" exists in the file
-      if (columnMapping.accountNumber.length === 0) {
-        console.error('[ImportService] ========== ULTRA-AGGRESSIVE FALLBACK ==========');
-        console.error('[ImportService] Force detection failed, trying ultra-aggressive fallback');
-        console.error('[ImportService] Headers array:', JSON.stringify(headers));
-        console.error('[ImportService] Headers array length:', headers.length);
-        
-        // Check every single header with the most permissive matching possible
-        for (let i = 0; i < headers.length; i++) {
-          const header = String(headers[i] || '').trim();
-          const headerLower = header.toLowerCase();
-          const headerNormalized = headerLower.replace(/\s+/g, '').replace(/[_-]/g, '');
-          
-          console.error(`[ImportService] Fallback check[${i}]: "${header}" -> lower: "${headerLower}", normalized: "${headerNormalized}"`);
-          
-          // ULTRA-PERMISSIVE: Match anything that could remotely be "Kontonummer"
-          if (headerLower.includes('kontonummer') || 
-              headerLower.includes('konto') ||
-              headerNormalized.includes('kontonummer') ||
-              headerNormalized.includes('konto') ||
-              headerLower.includes('account') ||
-              headerNormalized.includes('account') ||
-              header === 'Kontonummer' ||
-              header === 'kontonummer' ||
-              header === 'KONTONUMMER' ||
-              headerLower === 'kontonummer' ||
-              headerNormalized === 'kontonummer') {
-            console.error(`[ImportService] *** ULTRA-AGGRESSIVE FALLBACK FOUND at index ${i}: "${header}" ***`);
-            columnMapping.accountNumber.push(header);
-            break;
-          }
-        }
-        
-        console.error(`[ImportService] After ultra-aggressive fallback, accountNumber mapping has ${columnMapping.accountNumber.length} entries`);
-        console.error('[ImportService] ============================================');
-      }
+      // POSITIONAL FALLBACK: Use known template structure if headers match expected pattern
+      // This is the most reliable approach for the standard template
+      const isBilanzdatenSheet = sheetName.toLowerCase().includes('bilanz') || 
+                                  sheetName.toLowerCase().includes('balance') ||
+                                  sheetName.toLowerCase() === 'bilanzdaten';
       
-      // If still no account number found, try alternative: use first data row to infer headers
-      if (columnMapping.accountNumber.length === 0 && rawDataArray.length > 1) {
-        console.warn('[ImportService] No account number column found in headers, trying alternative detection');
-        // Try to find a column that looks like account numbers in the data
-        const firstDataRow = rawDataArray[1];
-        if (firstDataRow) {
-          for (let i = 0; i < Math.min(headers.length, firstDataRow.length); i++) {
-            const cellValue = String(firstDataRow[i] || '').trim();
-            // Check if this cell looks like an account number (numeric, 3-20 chars)
-            if (/^\d{3,20}$/.test(cellValue)) {
-              console.log(`[ImportService] Found potential account number column at index ${i}: "${headers[i]}" with value "${cellValue}"`);
-              columnMapping.accountNumber.push(headers[i]);
-              break;
-            }
-          }
-        }
-      }
+      // Check if first header looks like "Unternehmen" (indicating standard template)
+      const firstHeaderLower = String(headers[0] || '').toLowerCase().trim();
+      const isStandardTemplate = firstHeaderLower === 'unternehmen' || 
+                                  firstHeaderLower === 'company' ||
+                                  firstHeaderLower.includes('unternehmen');
       
-      // Validierung: Mindestens Kontonummer muss vorhanden sein
-      if (columnMapping.accountNumber.length === 0) {
-        // Provide helpful error message with available headers
+      console.log(`[ImportService] Is Bilanzdaten sheet: ${isBilanzdatenSheet}`);
+      console.log(`[ImportService] Is standard template: ${isStandardTemplate}`);
+      
+      // Determine column indices using header map with positional fallbacks
+      // These fallbacks match the standard template structure
+      const accountNumberIdx = headerMap['kontonummer'] ?? 
+                               headerMap['accountnumber'] ?? 
+                               headerMap['account_number'] ?? 
+                               headerMap['konto'] ??
+                               (isStandardTemplate ? 1 : -1); // Fallback to column 1 for standard template
+      
+      const accountNameIdx = headerMap['kontoname'] ?? 
+                             headerMap['accountname'] ?? 
+                             headerMap['account_name'] ??
+                             headerMap['name'] ??
+                             (isStandardTemplate ? 2 : -1);
+      
+      const debitIdx = headerMap['soll'] ?? headerMap['debit'] ?? -1;
+      const creditIdx = headerMap['haben'] ?? headerMap['credit'] ?? -1;
+      const balanceIdx = headerMap['saldo'] ?? headerMap['balance'] ?? -1;
+      const companyIdx = headerMap['unternehmen'] ?? headerMap['company'] ?? 0;
+      const isIntercompanyIdx = headerMap['zwischengesellschaft'] ?? headerMap['intercompany'] ?? -1;
+      
+      console.log(`[ImportService] Column indices: accountNumber=${accountNumberIdx}, accountName=${accountNameIdx}, debit=${debitIdx}, credit=${creditIdx}, balance=${balanceIdx}, company=${companyIdx}`);
+      
+      // Validate that we have an account number column
+      if (accountNumberIdx < 0 || accountNumberIdx >= headers.length) {
         const availableHeaders = headers.join(', ');
-        const normalizedHeaders = headers.map(h => {
-          const normalized = h.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '');
-          return `${h} (normalized: "${normalized}")`;
-        }).join(', ');
-        
-        console.error('[ImportService] Account number column not found.');
-        console.error('[ImportService] Sheet name:', sheetName);
-        console.error('[ImportService] Original headers:', JSON.stringify(headers, null, 2));
-        console.error('[ImportService] Normalized headers:', headers.map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '')));
-        console.error('[ImportService] Column mapping result:', JSON.stringify(columnMapping, null, 2));
-        console.error('[ImportService] First data row sample:', rawDataArray.length > 1 ? rawDataArray[1] : 'No data rows');
-        
-        // Try one more time with a very permissive check - look for any column that might be account number
-        let foundAlternative = false;
-        for (let i = 0; i < headers.length; i++) {
-          const header = headers[i];
-          const headerLower = header.toLowerCase();
-          const normalized = headerLower.trim().replace(/\s+/g, '').replace(/[_-]/g, '');
-          
-          // ULTRA-PERMISSIVE: Check every possible variation
-          // Check if header contains "kontonummer" in any form
-          if (headerLower.includes('kontonummer') || 
-              headerLower.includes('konto') || 
-              normalized.includes('kontonummer') ||
-              normalized.includes('konto') ||
-              headerLower.includes('account') || 
-              normalized.includes('account') ||
-              headerLower.includes('nr') || 
-              normalized.includes('nr') ||
-              headerLower.includes('number') ||
-              normalized.includes('number') ||
-              normalized === 'nr' ||
-              normalized === 'no' ||
-              normalized === 'nummer' ||
-              header === 'Kontonummer' ||
-              header === 'kontonummer' ||
-              header === 'KONTONUMMER') {
-            console.log(`[ImportService] Found alternative account number column via ultra-permissive check: "${header}" (index ${i}, normalized: "${normalized}")`);
-            columnMapping.accountNumber.push(header);
-            foundAlternative = true;
-            break;
-          }
-        }
-        
-        // If still not found, try to infer from data - look for numeric columns in first data row
-        if (!foundAlternative && rawDataArray.length > 1) {
-          const firstDataRow = rawDataArray[1];
-          for (let i = 0; i < Math.min(headers.length, firstDataRow.length); i++) {
-            const cellValue = String(firstDataRow[i] || '').trim();
-            // Check if this cell looks like an account number (numeric, 3-20 chars)
-            if (/^\d{3,20}$/.test(cellValue)) {
-              console.log(`[ImportService] Found potential account number column at index ${i}: "${headers[i]}" with value "${cellValue}"`);
-              columnMapping.accountNumber.push(headers[i]);
-              foundAlternative = true;
-              break;
-            }
-          }
-        }
-        
-        if (!foundAlternative) {
-          // LAST RESORT: If we have data rows, use the first column that contains numeric data
-          // This is a very permissive fallback that will work even if headers are completely wrong
-          if (rawDataArray.length > 1) {
-            const firstDataRow = rawDataArray[1];
-            console.log('[ImportService] LAST RESORT: Checking first data row for numeric columns:', firstDataRow);
-            
-            for (let i = 0; i < Math.min(headers.length, firstDataRow.length); i++) {
-              const cellValue = String(firstDataRow[i] || '').trim();
-              // Very permissive: any column with numeric data that could be an account number
-              if (cellValue && /^\d+$/.test(cellValue) && cellValue.length >= 2 && cellValue.length <= 20) {
-                console.log(`[ImportService] LAST RESORT: Using column ${i} ("${headers[i]}") with numeric value "${cellValue}" as account number column`);
-                columnMapping.accountNumber.push(headers[i]);
-                foundAlternative = true;
-                break;
-              }
-            }
-          }
-        }
-        
-        if (!foundAlternative) {
-          // Check if we're on the wrong sheet (Anleitung)
-          if (sheetName.toLowerCase().includes('anleitung') || sheetName.toLowerCase().includes('instruction')) {
-            // Try to find Bilanzdaten sheet
-            const bilanzSheet = workbook.SheetNames.find(name => 
-              name.toLowerCase().includes('bilanz') || 
-              name.toLowerCase().includes('balance')
-            );
-            
-            if (bilanzSheet) {
-              console.log(`[ImportService] Detected instruction sheet, redirecting to "${bilanzSheet}"`);
-              return this.importExcel({ ...file, buffer: file.buffer }, { ...importDataDto, sheetName: bilanzSheet });
-            }
-          }
-          
-          // CRITICAL: Log everything before throwing error
-          console.error('[ImportService] ========== FINAL ERROR - NO KONTONUMMER FOUND ==========');
-          console.error('[ImportService] Sheet name:', sheetName);
-          console.error('[ImportService] Available headers:', availableHeaders);
-          console.error('[ImportService] Normalized headers:', normalizedHeaders);
-          console.error('[ImportService] Available sheets:', workbook.SheetNames.join(', '));
-          console.error('[ImportService] First data row:', rawDataArray.length > 1 ? JSON.stringify(rawDataArray[1]) : 'Keine Daten');
-          console.error('[ImportService] All headers array:', JSON.stringify(headers, null, 2));
-          console.error('[ImportService] Column mapping result:', JSON.stringify(columnMapping, null, 2));
-          console.error('[ImportService] ========================================================');
-          
-          // Final error with all diagnostic information
-          const errorMessage = `Keine Kontonummer-Spalte gefunden im Blatt "${sheetName}".\n\n` +
-            `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
-            `Gefundene Spalten in der Datei: ${availableHeaders}\n\n` +
-            `Normalisierte Spaltennamen: ${normalizedHeaders}\n\n` +
-            `Verfügbare Blätter: ${workbook.SheetNames.join(', ')}\n\n` +
-            `Erste Datenzeile (zur Diagnose): ${rawDataArray.length > 1 ? JSON.stringify(rawDataArray[1]) : 'Keine Daten'}\n\n` +
-            `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung oder wählen Sie das Blatt "Bilanzdaten" aus.`;
-          
-          console.error('[ImportService] Throwing error with message length:', errorMessage.length);
-          throw new BadRequestException(errorMessage);
-        }
+        console.error(`[ImportService] Failed to find account number column. Headers: ${availableHeaders}`);
+        throw new BadRequestException(
+          `Keine Kontonummer-Spalte gefunden im Blatt "${sheetName}".\n\n` +
+          `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Konto\n\n` +
+          `Gefundene Spalten: ${availableHeaders}\n\n` +
+          `Tipp: Stellen Sie sicher, dass die erste Zeile Spaltenüberschriften enthält.`
+        );
       }
+      
+      // Get the actual header name for the account number column
+      const accountNumberHeader = headers[accountNumberIdx];
+      console.log(`[ImportService] Using account number column: "${accountNumberHeader}" at index ${accountNumberIdx}`);
+      
+      // Build column mapping for compatibility with existing code
+      const columnMapping: ColumnMapping = {
+        accountNumber: [accountNumberHeader],
+        accountName: accountNameIdx >= 0 ? [headers[accountNameIdx]] : [],
+        debit: debitIdx >= 0 ? [headers[debitIdx]] : [],
+        credit: creditIdx >= 0 ? [headers[creditIdx]] : [],
+        balance: balanceIdx >= 0 ? [headers[balanceIdx]] : [],
+        isIntercompany: isIntercompanyIdx >= 0 ? [headers[isIntercompanyIdx]] : [],
+        company: companyIdx >= 0 ? [headers[companyIdx]] : [],
+      };
       
       console.log('[ImportService] Column mapping successful:', {
         accountNumber: columnMapping.accountNumber,
