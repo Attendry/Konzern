@@ -383,15 +383,21 @@ function CompanyManagement() {
               >
                 <option value="">-- Kein Mutterunternehmen (Standalone) --</option>
                 {companies
-                  .filter((c) => !editingCompany || c.id !== editingCompany.id)
+                  .filter((c) => {
+                    // Exclude the company being edited
+                    if (editingCompany && c.id === editingCompany.id) return false;
+                    // Only show companies without a parent (potential parent companies)
+                    // or companies marked as ultimate parent
+                    return !c.parentCompanyId || c.isUltimateParent;
+                  })
                   .map((company) => (
                     <option key={company.id} value={company.id}>
-                      {company.name}
+                      {company.name} {company.isUltimateParent ? '(Konzernmutter)' : ''}
                     </option>
                   ))}
               </select>
               <small style={{ color: '#666', fontSize: '0.9rem' }}>
-                Wählen Sie ein Mutterunternehmen, wenn dies eine Tochtergesellschaft ist
+                Wählen Sie ein Mutterunternehmen, wenn dies eine Tochtergesellschaft ist. Nur Unternehmen ohne übergeordnetes Unternehmen können als Mutterunternehmen ausgewählt werden.
               </small>
             </div>
             {formData.parentCompanyId && (

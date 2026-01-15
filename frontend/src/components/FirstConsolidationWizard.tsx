@@ -149,11 +149,19 @@ export function FirstConsolidationWizard({
         return formData.parentCompanyId && formData.subsidiaryCompanyId && 
                formData.parentCompanyId !== formData.subsidiaryCompanyId;
       case 2:
-        return formData.acquisitionDate && formData.participationPercentage > 0 && 
+        return formData.acquisitionDate && 
+               formData.participationPercentage > 0 && 
+               formData.participationPercentage <= 100 &&
                formData.acquisitionCost > 0;
       case 3:
-        return formData.financialStatementId && 
-               (formData.subscribedCapital > 0 || formData.capitalReserves > 0);
+        // Allow any equity component to be > 0, or allow all to be 0 if hidden reserves/liabilities exist
+        const hasEquity = formData.subscribedCapital > 0 || 
+                         formData.capitalReserves > 0 || 
+                         formData.revenueReserves > 0 || 
+                         formData.retainedEarnings > 0;
+        const hasAdjustments = (formData.hiddenReserves || 0) !== 0 || 
+                              (formData.hiddenLiabilities || 0) !== 0;
+        return formData.financialStatementId && (hasEquity || hasAdjustments);
       default:
         return false;
     }

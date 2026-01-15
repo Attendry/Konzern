@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { importService } from '../services/importService';
 import { financialStatementService } from '../services/financialStatementService';
 import { companyService } from '../services/companyService';
-import { FinancialStatement } from '../types';
+import { AccountBalance, FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
 import { ExcelMappingWizard } from '../components/ExcelMappingWizard';
 import { BatchImportWizard } from '../components/BatchImportWizard';
@@ -11,6 +12,7 @@ import '../App.css';
 type ImportMode = 'quick' | 'wizard' | 'batch';
 
 function DataImport() {
+  const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
   const [importMode, setImportMode] = useState<ImportMode>('quick');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -31,6 +33,9 @@ function DataImport() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [creating, setCreating] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [showImportedData, setShowImportedData] = useState(false);
+  const [importedBalances, setImportedBalances] = useState<AccountBalance[]>([]);
+  const [loadingBalances, setLoadingBalances] = useState(false);
 
   useEffect(() => {
     loadStatements();
@@ -129,8 +134,16 @@ function DataImport() {
 
       if (importResult.errors.length === 0) {
         success(`Erfolgreich ${importResult.imported} Datensätze importiert`);
+        // Automatically load imported data if import was successful
+        if (importResult.imported > 0 && financialStatementId) {
+          loadImportedData(financialStatementId);
+        }
       } else {
         showError(`Import mit ${importResult.errors.length} Fehler${importResult.errors.length > 1 ? 'n' : ''} abgeschlossen`);
+        // Still try to load data if some records were imported
+        if (importResult.imported > 0 && financialStatementId) {
+          loadImportedData(financialStatementId);
+        }
       }
     } catch (error: any) {
       console.error('Fehler beim Import:', error);
@@ -175,10 +188,29 @@ function DataImport() {
       setShowWizard(false);
       setError(null);
       success(`Import erfolgreich: ${wizardResult.imported} Datensätze importiert`);
+      
+      // Load imported data if import was successful
+      if (wizardResult.imported > 0 && financialStatementId) {
+        loadImportedData(financialStatementId);
+      }
     } catch (error: any) {
       console.error('Error handling wizard complete:', error);
       showError(`Fehler beim Verarbeiten des Import-Ergebnisses: ${error.message || 'Unbekannter Fehler'}`);
       setShowWizard(false);
+    }
+  };
+
+  const loadImportedData = async (statementId: string) => {
+    setLoadingBalances(true);
+    try {
+      const balances = await financialStatementService.getBalances(statementId);
+      setImportedBalances(balances);
+      setShowImportedData(true);
+    } catch (error: any) {
+      console.error('Fehler beim Laden der importierten Daten:', error);
+      showError(`Fehler beim Laden der importierten Daten: ${error.message || 'Unbekannter Fehler'}`);
+    } finally {
+      setLoadingBalances(false);
     }
   };
 
@@ -474,6 +506,117 @@ function DataImport() {
                 </ul>
               </div>
             </div>
+          )}
+          {result.imported > 0 && financialStatementId && (
+            <div style={{ marginTop: 'var(--spacing-4)' }}>
+              <button
+                className="button button-primary"
+                onClick={() => {
+                  if (showImportedData) {
+                    setShowImportedData(false);
+                  } else {
+                    loadImportedData(financialStatementId);
+                  }
+                }}
+                disabled={loadingBalances}
+              >
+                {loadingBalances ? 'Lade...' : showImportedData ? 'Importierte Daten ausblenden' : 'Importierte Daten anzeigen'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {showImportedData && importedBalances.length > 0 && (
+        <div className="card" style={{ marginTop: 'var(--spacing-4)' }}>
+          <div className="card-header">
+            <h2>Importierte Kontensalden ({importedBalances.length})</h2>
+          </div>
+          {loadingBalances ? (
+            <div className="loading">
+              <div className="loading-spinner"></div>
+              <span>Lade Daten...</span>
+            </div>
+          ) : (
+            <>
+              {selectedStatement && (
+                <div style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                  <strong>Jahresabschluss:</strong> {selectedStatement.company?.name || 'Unbekannt'} - {selectedStatement.fiscalYear}
+                </div>
+              )}
+              {importedBalances.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-title">Keine importierten Daten vorhanden</div>
+                  <div className="empty-state-description">
+                    Die importierten Daten werden hier angezeigt, sobald sie verfügbar sind.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Kontonummer</th>
+                        <th>Kontoname</th>
+                        <th style={{ textAlign: 'right' }}>Soll</th>
+                        <th style={{ textAlign: 'right' }}>Haben</th>
+                        <th style={{ textAlign: 'right' }}>Saldo</th>
+                        <th>Zwischengesellschaft</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importedBalances.map((balance) => (
+                        <tr key={balance.id}>
+                          <td>{balance.account?.accountNumber || '-'}</td>
+                          <td>{balance.account?.name || '-'}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'var(--font-family-mono)' }}>
+                            {Number(balance.debit).toLocaleString('de-DE', {
+                              style: 'currency',
+                              currency: 'EUR'
+                            })}
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'var(--font-family-mono)' }}>
+                            {Number(balance.credit).toLocaleString('de-DE', {
+                              style: 'currency',
+                              currency: 'EUR'
+                            })}
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'var(--font-family-mono)', fontWeight: 'bold' }}>
+                            {Number(balance.balance).toLocaleString('de-DE', {
+                              style: 'currency',
+                              currency: 'EUR'
+                            })}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className={`badge ${balance.isIntercompany ? 'badge-warning' : 'badge-neutral'}`}>
+                              {balance.isIntercompany ? 'Ja' : 'Nein'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)' }}>
+                <strong>Hinweis:</strong> Sie können die vollständigen Daten dieses Jahresabschlusses auch auf der{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/financial-statements/${financialStatementId}`)}
+                  style={{ 
+                    color: 'var(--color-accent-blue)', 
+                    textDecoration: 'underline',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    font: 'inherit'
+                  }}
+                >
+                  Jahresabschluss-Detailseite
+                </button> anzeigen.
+              </div>
+            </>
           )}
         </div>
       )}
