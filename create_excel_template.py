@@ -33,8 +33,129 @@ border = Border(
     bottom=Side(style='thin')
 )
 
-# ===== BLATT 0: Anleitung (WICHTIG: Erstes Blatt) =====
-ws_anleitung = wb.create_sheet("Anleitung", 0)
+# ===== BLATT 0: Bilanzdaten (MUST BE FIRST for import detection) =====
+# Create Bilanzdaten FIRST so it's index 0 and gets auto-selected by import code
+ws_bilanz = wb.create_sheet("Bilanzdaten", 0)
+
+# Headers - Write explicitly cell-by-cell to ensure no gaps or nulls
+headers_bilanz = [
+    "Unternehmen", "Kontonummer", "Kontoname", "HGB-Position", 
+    "Kontotyp", "Soll", "Haben", "Saldo", 
+    "Zwischengesellschaft", "Gegenpartei", "Bemerkung"
+]
+
+# CRITICAL: Write headers explicitly to each cell to avoid sparse arrays
+# This ensures XLSX reads them correctly as a dense array with no null/undefined values
+for col_idx, header_value in enumerate(headers_bilanz, start=1):
+    cell = ws_bilanz.cell(row=1, column=col_idx)
+    # Ensure header is a string, never None or empty
+    cell.value = str(header_value) if header_value else f"Column_{col_idx}"
+    cell.fill = header_fill
+    cell.font = header_font
+    cell.alignment = Alignment(horizontal="center", vertical="center")
+    cell.border = border
+
+# Verify header row is complete
+print(f"[Template] Bilanzdaten headers written: {len(headers_bilanz)} columns")
+print(f"[Template] Header row 1 has {ws_bilanz.max_column} columns")
+print(f"[Template] Headers: {headers_bilanz}")
+
+# Erweiterte Beispiel-Daten
+# CRITICAL: Ensure all rows have exactly 11 columns (matching headers)
+# Replace empty strings with explicit values to avoid sparse arrays
+example_data = [
+    ["Mutterunternehmen H", "1000", "Kasse", "B.IV", "asset", "5000.00", "0.00", "5000.00", "Nein", "", ""],
+    ["Mutterunternehmen H", "1200", "Forderungen a. LL", "B.II", "asset", "100000.00", "0.00", "100000.00", "Ja", "TU1", "Zwischengesellschaftsgeschäft"],
+    ["Mutterunternehmen H", "1400", "Beteiligung TU1", "A.III", "asset", "500000.00", "0.00", "500000.00", "Nein", "", "Beteiligung an Tochterunternehmen"],
+    ["Mutterunternehmen H", "2000", "Grundstücke", "A.II", "asset", "2000000.00", "0.00", "2000000.00", "Nein", "", ""],
+    ["Mutterunternehmen H", "3000", "Gezeichnetes Kapital", "A.I", "equity", "0.00", "1000000.00", "-1000000.00", "Nein", "", ""],
+    ["Mutterunternehmen H", "3100", "Kapitalrücklage", "A.II", "equity", "0.00", "200000.00", "-200000.00", "Nein", "", ""],
+    ["Mutterunternehmen H", "3200", "Gewinnrücklagen", "A.III", "equity", "0.00", "300000.00", "-300000.00", "Nein", "", ""],
+    ["Mutterunternehmen H", "4000", "Verbindlichkeiten", "C", "liability", "0.00", "500000.00", "-500000.00", "Nein", "", ""],
+    ["Tochterunternehmen TU1", "1000", "Kasse", "B.IV", "asset", "2000.00", "0.00", "2000.00", "Nein", "", ""],
+    ["Tochterunternehmen TU1", "1600", "Verbindlichkeiten a. LL", "C", "liability", "0.00", "50000.00", "-50000.00", "Ja", "Mutter H", "Gegenpartei: Mutterunternehmen H"],
+    ["Tochterunternehmen TU1", "3000", "Gezeichnetes Kapital", "A.I", "equity", "0.00", "500000.00", "-500000.00", "Nein", "", ""],
+    ["Tochterunternehmen TU2", "1000", "Kasse", "B.IV", "asset", "1500.00", "0.00", "1500.00", "Nein", "", ""],
+    ["Tochterunternehmen TU2", "3000", "Gezeichnetes Kapital", "A.I", "equity", "0.00", "300000.00", "-300000.00", "Nein", "", ""],
+]
+
+# CRITICAL: Write data rows explicitly to ensure consistent column count
+# This prevents sparse arrays that cause header detection issues
+for row_idx, row_data in enumerate(example_data, start=2):
+    # Ensure row has exactly 11 columns (matching headers)
+    while len(row_data) < len(headers_bilanz):
+        row_data.append("")  # Pad with empty strings if needed
+    
+    # Write each cell explicitly with proper formatting
+    for col_idx, cell_value in enumerate(row_data[:len(headers_bilanz)], start=1):
+        cell = ws_bilanz.cell(row=row_idx, column=col_idx)
+        
+        # Set cell value - never None
+        if cell_value is None:
+            cell.value = ""
+        elif isinstance(cell_value, (int, float)):
+            cell.value = cell_value
+        else:
+            cell.value = str(cell_value)
+        
+        cell.border = border
+        
+        # Apply formatting based on column
+        if col_idx == 8:  # Saldo - Formel (calculate from Soll and Haben)
+            cell.value = f"=F{row_idx}-G{row_idx}"
+            cell.number_format = '#,##0.00'
+            cell.fill = calculated_fill
+            cell.alignment = Alignment(horizontal="right", vertical="center")
+        elif col_idx in [6, 7]:  # Soll, Haben
+            cell.number_format = '#,##0.00'
+            cell.alignment = Alignment(horizontal="right", vertical="center")
+        elif col_idx == 1:  # Unternehmen
+            cell.fill = required_fill
+        elif col_idx == 9:  # Zwischengesellschaft
+            dv = DataValidation(type="list", formula1='"Ja,Nein"')
+            ws_bilanz.add_data_validation(dv)
+            dv.add(cell)
+        elif col_idx == 5:  # Kontotyp
+            dv = DataValidation(type="list", formula1='"asset,liability,equity"')
+            ws_bilanz.add_data_validation(dv)
+            dv.add(cell)
+
+# Bilanzsumme-Zeile
+total_row = len(example_data) + 3
+ws_bilanz.cell(row=total_row, column=1).value = "BILANZSUMME"
+ws_bilanz.cell(row=total_row, column=1).font = Font(bold=True)
+ws_bilanz.cell(row=total_row, column=8).value = f"=SUM(H2:H{len(example_data)+1})"
+ws_bilanz.cell(row=total_row, column=8).number_format = '#,##0.00'
+ws_bilanz.cell(row=total_row, column=8).fill = calculated_fill
+ws_bilanz.cell(row=total_row, column=8).font = Font(bold=True)
+
+# Spaltenbreiten anpassen
+ws_bilanz.column_dimensions['A'].width = 25
+ws_bilanz.column_dimensions['B'].width = 15
+ws_bilanz.column_dimensions['C'].width = 30
+ws_bilanz.column_dimensions['D'].width = 15
+ws_bilanz.column_dimensions['E'].width = 15
+ws_bilanz.column_dimensions['F'].width = 15
+ws_bilanz.column_dimensions['G'].width = 15
+ws_bilanz.column_dimensions['H'].width = 15
+ws_bilanz.column_dimensions['I'].width = 20
+ws_bilanz.column_dimensions['J'].width = 20
+ws_bilanz.column_dimensions['K'].width = 40
+
+# CRITICAL: Verify header row integrity
+print(f"[Template] Bilanzdaten sheet verification:")
+print(f"  - Headers count: {len(headers_bilanz)}")
+print(f"  - Max column: {ws_bilanz.max_column}")
+print(f"  - Header row 1 values:")
+for col in range(1, min(len(headers_bilanz) + 1, ws_bilanz.max_column + 1)):
+    header_cell = ws_bilanz.cell(row=1, column=col)
+    print(f"    Column {col}: '{header_cell.value}' (type: {type(header_cell.value).__name__})")
+
+# ===== BLATT 1: Anleitung (Now second sheet) =====
+ws_anleitung = wb.create_sheet("Anleitung", 1)
+
+# ===== BLATT 1: Anleitung (Now second sheet) =====
+ws_anleitung = wb.create_sheet("Anleitung", 1)
 
 # Titel
 ws_anleitung.merge_cells('A1:F1')
@@ -58,8 +179,8 @@ ws_anleitung.cell(row=row, column=1).font = Font(bold=True, size=12)
 row += 1
 
 sheets_info = [
-    ("1. Anleitung", "Dieses Blatt - Übersicht und Anleitung"),
-    ("2. Bilanzdaten", "Bilanzpositionen für alle Unternehmen (HGB § 266)"),
+    ("1. Bilanzdaten", "Bilanzpositionen für alle Unternehmen (HGB § 266) - WICHTIG: Dieses Blatt wird automatisch für Import verwendet"),
+    ("2. Anleitung", "Dieses Blatt - Übersicht und Anleitung"),
     ("3. GuV-Daten", "Gewinn- und Verlustrechnung (HGB § 275)"),
     ("4. Unternehmensinformationen", "Basis-Informationen zu allen Unternehmen"),
     ("5. Beteiligungsverhältnisse", "Für Kapitalkonsolidierung (HGB § 301)"),
@@ -142,88 +263,6 @@ for color, desc in color_info:
 # Spaltenbreiten
 ws_anleitung.column_dimensions['A'].width = 20
 ws_anleitung.column_dimensions['B'].width = 60
-
-# ===== BLATT 1: Bilanzdaten (Verbessert mit Formeln) =====
-ws_bilanz = wb.create_sheet("Bilanzdaten", 1)
-
-# Header - Erweitert
-headers_bilanz = [
-    "Unternehmen", "Kontonummer", "Kontoname", "HGB-Position", 
-    "Kontotyp", "Soll", "Haben", "Saldo", 
-    "Zwischengesellschaft", "Gegenpartei", "Bemerkung"
-]
-ws_bilanz.append(headers_bilanz)
-
-# Formatierung Header
-for col in range(1, len(headers_bilanz) + 1):
-    cell = ws_bilanz.cell(row=1, column=col)
-    cell.fill = header_fill
-    cell.font = header_font
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    cell.border = border
-
-# Erweiterte Beispiel-Daten
-example_data = [
-    ["Mutterunternehmen H", "1000", "Kasse", "B.IV", "asset", "5000.00", "0.00", "", "Nein", "", ""],
-    ["Mutterunternehmen H", "1200", "Forderungen a. LL", "B.II", "asset", "100000.00", "0.00", "", "Ja", "TU1", "Zwischengesellschaftsgeschäft"],
-    ["Mutterunternehmen H", "1400", "Beteiligung TU1", "A.III", "asset", "500000.00", "0.00", "", "Nein", "", "Beteiligung an Tochterunternehmen"],
-    ["Mutterunternehmen H", "2000", "Grundstücke", "A.II", "asset", "2000000.00", "0.00", "", "Nein", "", ""],
-    ["Mutterunternehmen H", "3000", "Gezeichnetes Kapital", "A.I", "equity", "0.00", "1000000.00", "", "Nein", "", ""],
-    ["Mutterunternehmen H", "3100", "Kapitalrücklage", "A.II", "equity", "0.00", "200000.00", "", "Nein", "", ""],
-    ["Mutterunternehmen H", "3200", "Gewinnrücklagen", "A.III", "equity", "0.00", "300000.00", "", "Nein", "", ""],
-    ["Mutterunternehmen H", "4000", "Verbindlichkeiten", "C", "liability", "0.00", "500000.00", "", "Nein", "", ""],
-    ["Tochterunternehmen TU1", "1000", "Kasse", "B.IV", "asset", "2000.00", "0.00", "", "Nein", "", ""],
-    ["Tochterunternehmen TU1", "1600", "Verbindlichkeiten a. LL", "C", "liability", "0.00", "50000.00", "", "Ja", "Mutter H", "Gegenpartei: Mutterunternehmen H"],
-    ["Tochterunternehmen TU1", "3000", "Gezeichnetes Kapital", "A.I", "equity", "0.00", "500000.00", "", "Nein", "", ""],
-    ["Tochterunternehmen TU2", "1000", "Kasse", "B.IV", "asset", "1500.00", "0.00", "", "Nein", "", ""],
-    ["Tochterunternehmen TU2", "3000", "Gezeichnetes Kapital", "A.I", "equity", "0.00", "300000.00", "", "Nein", "", ""],
-]
-
-for row_idx, row_data in enumerate(example_data, start=2):
-    ws_bilanz.append(row_data)
-    for col in range(1, len(row_data) + 1):
-        cell = ws_bilanz.cell(row=row_idx, column=col)
-        cell.border = border
-        if col == 8:  # Saldo - Formel
-            cell.value = f"=F{row_idx}-G{row_idx}"
-            cell.number_format = '#,##0.00'
-            cell.fill = calculated_fill
-            cell.alignment = Alignment(horizontal="right", vertical="center")
-        elif col in [6, 7]:  # Soll, Haben
-            cell.number_format = '#,##0.00'
-            cell.alignment = Alignment(horizontal="right", vertical="center")
-        elif col == 1:  # Unternehmen
-            cell.fill = required_fill
-        elif col == 9:  # Zwischengesellschaft
-            dv = DataValidation(type="list", formula1='"Ja,Nein"')
-            ws_bilanz.add_data_validation(dv)
-            dv.add(cell)
-        elif col == 5:  # Kontotyp
-            dv = DataValidation(type="list", formula1='"asset,liability,equity"')
-            ws_bilanz.add_data_validation(dv)
-            dv.add(cell)
-
-# Bilanzsumme-Zeile
-total_row = len(example_data) + 3
-ws_bilanz.cell(row=total_row, column=1).value = "BILANZSUMME"
-ws_bilanz.cell(row=total_row, column=1).font = Font(bold=True)
-ws_bilanz.cell(row=total_row, column=8).value = f"=SUM(H2:H{len(example_data)+1})"
-ws_bilanz.cell(row=total_row, column=8).number_format = '#,##0.00'
-ws_bilanz.cell(row=total_row, column=8).fill = calculated_fill
-ws_bilanz.cell(row=total_row, column=8).font = Font(bold=True)
-
-# Spaltenbreiten anpassen
-ws_bilanz.column_dimensions['A'].width = 25
-ws_bilanz.column_dimensions['B'].width = 15
-ws_bilanz.column_dimensions['C'].width = 30
-ws_bilanz.column_dimensions['D'].width = 15
-ws_bilanz.column_dimensions['E'].width = 15
-ws_bilanz.column_dimensions['F'].width = 15
-ws_bilanz.column_dimensions['G'].width = 15
-ws_bilanz.column_dimensions['H'].width = 15
-ws_bilanz.column_dimensions['I'].width = 20
-ws_bilanz.column_dimensions['J'].width = 20
-ws_bilanz.column_dimensions['K'].width = 40
 
 # ===== BLATT 2: GuV-Daten (Erweitert) =====
 ws_guv = wb.create_sheet("GuV-Daten", 2)
@@ -669,14 +708,49 @@ ws_kontenplan.column_dimensions['B'].width = 15
 ws_kontenplan.column_dimensions['C'].width = 50
 ws_kontenplan.column_dimensions['D'].width = 15
 
+# CRITICAL: Verify sheet order - Bilanzdaten MUST be first (index 0)
+print(f"\n[Template] Sheet order verification:")
+for idx, sheet_name in enumerate(wb.sheetnames):
+    print(f"  Sheet {idx}: '{sheet_name}'")
+    if idx == 0 and sheet_name != "Bilanzdaten":
+        print(f"  WARNING: First sheet is '{sheet_name}', not 'Bilanzdaten'!")
+    if sheet_name == "Bilanzdaten":
+        print(f"  [OK] Bilanzdaten found at index {idx}")
+
+# Verify Bilanzdaten sheet structure
+if "Bilanzdaten" in wb.sheetnames:
+    bilanz_sheet = wb["Bilanzdaten"]
+    print(f"\n[Template] Bilanzdaten sheet structure:")
+    print(f"  - Max row: {bilanz_sheet.max_row}")
+    print(f"  - Max column: {bilanz_sheet.max_column}")
+    print(f"  - Expected headers: {len(headers_bilanz)}")
+    if bilanz_sheet.max_column != len(headers_bilanz):
+        print(f"  WARNING: Column count mismatch! Expected {len(headers_bilanz)}, got {bilanz_sheet.max_column}")
+    
+    # Verify first row headers
+    first_row_headers = []
+    for col in range(1, bilanz_sheet.max_column + 1):
+        cell = bilanz_sheet.cell(row=1, column=col)
+        first_row_headers.append(str(cell.value) if cell.value else f"Column_{col}")
+    print(f"  - First row headers: {first_row_headers}")
+    
+    # Verify "Kontonummer" is in headers
+    if "Kontonummer" in first_row_headers:
+        kontonummer_idx = first_row_headers.index("Kontonummer")
+        print(f"  [OK] 'Kontonummer' found at index {kontonummer_idx} (column {kontonummer_idx + 1})")
+    else:
+        print(f"  ERROR: 'Kontonummer' NOT FOUND in headers!")
+        print(f"  Available headers: {first_row_headers}")
+
 # Speichere Datei
 filename = "templates/Konsolidierung_Muster_v3.0.xlsx"
 import os
 os.makedirs("templates", exist_ok=True)
 wb.save(filename)
-print(f"Excel-Template erfolgreich erstellt: {filename}")
+print(f"\n[SUCCESS] Excel-Template erfolgreich erstellt: {filename}")
 print("Version 3.0 - Vollständig mit Phase 1, 2 & 3:")
 print("  Phase 1:")
+print("    - Bilanzdaten-Blatt ist ERSTES Blatt (für Auto-Detection)")
 print("    - Anleitung-Blatt hinzugefügt")
 print("    - GuV-Daten-Blatt hinzugefügt (HGB § 275)")
 print("    - HGB-Bilanzstruktur-Referenz hinzugefügt (HGB § 266)")
