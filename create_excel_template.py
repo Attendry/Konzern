@@ -154,9 +154,6 @@ for col in range(1, min(len(headers_bilanz) + 1, ws_bilanz.max_column + 1)):
 # ===== BLATT 1: Anleitung (Now second sheet) =====
 ws_anleitung = wb.create_sheet("Anleitung", 1)
 
-# ===== BLATT 1: Anleitung (Now second sheet) =====
-ws_anleitung = wb.create_sheet("Anleitung", 1)
-
 # Titel
 ws_anleitung.merge_cells('A1:F1')
 title_cell = ws_anleitung.cell(row=1, column=1)

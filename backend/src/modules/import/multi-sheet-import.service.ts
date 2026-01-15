@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { CompanyService } from '../company/company.service';
 import { ParticipationService } from '../participation/participation.service';
 import { FinancialStatementService } from '../financial-statement/financial-statement.service';
+import { FinancialStatementStatus } from '../../entities/financial-statement.entity';
 import { ImportService } from './import.service';
 
 interface MulterFile {
@@ -20,7 +21,7 @@ interface SheetImportResult {
   warnings: string[];
 }
 
-interface MultiSheetImportResult {
+export interface MultiSheetImportResult {
   totalImported: number;
   sheets: SheetImportResult[];
   errors: string[];
@@ -305,7 +306,7 @@ export class MultiSheetImportService {
             fiscalYear: options.fiscalYear,
             periodStart,
             periodEnd,
-            status: 'draft',
+            status: FinancialStatementStatus.DRAFT,
           });
           financialStatementId = newFs.id;
         }
@@ -506,7 +507,7 @@ export class MultiSheetImportService {
         await this.companyService.create({
           name: companyName,
           legalForm: companyType || 'GmbH',
-          isUltimateParent,
+          isConsolidated: isUltimateParent, // Ultimate parent companies are consolidated
           parentCompanyId: null, // Will be set from participations sheet
           participationPercentage: participationIdx >= 0 ? parseFloat(String(row[participationIdx] || '0')) : undefined,
         });

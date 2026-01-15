@@ -346,7 +346,7 @@ export class VarianceAnalysisTool implements AgentTool {
     const reasoning = this.reasoning.buildReasoningChain(
       [
         {
-          observation: `Vergleich ${fs.period} mit ${previousFs?.period || 'Vorjahr'}`,
+          observation: `Vergleich ${fs.fiscal_year} mit ${previousFs?.fiscal_year || 'Vorjahr'}`,
           inference: `${significantVariances.length} signifikante Abweichungen (>${threshold}%) identifiziert`,
           confidence: 0.9,
           dataPoints: [`${accountKeys.size} Positionen verglichen`],
@@ -367,8 +367,8 @@ export class VarianceAnalysisTool implements AgentTool {
       success: true,
       data: {
         financialStatementId,
-        period: fs.period,
-        previousPeriod: previousFs?.period,
+        period: fs.fiscal_year,
+        previousPeriod: previousFs?.fiscal_year,
         significantVariances: significantVariances.slice(0, 10),
         totalAnalyzed: accountKeys.size,
       },
@@ -385,13 +385,13 @@ export class VarianceAnalysisTool implements AgentTool {
         this.provenance.createDatabaseProvenance(
           'financial_statements',
           financialStatementId,
-          `Jahresabschluss ${fs.period}`,
+          `Jahresabschluss ${fs.fiscal_year}`,
         ),
         ...(previousFs ? [
           this.provenance.createDatabaseProvenance(
             'financial_statements',
             previousFs.id,
-            `Vorjahresabschluss ${previousFs.period}`,
+            `Vorjahresabschluss ${previousFs.fiscal_year}`,
           ),
         ] : []),
       ],

@@ -188,16 +188,13 @@ export class ConsolidatedBalanceSheetService {
         totalEliminationAmount += Math.abs(adjustmentAmount);
       } else if (accountId && account) {
         // Neue Position durch Konsolidierungsbuchung (z.B. Goodwill)
-        const account = entry.accounts;
-        if (account) {
-          consolidatedPositions.set(accountId, {
-            accountId,
-            accountNumber: account.account_number || '',
-            accountName: account.name || entry.description || 'Konsolidierung',
-            accountType: account.account_type as 'asset' | 'liability' | 'equity',
-            balance: adjustmentAmount,
-          });
-        }
+        consolidatedPositions.set(accountId, {
+          accountId,
+          accountNumber: account.account_number || '',
+          accountName: account.name || entry.description || 'Konsolidierung',
+          accountType: account.account_type as 'asset' | 'liability' | 'equity',
+          balance: adjustmentAmount,
+        });
       }
     }
 
