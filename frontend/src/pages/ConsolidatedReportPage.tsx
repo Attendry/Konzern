@@ -691,6 +691,15 @@ function ConsolidatedReportPage() {
         </div>
       )}
 
+      {!loading && !selectedStatementId && (
+        <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+          <div className="empty-state">
+            <h3>Kein Jahresabschluss ausgewählt</h3>
+            <p>Bitte wählen Sie einen Jahresabschluss aus der Liste oben aus, um den Konzernabschluss anzuzeigen.</p>
+          </div>
+        </div>
+      )}
+
       {!loading && !report && selectedStatementId && (
         <div className="empty-state">
           <p>Keine Konsolidierungsdaten gefunden. Bitte führen Sie zuerst die Konsolidierung durch.</p>
