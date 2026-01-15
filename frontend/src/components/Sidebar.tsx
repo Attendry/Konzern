@@ -136,6 +136,14 @@ const Icons = {
       <line x1="10" y1="9" x2="8" y2="9" />
     </svg>
   ),
+  ai: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+      <circle cx="9" cy="13" r="1" />
+      <circle cx="15" cy="13" r="1" />
+      <path d="M9 17h6" />
+    </svg>
+  ),
 };
 
 // Navigation configuration - consolidated groups for compact layout
@@ -171,6 +179,7 @@ const navGroups = [
     items: [
       { path: '/controls', label: 'Kontrollen', icon: Icons.controls },
       { path: '/policies', label: 'Richtlinien', icon: Icons.policies },
+      { path: '/ai-audit', label: 'AI-Protokoll', icon: Icons.ai },
     ],
   },
 ];

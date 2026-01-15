@@ -17,6 +17,8 @@ import PolicyManagement from './pages/PolicyManagement';
 import FiscalYearAdjustments from './pages/FiscalYearAdjustments';
 import CurrencyTranslation from './pages/CurrencyTranslation';
 import ManagementReportPage from './pages/ManagementReportPage';
+// AI Features
+import AIAuditDashboard from './pages/AIAuditDashboard';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AIChatProvider } from './contexts/AIChatContext';
@@ -25,25 +27,27 @@ import { DarkModeToggle } from './components/DarkModeToggle';
 import { PageTransition } from './components/PageTransition';
 import { Sidebar } from './components/Sidebar';
 import { GlobalAIChat } from './components/ai/GlobalAIChat';
+import { LegalChangeAlerts } from './components/ai/LegalChangeAlerts';
+import { useAuth } from './contexts/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
-function App() {
+function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user } = useAuth();
 
   const handleSidebarCollapsedChange = useCallback((isCollapsed: boolean) => {
     setSidebarCollapsed(isCollapsed);
   }, []);
 
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AIChatProvider>
-          <Router>
-            <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-              <Sidebar onCollapsedChange={handleSidebarCollapsedChange} />
-              <main className="main-content">
-                <PageTransition>
+    <Router>
+      <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <Sidebar onCollapsedChange={handleSidebarCollapsedChange} />
+        <main className="main-content">
+          {/* Legal Change Alerts - shown on all pages */}
+          <LegalChangeAlerts userId={user?.id} />
+          <PageTransition>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/companies" element={<CompanyManagement />} />
@@ -72,15 +76,26 @@ function App() {
                     <Route path="/waehrungsumrechnung" element={<CurrencyTranslation />} />
                     <Route path="/konzernlagebericht" element={<ManagementReportPage />} />
                     <Route path="/konzernlagebericht/:id" element={<ManagementReportPage />} />
+                    {/* AI Features Routes */}
+                    <Route path="/ai-audit" element={<AIAuditDashboard />} />
                   </Routes>
                 </PageTransition>
               </main>
-              <CommandPalette />
-              <DarkModeToggle />
-              {/* Global AI Chat - Available on all pages */}
-              <GlobalAIChat />
-            </div>
-          </Router>
+          <CommandPalette />
+          <DarkModeToggle />
+          {/* Global AI Chat - Available on all pages */}
+          <GlobalAIChat />
+        </div>
+      </Router>
+    );
+  }
+
+function App() {
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <AIChatProvider>
+          <AppContent />
         </AIChatProvider>
       </ToastProvider>
     </AuthProvider>
