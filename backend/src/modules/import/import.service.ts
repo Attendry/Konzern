@@ -110,25 +110,26 @@ export class ImportService {
         'accno', 'accnumber', 'kto', 'nr', 'no', 'nummer', 'number'
       ];
       
-      const allVariations = [
-        normalized, 
-        originalLower, 
-        cleanedLower, 
-        cleanedNormalized, 
-        trimmedHeader.toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, ''),
-        header.toLowerCase(), // Direct lowercase of original
-        header.toLowerCase().trim(), // Direct lowercase trimmed
-      ];
-      
-      // Also check if header exactly matches "Kontonummer" (case-insensitive)
+      // First check: exact case-insensitive match for "Kontonummer" (most common template column)
+      let matched = false;
       if (header.toLowerCase() === 'kontonummer' || header === 'Kontonummer') {
         console.log(`[ImportService] Exact case-insensitive match for "Kontonummer": "${header}"`);
         mapping.accountNumber.push(header);
         matched = true;
       }
       
-      let matched = false;
+      // Second check: exact matches in normalized variations
       if (!matched) {
+        const allVariations = [
+          normalized, 
+          originalLower, 
+          cleanedLower, 
+          cleanedNormalized, 
+          trimmedHeader.toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, ''),
+          header.toLowerCase(), // Direct lowercase of original
+          header.toLowerCase().trim(), // Direct lowercase trimmed
+        ];
+        
         for (const variation of allVariations) {
           if (exactMatches.includes(variation)) {
             console.log(`[ImportService] Exact match for account number column: "${header}" (matched variation: "${variation}")`);
