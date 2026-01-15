@@ -103,22 +103,39 @@ export class ImportService {
       console.log(`[ImportService] Processing header ${index}: "${header}" -> normalized: "${normalized}", cleaned: "${cleanedLower}"`);
       
       // Kontonummer - check exact matches first (most common cases)
-      // Check ALL variations
+      // Check ALL variations including exact case-insensitive match
       const exactMatches = [
         'kontonummer', 'accountnumber', 'account_number', 'account-number',
         'konto', 'account', 'kontonr', 'kontonumber', 'accountnr', 'accountno',
         'accno', 'accnumber', 'kto', 'nr', 'no', 'nummer', 'number'
       ];
       
-      const allVariations = [normalized, originalLower, cleanedLower, cleanedNormalized, trimmedHeader.toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, '')];
+      const allVariations = [
+        normalized, 
+        originalLower, 
+        cleanedLower, 
+        cleanedNormalized, 
+        trimmedHeader.toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, ''),
+        header.toLowerCase(), // Direct lowercase of original
+        header.toLowerCase().trim(), // Direct lowercase trimmed
+      ];
+      
+      // Also check if header exactly matches "Kontonummer" (case-insensitive)
+      if (header.toLowerCase() === 'kontonummer' || header === 'Kontonummer') {
+        console.log(`[ImportService] Exact case-insensitive match for "Kontonummer": "${header}"`);
+        mapping.accountNumber.push(header);
+        matched = true;
+      }
       
       let matched = false;
-      for (const variation of allVariations) {
-        if (exactMatches.includes(variation)) {
-          console.log(`[ImportService] Exact match for account number column: "${header}" (matched variation: "${variation}")`);
-          mapping.accountNumber.push(header);
-          matched = true;
-          break;
+      if (!matched) {
+        for (const variation of allVariations) {
+          if (exactMatches.includes(variation)) {
+            console.log(`[ImportService] Exact match for account number column: "${header}" (matched variation: "${variation}")`);
+            mapping.accountNumber.push(header);
+            matched = true;
+            break;
+          }
         }
       }
       
