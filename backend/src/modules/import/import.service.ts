@@ -7,6 +7,10 @@ import * as csv from 'csv-parser';
 import { Readable } from 'stream';
 import { ImportDataDto } from './dto/import-data.dto';
 
+// Build version for cache-busting - update this to force Railway rebuild
+const IMPORT_SERVICE_VERSION = '2.0.0-20260115-2200';
+console.log(`[ImportService] Loading version ${IMPORT_SERVICE_VERSION}`);
+
 // Multer File Type
 interface MulterFile {
   fieldname: string;
