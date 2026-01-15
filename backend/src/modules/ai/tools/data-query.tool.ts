@@ -143,7 +143,7 @@ export class DataQueryTool implements AgentTool {
         success: true,
         message: 'Query companies',
         table: 'companies',
-        columns: ['id', 'name', 'company_type', 'ownership_percentage', 'consolidation_type'],
+        columns: ['id', 'name', 'legal_form', 'parent_company_id', 'is_consolidated', 'consolidation_type', 'is_ultimate_parent'],
       };
     }
 
@@ -296,9 +296,14 @@ Antworte mit JSON:
     const client = this.supabase.getClient();
     
     try {
+      // For companies table, use '*' to get all columns to avoid column name issues
+      const selectColumns = intent.table === 'companies' 
+        ? '*' 
+        : (intent.columns?.join(',') || '*');
+      
       let query = client
         .from(intent.table)
-        .select(intent.columns?.join(',') || '*')
+        .select(selectColumns)
         .limit(100);
 
       // Apply filters
@@ -316,11 +321,15 @@ Antworte mit JSON:
       const { data, error } = await query;
 
       if (error) {
+        this.logger.error(`Database query error for table ${intent.table}:`, error);
         return {
           success: false,
           message: `Datenbankfehler: ${error.message}`,
         };
       }
+
+      // Log query result for debugging
+      this.logger.log(`Query ${intent.table}: Found ${data?.length || 0} results`);
 
       return {
         success: true,
@@ -348,6 +357,8 @@ Antworte mit JSON:
     question: string,
     result: QueryResult,
   ): Promise<{ text: string }> {
+    // Log for debugging
+    this.logger.log(`Formatting answer for ${result.tableName} with ${result.count} results`);
     const { tableName, results, count } = result;
 
     if (count === 0) {
@@ -386,12 +397,23 @@ Antworte mit JSON:
    * Format companies result
    */
   private formatCompaniesResult(results: any[]): string {
+    if (!results || results.length === 0) {
+      return 'Keine Unternehmen gefunden.';
+    }
+    
     let text = '';
     results.slice(0, 10).forEach((company, i) => {
-      const typeLabel = company.company_type === 'parent' ? '[MU]' : '[TU]';
+      // Determine if it's a parent or subsidiary
+      const isParent = !company.parent_company_id || company.is_ultimate_parent;
+      const typeLabel = isParent ? '[MU]' : '[TU]';
+      const consolidationLabel = company.is_consolidated ? ' (konsolidiert)' : ' (nicht konsolidiert)';
       text += `${i + 1}. ${typeLabel} **${company.name}**`;
-      if (company.ownership_percentage) {
-        text += ` (${company.ownership_percentage}%)`;
+      if (company.legal_form) {
+        text += ` - ${company.legal_form}`;
+      }
+      text += consolidationLabel;
+      if (company.consolidation_type && company.consolidation_type !== 'full') {
+        text += ` [${company.consolidation_type}]`;
       }
       text += '\n';
     });
