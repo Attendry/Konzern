@@ -284,12 +284,32 @@ export class ImportService {
 
       // Convert headers to strings and clean them
       const headers = headerRow.map((h: any, i: number) => {
-        const headerStr = String(h || `Spalte_${i + 1}`).trim();
-        // Remove zero-width spaces and other invisible characters
-        return headerStr.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        // Handle different data types from Excel
+        let headerStr: string;
+        if (h === null || h === undefined || h === '') {
+          headerStr = `Spalte_${i + 1}`;
+        } else if (typeof h === 'number') {
+          headerStr = String(h);
+        } else if (typeof h === 'string') {
+          headerStr = h;
+        } else {
+          headerStr = String(h);
+        }
+        
+        // Remove zero-width spaces and other invisible characters, then trim
+        headerStr = headerStr.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        
+        // If after cleaning it's empty, use default name
+        if (!headerStr || headerStr.length === 0) {
+          headerStr = `Spalte_${i + 1}`;
+        }
+        
+        return headerStr;
       });
 
+      console.log('[ImportService] Raw header row from Excel:', headerRow);
       console.log('[ImportService] Detected headers from Excel:', headers);
+      console.log('[ImportService] Header count:', headers.length);
 
       const columnMapping = this.findColumnMapping(headers);
       
