@@ -211,12 +211,35 @@ export class ImportService {
       if (balancePatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
         mapping.balance.push(header);
       }
-      // Zwischengesellschaft
-      if (normalized.match(/zwischengesellschaft|intercompany|is_intercompany/i)) {
+      // Zwischengesellschaft - handle with hyphen
+      const intercompanyPatterns = [
+        /zwischengesellschaft/i,
+        /intercompany/i,
+        /is_intercompany/i,
+        /is-intercompany/i,
+        /zwischen.*gesellschaft/i,
+      ];
+      if (intercompanyPatterns.some(pattern => 
+        pattern.test(normalized) || 
+        pattern.test(originalLower) || 
+        pattern.test(cleanedLower)
+      )) {
         mapping.isIntercompany.push(header);
       }
-      // Unternehmen
-      if (normalized.match(/unternehmen|company|firma/i)) {
+      
+      // Unternehmen - handle with hyphen and variations
+      const companyPatterns = [
+        /unternehmen/i,
+        /company/i,
+        /firma/i,
+        /unternehmensname/i,
+        /company.*name/i,
+      ];
+      if (companyPatterns.some(pattern => 
+        pattern.test(normalized) || 
+        pattern.test(originalLower) || 
+        pattern.test(cleanedLower)
+      )) {
         mapping.company.push(header);
       }
     });
@@ -314,16 +337,38 @@ export class ImportService {
       }
       
       console.log(`[ImportService] Using sheet: "${sheetName}" (available sheets: ${workbook.SheetNames.join(', ')})`);
-
+      
       // Erste Zeile für Spaltenzuordnung
       // Use header: 1 to get array of arrays, then convert to objects with first row as headers
       const rawDataArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+      console.log(`[ImportService] Raw data array length: ${rawDataArray?.length || 0}`);
+      
       if (!rawDataArray || rawDataArray.length === 0) {
-        throw new BadRequestException('Excel-Datei enthält keine Daten');
+        // Try next sheet if this one is empty
+        const nextSheet = workbook.SheetNames.find(name => 
+          name.toLowerCase().includes('bilanz') || 
+          name.toLowerCase().includes('balance') ||
+          (name.toLowerCase() !== 'anleitung' && name.toLowerCase() !== 'instruction')
+        );
+        
+        if (nextSheet && nextSheet !== sheetName) {
+          console.log(`[ImportService] Sheet "${sheetName}" is empty, trying "${nextSheet}"`);
+          const nextWorksheet = workbook.Sheets[nextSheet];
+          if (nextWorksheet) {
+            const nextDataArray = XLSX.utils.sheet_to_json(nextWorksheet, { header: 1, defval: null });
+            if (nextDataArray && nextDataArray.length > 0) {
+              console.log(`[ImportService] Found data in "${nextSheet}", using that instead`);
+              return this.importExcel({ ...file, buffer: file.buffer }, { ...importDataDto, sheetName: nextSheet });
+            }
+        }
+        }
+        throw new BadRequestException(`Excel-Datei enthält keine Daten im Blatt "${sheetName}". Verfügbare Blätter: ${workbook.SheetNames.join(', ')}`);
       }
 
       // First row should be headers
       const headerRow = rawDataArray[0];
+      console.log(`[ImportService] Header row:`, headerRow);
+      
       if (!headerRow || headerRow.length === 0) {
         throw new BadRequestException('Excel-Datei enthält keine Spaltenüberschriften');
       }
@@ -353,9 +398,14 @@ export class ImportService {
         return headerStr;
       });
 
-      console.log('[ImportService] Raw header row from Excel:', headerRow);
-      console.log('[ImportService] Detected headers from Excel:', headers);
+      console.log('[ImportService] Raw header row from Excel:', JSON.stringify(headerRow));
+      console.log('[ImportService] Detected headers from Excel:', JSON.stringify(headers));
       console.log('[ImportService] Header count:', headers.length);
+      
+      // Debug: Log each header individually with its type
+      headers.forEach((h, i) => {
+        console.log(`[ImportService] Header[${i}]: "${h}" (type: ${typeof headerRow[i]}, original: ${JSON.stringify(headerRow[i])})`);
+      });
 
       const columnMapping = this.findColumnMapping(headers);
       
@@ -387,9 +437,11 @@ export class ImportService {
         }).join(', ');
         
         console.error('[ImportService] Account number column not found.');
-        console.error('[ImportService] Original headers:', headers);
+        console.error('[ImportService] Sheet name:', sheetName);
+        console.error('[ImportService] Original headers:', JSON.stringify(headers, null, 2));
         console.error('[ImportService] Normalized headers:', headers.map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '')));
         console.error('[ImportService] Column mapping result:', JSON.stringify(columnMapping, null, 2));
+        console.error('[ImportService] First data row sample:', rawDataArray.length > 1 ? rawDataArray[1] : 'No data rows');
         
         // Try one more time with a very permissive check - look for any column that might be account number
         let foundAlternative = false;
@@ -405,20 +457,50 @@ export class ImportService {
               normalized === 'nr' ||
               normalized === 'no' ||
               normalized === 'nummer') {
-            console.log(`[ImportService] Found alternative account number column via permissive check: "${header}"`);
+            console.log(`[ImportService] Found alternative account number column via permissive check: "${header}" (index ${i})`);
             columnMapping.accountNumber.push(header);
             foundAlternative = true;
             break;
           }
         }
         
+        // If still not found, try to infer from data - look for numeric columns in first data row
+        if (!foundAlternative && rawDataArray.length > 1) {
+          const firstDataRow = rawDataArray[1];
+          for (let i = 0; i < Math.min(headers.length, firstDataRow.length); i++) {
+            const cellValue = String(firstDataRow[i] || '').trim();
+            // Check if this cell looks like an account number (numeric, 3-20 chars)
+            if (/^\d{3,20}$/.test(cellValue)) {
+              console.log(`[ImportService] Found potential account number column at index ${i}: "${headers[i]}" with value "${cellValue}"`);
+              columnMapping.accountNumber.push(headers[i]);
+              foundAlternative = true;
+              break;
+            }
+          }
+        }
+        
         if (!foundAlternative) {
+          // Check if we're on the wrong sheet (Anleitung)
+          if (sheetName.toLowerCase().includes('anleitung') || sheetName.toLowerCase().includes('instruction')) {
+            // Try to find Bilanzdaten sheet
+            const bilanzSheet = workbook.SheetNames.find(name => 
+              name.toLowerCase().includes('bilanz') || 
+              name.toLowerCase().includes('balance')
+            );
+            
+            if (bilanzSheet) {
+              console.log(`[ImportService] Detected instruction sheet, redirecting to "${bilanzSheet}"`);
+              return this.importExcel({ ...file, buffer: file.buffer }, { ...importDataDto, sheetName: bilanzSheet });
+            }
+          }
+          
           throw new BadRequestException(
-            `Keine Kontonummer-Spalte gefunden.\n\n` +
+            `Keine Kontonummer-Spalte gefunden im Blatt "${sheetName}".\n\n` +
             `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
             `Gefundene Spalten in der Datei: ${availableHeaders}\n\n` +
             `Normalisierte Spaltennamen: ${normalizedHeaders}\n\n` +
-            `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung.`
+            `Verfügbare Blätter: ${workbook.SheetNames.join(', ')}\n\n` +
+            `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung oder wählen Sie das Blatt "Bilanzdaten" aus.`
           );
         }
       }
