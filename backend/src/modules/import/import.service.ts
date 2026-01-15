@@ -52,7 +52,7 @@ export class ImportService {
    * Findet die Spaltenzuordnung basierend auf möglichen Spaltennamen
    */
   private findColumnMapping(headers: string[]): ColumnMapping {
-    const normalize = (str: string) => str.toLowerCase().trim().replace(/\s+/g, '');
+    const normalize = (str: string) => str.toLowerCase().trim().replace(/\s+/g, '').replace(/[_-]/g, '');
     
     const mapping: ColumnMapping = {
       accountNumber: [],
@@ -66,25 +66,87 @@ export class ImportService {
 
     headers.forEach((header, index) => {
       const normalized = normalize(header);
+      const originalLower = header.toLowerCase().trim();
       
-      // Kontonummer
-      if (normalized.match(/kontonummer|accountnumber|account_number|konto/i)) {
+      // Kontonummer - expanded pattern matching with more variations
+      // Match common variations: kontonummer, accountnumber, account_number, account-number, konto, account, etc.
+      // Test both normalized (without spaces/underscores/hyphens) and original (with them)
+      const accountNumberPatterns = [
+        /kontonummer/i,
+        /accountnumber/i,
+        /account_number/i,
+        /account-number/i,
+        /account\s+number/i,
+        /^konto$/i,
+        /^account$/i,
+        /kontonr/i,
+        /kontonumber/i,
+        /accountnr/i,
+        /accountno/i,
+        /accno/i,
+        /accnumber/i,
+        /^kto$/i,
+        /^nr$/i,
+        /^no$/i,
+        /^nummer$/i,
+        /^number$/i,
+      ];
+      
+      if (accountNumberPatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
         mapping.accountNumber.push(header);
       }
-      // Kontoname
-      if (normalized.match(/kontoname|accountname|account_name|name/i)) {
+      // Kontoname - expanded patterns
+      const accountNamePatterns = [
+        /kontoname/i,
+        /accountname/i,
+        /account_name/i,
+        /account-name/i,
+        /account\s+name/i,
+        /^name$/i,
+        /bezeichnung/i,
+        /description/i,
+        /text/i,
+      ];
+      if (accountNamePatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
         mapping.accountName.push(header);
       }
-      // Soll
-      if (normalized.match(/^soll$|debit/i)) {
+      
+      // Soll - expanded patterns
+      const debitPatterns = [
+        /^soll$/i,
+        /debit/i,
+        /sollbetrag/i,
+        /debitamount/i,
+        /debit_amount/i,
+        /debit-amount/i,
+      ];
+      if (debitPatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
         mapping.debit.push(header);
       }
-      // Haben
-      if (normalized.match(/^haben$|credit/i)) {
+      
+      // Haben - expanded patterns
+      const creditPatterns = [
+        /^haben$/i,
+        /credit/i,
+        /habenbetrag/i,
+        /creditamount/i,
+        /credit_amount/i,
+        /credit-amount/i,
+      ];
+      if (creditPatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
         mapping.credit.push(header);
       }
-      // Saldo
-      if (normalized.match(/saldo|balance|betrag/i)) {
+      
+      // Saldo - expanded patterns
+      const balancePatterns = [
+        /saldo/i,
+        /balance/i,
+        /betrag/i,
+        /amount/i,
+        /gesamt/i,
+        /total/i,
+      ];
+      if (balancePatterns.some(pattern => pattern.test(normalized) || pattern.test(originalLower))) {
         mapping.balance.push(header);
       }
       // Zwischengesellschaft
@@ -181,8 +243,13 @@ export class ImportService {
       
       // Validierung: Mindestens Kontonummer muss vorhanden sein
       if (columnMapping.accountNumber.length === 0) {
+        // Provide helpful error message with available headers
+        const availableHeaders = headers.slice(0, 10).join(', ') + (headers.length > 10 ? '...' : '');
         throw new BadRequestException(
-          `Keine Kontonummer-Spalte gefunden. Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Konto`
+          `Keine Kontonummer-Spalte gefunden.\n\n` +
+          `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
+          `Verfügbare Spalten in der Datei: ${availableHeaders}\n\n` +
+          `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung.`
         );
       }
 
