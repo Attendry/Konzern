@@ -16,7 +16,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: true, // Enable for debugging
     minify: 'esbuild',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

@@ -45,8 +45,8 @@ function AppContent() {
       <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <Sidebar onCollapsedChange={handleSidebarCollapsedChange} />
         <main className="main-content">
-          {/* Legal Change Alerts - shown on all pages */}
-          <LegalChangeAlerts userId={user?.id} />
+          {/* Legal Change Alerts - temporarily disabled for debugging */}
+          {/* <LegalChangeAlerts userId={user?.id} /> */}
           <PageTransition>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
