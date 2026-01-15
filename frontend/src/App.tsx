@@ -19,10 +19,12 @@ import CurrencyTranslation from './pages/CurrencyTranslation';
 import ManagementReportPage from './pages/ManagementReportPage';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { AIChatProvider } from './contexts/AIChatContext';
 import { CommandPalette } from './components/CommandPalette';
 import { DarkModeToggle } from './components/DarkModeToggle';
 import { PageTransition } from './components/PageTransition';
 import { Sidebar } from './components/Sidebar';
+import { GlobalAIChat } from './components/ai/GlobalAIChat';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
@@ -36,46 +38,50 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <Router>
-        <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-          <Sidebar onCollapsedChange={handleSidebarCollapsedChange} />
-          <main className="main-content">
-            <PageTransition>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/companies" element={<CompanyManagement />} />
-                <Route path="/import" element={
-                  <ErrorBoundary>
-                    <DataImport />
-                  </ErrorBoundary>
-                } />
-                <Route path="/consolidation-circle" element={<ConsolidationCirclePage />} />
-                <Route path="/consolidation" element={<Consolidation />} />
-                <Route path="/konzernabschluss" element={<ConsolidatedReportPage />} />
-                <Route path="/konzernabschluss/:id" element={<ConsolidatedReportPage />} />
-                <Route path="/konsolidierung-assistent" element={<ConsolidationWizardPage />} />
-                <Route path="/financial-statements/:id" element={<FinancialStatement />} />
-                <Route path="/consolidated-notes/:id" element={<ConsolidatedNotes />} />
-                <Route path="/lineage" element={<DataLineage />} />
-                <Route path="/lineage/:id" element={<DataLineage />} />
-                <Route path="/konzernanhang" element={<KonzernanhangPage />} />
-                <Route path="/konzernanhang/:id" element={<KonzernanhangPage />} />
-                <Route path="/controls" element={<PlausibilityChecks />} />
-                <Route path="/controls/:financialStatementId" element={<PlausibilityChecks />} />
-                <Route path="/policies" element={<PolicyManagement />} />
-                {/* Priority Features Routes */}
-                <Route path="/stichtagsverschiebung" element={<FiscalYearAdjustments />} />
-                <Route path="/stichtagsverschiebung/:financialStatementId" element={<FiscalYearAdjustments />} />
-                <Route path="/waehrungsumrechnung" element={<CurrencyTranslation />} />
-                <Route path="/konzernlagebericht" element={<ManagementReportPage />} />
-                <Route path="/konzernlagebericht/:id" element={<ManagementReportPage />} />
-              </Routes>
-            </PageTransition>
-          </main>
-            <CommandPalette />
-          <DarkModeToggle />
-        </div>
-        </Router>
+        <AIChatProvider>
+          <Router>
+            <div className={`app ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+              <Sidebar onCollapsedChange={handleSidebarCollapsedChange} />
+              <main className="main-content">
+                <PageTransition>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/companies" element={<CompanyManagement />} />
+                    <Route path="/import" element={
+                      <ErrorBoundary>
+                        <DataImport />
+                      </ErrorBoundary>
+                    } />
+                    <Route path="/consolidation-circle" element={<ConsolidationCirclePage />} />
+                    <Route path="/consolidation" element={<Consolidation />} />
+                    <Route path="/konzernabschluss" element={<ConsolidatedReportPage />} />
+                    <Route path="/konzernabschluss/:id" element={<ConsolidatedReportPage />} />
+                    <Route path="/konsolidierung-assistent" element={<ConsolidationWizardPage />} />
+                    <Route path="/financial-statements/:id" element={<FinancialStatement />} />
+                    <Route path="/consolidated-notes/:id" element={<ConsolidatedNotes />} />
+                    <Route path="/lineage" element={<DataLineage />} />
+                    <Route path="/lineage/:id" element={<DataLineage />} />
+                    <Route path="/konzernanhang" element={<KonzernanhangPage />} />
+                    <Route path="/konzernanhang/:id" element={<KonzernanhangPage />} />
+                    <Route path="/controls" element={<PlausibilityChecks />} />
+                    <Route path="/controls/:financialStatementId" element={<PlausibilityChecks />} />
+                    <Route path="/policies" element={<PolicyManagement />} />
+                    {/* Priority Features Routes */}
+                    <Route path="/stichtagsverschiebung" element={<FiscalYearAdjustments />} />
+                    <Route path="/stichtagsverschiebung/:financialStatementId" element={<FiscalYearAdjustments />} />
+                    <Route path="/waehrungsumrechnung" element={<CurrencyTranslation />} />
+                    <Route path="/konzernlagebericht" element={<ManagementReportPage />} />
+                    <Route path="/konzernlagebericht/:id" element={<ManagementReportPage />} />
+                  </Routes>
+                </PageTransition>
+              </main>
+              <CommandPalette />
+              <DarkModeToggle />
+              {/* Global AI Chat - Available on all pages */}
+              <GlobalAIChat />
+            </div>
+          </Router>
+        </AIChatProvider>
       </ToastProvider>
     </AuthProvider>
   );

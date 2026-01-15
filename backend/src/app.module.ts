@@ -11,6 +11,7 @@ import { LineageModule } from './modules/lineage/lineage.module';
 import { ControlsModule } from './modules/controls/controls.module';
 import { PolicyModule } from './modules/policy/policy.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AIModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuthModule } from './modules/auth/auth.module';
     LineageModule, // Phase 4: Data Lineage + Prüfpfad
     ControlsModule, // Phase 4: Plausibility & Controls Engine
     PolicyModule, // Phase 4: Accounting Policy & Rules Layer
+    AIModule, // AI Features: Chat + IC Analysis
   ],
 })
 export class AppModule {}
