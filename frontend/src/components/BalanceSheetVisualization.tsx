@@ -115,19 +115,43 @@ function BalanceSheetVisualization({
     // Use a small timeout to ensure recharts is fully initialized
     const timer = setTimeout(() => {
       try {
-        // Verify recharts components are available
-        if (typeof PieChart !== 'undefined' && typeof BarChart !== 'undefined') {
+        // Verify recharts components are available and properly initialized
+        if (
+          typeof PieChart !== 'undefined' && 
+          typeof BarChart !== 'undefined' &&
+          typeof ResponsiveContainer !== 'undefined' &&
+          PieChart !== null &&
+          BarChart !== null &&
+          ResponsiveContainer !== null
+        ) {
           setChartsReady(true);
         } else {
           // Retry if not ready
-          setTimeout(() => setChartsReady(true), 100);
+          const retryTimer = setTimeout(() => {
+            try {
+              if (
+                typeof PieChart !== 'undefined' && 
+                typeof BarChart !== 'undefined' &&
+                typeof ResponsiveContainer !== 'undefined'
+              ) {
+                setChartsReady(true);
+              } else {
+                console.warn('Recharts components not available, charts will be disabled');
+                setChartsReady(false);
+              }
+            } catch (retryError) {
+              console.warn('Error retrying chart initialization:', retryError);
+              setChartsReady(false);
+            }
+          }, 200);
+          return () => clearTimeout(retryTimer);
         }
       } catch (error) {
-        console.error('Error initializing charts:', error);
-        // Still set ready to avoid blocking the UI
-        setChartsReady(true);
+        console.warn('Error initializing charts:', error);
+        // Set ready to false to prevent rendering broken charts
+        setChartsReady(false);
       }
-    }, 100);
+    }, 150);
     
     return () => clearTimeout(timer);
   }, []);
@@ -157,8 +181,16 @@ function BalanceSheetVisualization({
             setViewType('after');
           }
         } catch (consolidatedErr: any) {
-          // If consolidated balance sheet doesn't exist, that's okay - we'll show before only
-          console.log('No consolidated balance sheet available, showing uploaded data only');
+          // If consolidated balance sheet doesn't exist (400 = no consolidation required), that's okay
+          // Only log as warning if it's a 400, otherwise log as error
+          if (consolidatedErr.response?.status === 400) {
+            // Expected: No consolidation required for this financial statement
+            // Silently handle - this is normal for single companies
+          } else {
+            // Unexpected error - log it
+            console.warn('Error loading consolidated balance sheet:', consolidatedErr.response?.data?.message || consolidatedErr.message);
+          }
+          // Show before only if we have account balances
           if (hasAccountBalances) {
             setViewType('before');
           }
@@ -507,7 +539,13 @@ function BalanceSheetVisualization({
         </div>
       )}
 
-      {viewMode === 'pie' && chartsReady && (
+      {chartsReady && (!balanceSheet || !balanceSheet.assets || !balanceSheet.liabilities) && (
+        <div className="card" style={{ marginTop: '2rem' }}>
+          <p>Keine Bilanzdaten verfügbar für Visualisierung.</p>
+        </div>
+      )}
+
+      {viewMode === 'pie' && chartsReady && typeof PieChart !== 'undefined' && typeof ResponsiveContainer !== 'undefined' && (
         <>
           {viewType === 'both' && hasBefore && hasAfter ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
@@ -663,7 +701,7 @@ function BalanceSheetVisualization({
         </>
       )}
 
-      {viewMode === 'bar' && chartsReady && (
+      {viewMode === 'bar' && chartsReady && typeof BarChart !== 'undefined' && typeof ResponsiveContainer !== 'undefined' && (
         <div style={{ marginTop: '2rem' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '1rem' }}>Bilanzstruktur</h3>
           <ResponsiveContainer width="100%" height={400}>
@@ -683,7 +721,7 @@ function BalanceSheetVisualization({
         </div>
       )}
 
-      {viewMode === 'treemap' && chartsReady && (
+      {viewMode === 'treemap' && chartsReady && typeof Treemap !== 'undefined' && typeof ResponsiveContainer !== 'undefined' && (
         <div style={{ marginTop: '2rem' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '1rem' }}>Bilanzübersicht (Treemap)</h3>
           <ResponsiveContainer width="100%" height={400}>

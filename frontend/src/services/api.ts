@@ -71,7 +71,16 @@ api.interceptors.response.use(
       error.message = 'Request timeout - Der Server antwortet nicht. Bitte prüfen Sie, ob das Backend läuft.';
     } else if (error.response) {
       // Server hat geantwortet, aber mit Fehlerstatus
-      console.error(`[API] Response Error: ${error.config?.method?.toUpperCase()} ${fullUrl} - ${error.response.status}`, error.response.data);
+      // For balance-sheet endpoint, 400 is expected when no consolidation is required
+      const isExpected400 = error.response.status === 400 && 
+                           error.config?.url?.includes('/consolidation/balance-sheet/');
+      
+      if (isExpected400) {
+        // Don't log as error - this is expected behavior
+        console.log(`[API] ${error.config?.method?.toUpperCase()} ${fullUrl} - ${error.response.status} (No consolidation required)`);
+      } else {
+        console.error(`[API] Response Error: ${error.config?.method?.toUpperCase()} ${fullUrl} - ${error.response.status}`, error.response.data);
+      }
     } else if (error.request) {
       // Request wurde gesendet, aber keine Antwort erhalten
       console.error(`[API] No Response: ${error.config?.method?.toUpperCase()} ${fullUrl}`, error.request);
