@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAIChat } from '../../contexts/AIChatContext';
 import { AIChatPanel } from './AIChatPanel';
 
@@ -8,13 +7,8 @@ import { AIChatPanel } from './AIChatPanel';
  * Place this component once in App.tsx - it will be visible on all pages.
  * The chat button appears in the bottom-right corner.
  */
-export const GlobalAIChat: React.FC = () => {
-  const { isOpen, toggleChat, isAvailable } = useAIChat();
-
-  // Don't render anything if AI is not available
-  if (!isAvailable) {
-    return null;
-  }
+export const GlobalAIChat = () => {
+  const { isOpen, toggleChat } = useAIChat();
 
   return (
     <>

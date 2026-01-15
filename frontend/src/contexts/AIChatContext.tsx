@@ -43,20 +43,8 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [financialStatementId, setFinancialStatementId] = useState<string | null>(null);
-  const [isAvailable, setIsAvailable] = useState(true);
-
-  // Check AI availability on mount
-  useEffect(() => {
-    const checkAvailability = async () => {
-      try {
-        const health = await aiService.checkHealth();
-        setIsAvailable(health.available);
-      } catch {
-        setIsAvailable(false);
-      }
-    };
-    checkAvailability();
-  }, []);
+  // Always show the button - errors will be shown in the chat panel
+  const [isAvailable] = useState(true);
 
   // Keyboard shortcut: Ctrl+K or Cmd+K to toggle chat
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAIChat } from '../../contexts/AIChatContext';
 
 /**
@@ -7,7 +7,7 @@ import { useAIChat } from '../../contexts/AIChatContext';
  * This component is rendered by GlobalAIChat and appears when the user
  * clicks the floating chat button or presses Ctrl+K.
  */
-export const AIChatPanel: React.FC = () => {
+export const AIChatPanel = () => {
   const { 
     isOpen, 
     closeChat, 
