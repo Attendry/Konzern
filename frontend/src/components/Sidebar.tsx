@@ -138,7 +138,7 @@ const Icons = {
   ),
 };
 
-// Navigation configuration
+// Navigation configuration - consolidated groups for compact layout
 const navGroups = [
   {
     title: 'Übersicht',
@@ -148,17 +148,14 @@ const navGroups = [
     ],
   },
   {
-    title: 'Daten',
-    items: [
-      { path: '/import', label: 'Datenimport', icon: Icons.import },
-    ],
-  },
-  {
     title: 'Konsolidierung',
     items: [
+      { path: '/import', label: 'Datenimport', icon: Icons.import },
       { path: '/consolidation-circle', label: 'Konsolidierungskreis', icon: Icons.consolidationCircle },
       { path: '/consolidation', label: 'Konsolidierung', icon: Icons.consolidation },
       { path: '/konzernabschluss', label: 'Konzernabschluss', icon: Icons.report },
+      { path: '/stichtagsverschiebung', label: 'Stichtagsverschiebung', icon: Icons.calendar },
+      { path: '/waehrungsumrechnung', label: 'Währungsumrechnung', icon: Icons.currency },
     ],
   },
   {
@@ -167,13 +164,6 @@ const navGroups = [
       { path: '/konzernanhang', label: 'Konzernanhang', icon: Icons.notes },
       { path: '/konzernlagebericht', label: 'Konzernlagebericht', icon: Icons.document },
       { path: '/lineage', label: 'Prüfpfad', icon: Icons.auditTrail },
-    ],
-  },
-  {
-    title: 'HGB-Anpassungen',
-    items: [
-      { path: '/stichtagsverschiebung', label: 'Stichtagsverschiebung', icon: Icons.calendar },
-      { path: '/waehrungsumrechnung', label: 'Währungsumrechnung', icon: Icons.currency },
     ],
   },
   {

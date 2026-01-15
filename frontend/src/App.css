@@ -124,23 +124,23 @@
 
 .sidebar-nav {
   flex: 1;
-  padding: var(--spacing-4) var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-2);
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .nav-group {
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-2);
 }
 
 .nav-group-header {
-  padding: var(--spacing-2) var(--spacing-3);
+  padding: var(--spacing-1) var(--spacing-3);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-wide);
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
   white-space: nowrap;
   opacity: 1;
   transition: opacity var(--transition-fast);
@@ -157,11 +157,11 @@
 .nav-item {
   display: flex;
   align-items: center;
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-2) var(--spacing-3);
   color: var(--color-text-primary);
   text-decoration: none;
   border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-1);
+  margin-bottom: 2px;
   transition: all var(--transition-fast);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -191,7 +191,7 @@
 
 .app.sidebar-collapsed .nav-item {
   justify-content: center;
-  padding: var(--spacing-3);
+  padding: var(--spacing-2);
 }
 
 .app.sidebar-collapsed .nav-item-label {
