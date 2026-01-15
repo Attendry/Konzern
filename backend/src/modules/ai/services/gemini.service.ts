@@ -78,21 +78,30 @@ export class GeminiService implements OnModuleInit {
     }
 
     try {
-      // Convert messages to Gemini format
-      const history = messages.slice(0, -1).map(m => ({
-        role: m.role,
-        parts: [{ text: m.content }],
-      }));
-
-      // systemInstruction must be a Content object, not a string
-      const chatConfig: any = { history };
+      // Build history with system prompt as initial context
+      const history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+      
+      // Add system prompt as initial exchange if provided
       if (systemPrompt) {
-        chatConfig.systemInstruction = {
-          parts: [{ text: systemPrompt }],
-        };
+        history.push({
+          role: 'user',
+          parts: [{ text: `System-Anweisung: ${systemPrompt}` }],
+        });
+        history.push({
+          role: 'model',
+          parts: [{ text: 'Verstanden. Ich werde diese Anweisungen befolgen.' }],
+        });
       }
 
-      const chat = this.model.startChat(chatConfig);
+      // Add conversation history (except last message)
+      for (const m of messages.slice(0, -1)) {
+        history.push({
+          role: m.role,
+          parts: [{ text: m.content }],
+        });
+      }
+
+      const chat = this.model.startChat({ history });
 
       const lastMessage = messages[messages.length - 1];
       const result = await chat.sendMessage(lastMessage.content);
