@@ -6,12 +6,14 @@ import { MultiSheetImportService } from './multi-sheet-import.service';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { CompanyModule } from '../company/company.module';
 import { ParticipationModule } from '../participation/participation.module';
+import { FinancialStatementModule } from '../financial-statement/financial-statement.module';
 
 @Module({
   imports: [
     SupabaseModule,
     CompanyModule,
     ParticipationModule,
+    FinancialStatementModule,
   ],
   controllers: [ImportController],
   providers: [ImportService, ValidationService, MultiSheetImportService],
