@@ -51,12 +51,8 @@ export const importService = {
       
       const response = await api.get(`/import/template${cacheBuster}`, {
         responseType: 'blob',
-        // Prevent browser caching
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
+        // Note: Cache-busting is handled by query parameters (v and t)
+        // Removing custom headers to avoid CORS preflight issues
       });
       url = window.URL.createObjectURL(new Blob([response.data]));
       link = document.createElement('a');

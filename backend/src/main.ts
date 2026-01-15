@@ -65,8 +65,11 @@ async function bootstrap() {
         'Cache-Control',
         'Pragma',
         'Expires',
+        'Accept',
+        'Origin',
+        'X-Requested-With',
       ],
-      exposedHeaders: ['Content-Length', 'Content-Type'],
+      exposedHeaders: ['Content-Length', 'Content-Type', 'Content-Disposition'],
       maxAge: 86400, // 24 hours
     });
     logger.log(`✅ CORS enabled for origins: ${allowedOrigins.join(', ')}`);
