@@ -263,11 +263,37 @@ export class ImportService {
         throw new BadRequestException('Excel-Datei enthält keine Arbeitsblätter');
       }
 
-      const sheetName = importDataDto.sheetName || workbook.SheetNames[0];
+      // Smart sheet selection: prefer "Bilanzdaten" if available, otherwise use specified or first sheet
+      let sheetName = importDataDto.sheetName;
+      if (!sheetName) {
+        // Prefer "Bilanzdaten" sheet (most common data sheet name)
+        const bilanzSheet = workbook.SheetNames.find(name => 
+          name.toLowerCase().includes('bilanz') || 
+          name.toLowerCase().includes('balance') ||
+          name.toLowerCase() === 'bilanzdaten'
+        );
+        
+        if (bilanzSheet) {
+          sheetName = bilanzSheet;
+          console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (found Bilanz sheet)`);
+        } else {
+          // Skip instruction/info sheets and find first data sheet
+          const skipSheets = ['anleitung', 'instruction', 'info', 'information', 'überblick', 'overview', 'hinweise'];
+          const dataSheet = workbook.SheetNames.find(name => 
+            !skipSheets.some(skip => name.toLowerCase().includes(skip))
+          );
+          
+          sheetName = dataSheet || workbook.SheetNames[0];
+          console.log(`[ImportService] Auto-selected sheet: "${sheetName}" (from ${workbook.SheetNames.length} available sheets)`);
+        }
+      }
+      
       const worksheet = workbook.Sheets[sheetName];
       if (!worksheet) {
         throw new BadRequestException(`Arbeitsblatt "${sheetName}" nicht gefunden. Verfügbare Blätter: ${workbook.SheetNames.join(', ')}`);
       }
+      
+      console.log(`[ImportService] Using sheet: "${sheetName}" (available sheets: ${workbook.SheetNames.join(', ')})`);
 
       // Erste Zeile für Spaltenzuordnung
       // Use header: 1 to get array of arrays, then convert to objects with first row as headers
