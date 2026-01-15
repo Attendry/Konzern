@@ -563,6 +563,44 @@ export class ImportService {
       console.log(`[ImportService] ========== FORCE DETECTION END ==========`);
       console.log(`[ImportService] After force detection, accountNumber mapping has ${columnMapping.accountNumber.length} entries:`, columnMapping.accountNumber);
       
+      // ULTRA-AGGRESSIVE FALLBACK: If still no account number found, check headers array directly
+      // This is a last resort that should NEVER fail if "Kontonummer" exists in the file
+      if (columnMapping.accountNumber.length === 0) {
+        console.error('[ImportService] ========== ULTRA-AGGRESSIVE FALLBACK ==========');
+        console.error('[ImportService] Force detection failed, trying ultra-aggressive fallback');
+        console.error('[ImportService] Headers array:', JSON.stringify(headers));
+        console.error('[ImportService] Headers array length:', headers.length);
+        
+        // Check every single header with the most permissive matching possible
+        for (let i = 0; i < headers.length; i++) {
+          const header = String(headers[i] || '').trim();
+          const headerLower = header.toLowerCase();
+          const headerNormalized = headerLower.replace(/\s+/g, '').replace(/[_-]/g, '');
+          
+          console.error(`[ImportService] Fallback check[${i}]: "${header}" -> lower: "${headerLower}", normalized: "${headerNormalized}"`);
+          
+          // ULTRA-PERMISSIVE: Match anything that could remotely be "Kontonummer"
+          if (headerLower.includes('kontonummer') || 
+              headerLower.includes('konto') ||
+              headerNormalized.includes('kontonummer') ||
+              headerNormalized.includes('konto') ||
+              headerLower.includes('account') ||
+              headerNormalized.includes('account') ||
+              header === 'Kontonummer' ||
+              header === 'kontonummer' ||
+              header === 'KONTONUMMER' ||
+              headerLower === 'kontonummer' ||
+              headerNormalized === 'kontonummer') {
+            console.error(`[ImportService] *** ULTRA-AGGRESSIVE FALLBACK FOUND at index ${i}: "${header}" ***`);
+            columnMapping.accountNumber.push(header);
+            break;
+          }
+        }
+        
+        console.error(`[ImportService] After ultra-aggressive fallback, accountNumber mapping has ${columnMapping.accountNumber.length} entries`);
+        console.error('[ImportService] ============================================');
+      }
+      
       // If still no account number found, try alternative: use first data row to infer headers
       if (columnMapping.accountNumber.length === 0 && rawDataArray.length > 1) {
         console.warn('[ImportService] No account number column found in headers, trying alternative detection');
