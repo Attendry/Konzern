@@ -313,6 +313,13 @@ export class ImportService {
     file: MulterFile,
     importDataDto: ImportDataDto,
   ): Promise<{ imported: number; errors: string[]; warnings: string[] }> {
+    console.log('[ImportService] ========== IMPORT EXCEL CALLED ==========');
+    console.log('[ImportService] File name:', file?.originalname);
+    console.log('[ImportService] File size:', file?.size);
+    console.log('[ImportService] Financial statement ID:', importDataDto.financialStatementId);
+    console.log('[ImportService] Sheet name:', importDataDto.sheetName);
+    console.log('[ImportService] =========================================');
+    
     try {
       if (!file || !file.buffer) {
         throw new BadRequestException('Datei ist leer oder ungültig');
@@ -659,16 +666,28 @@ export class ImportService {
             }
           }
           
+          // CRITICAL: Log everything before throwing error
+          console.error('[ImportService] ========== FINAL ERROR - NO KONTONUMMER FOUND ==========');
+          console.error('[ImportService] Sheet name:', sheetName);
+          console.error('[ImportService] Available headers:', availableHeaders);
+          console.error('[ImportService] Normalized headers:', normalizedHeaders);
+          console.error('[ImportService] Available sheets:', workbook.SheetNames.join(', '));
+          console.error('[ImportService] First data row:', rawDataArray.length > 1 ? JSON.stringify(rawDataArray[1]) : 'Keine Daten');
+          console.error('[ImportService] All headers array:', JSON.stringify(headers, null, 2));
+          console.error('[ImportService] Column mapping result:', JSON.stringify(columnMapping, null, 2));
+          console.error('[ImportService] ========================================================');
+          
           // Final error with all diagnostic information
-          throw new BadRequestException(
-            `Keine Kontonummer-Spalte gefunden im Blatt "${sheetName}".\n\n` +
+          const errorMessage = `Keine Kontonummer-Spalte gefunden im Blatt "${sheetName}".\n\n` +
             `Erwartete Spaltennamen: Kontonummer, AccountNumber, Account_Number, Account-Number, Konto, Konto-Nr, Konto Nr, Account, Nr, No\n\n` +
             `Gefundene Spalten in der Datei: ${availableHeaders}\n\n` +
             `Normalisierte Spaltennamen: ${normalizedHeaders}\n\n` +
             `Verfügbare Blätter: ${workbook.SheetNames.join(', ')}\n\n` +
             `Erste Datenzeile (zur Diagnose): ${rawDataArray.length > 1 ? JSON.stringify(rawDataArray[1]) : 'Keine Daten'}\n\n` +
-            `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung oder wählen Sie das Blatt "Bilanzdaten" aus.`
-          );
+            `Bitte verwenden Sie den Import-Assistenten für flexible Spaltenzuordnung oder wählen Sie das Blatt "Bilanzdaten" aus.`;
+          
+          console.error('[ImportService] Throwing error with message length:', errorMessage.length);
+          throw new BadRequestException(errorMessage);
         }
       }
       
