@@ -427,6 +427,23 @@ export class ImportService {
 
       const columnMapping = this.findColumnMapping(headers);
       
+      // DEBUG: Log the exact header that should be "Kontonummer"
+      const kontonummerIndex = headers.findIndex(h => 
+        h.toLowerCase() === 'kontonummer' || 
+        h === 'Kontonummer' ||
+        h.toLowerCase().includes('kontonummer')
+      );
+      if (kontonummerIndex >= 0) {
+        console.log(`[ImportService] DEBUG: Found header at index ${kontonummerIndex}: "${headers[kontonummerIndex]}" - This should be the Kontonummer column!`);
+        // Force add it if not already detected
+        if (columnMapping.accountNumber.length === 0) {
+          console.log(`[ImportService] DEBUG: Forcing addition of "${headers[kontonummerIndex]}" to accountNumber mapping`);
+          columnMapping.accountNumber.push(headers[kontonummerIndex]);
+        }
+      } else {
+        console.log(`[ImportService] DEBUG: No header found matching "Kontonummer" exactly. Headers are:`, headers);
+      }
+      
       // If still no account number found, try alternative: use first data row to infer headers
       if (columnMapping.accountNumber.length === 0 && rawDataArray.length > 1) {
         console.warn('[ImportService] No account number column found in headers, trying alternative detection');
