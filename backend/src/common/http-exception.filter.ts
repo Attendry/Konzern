@@ -38,10 +38,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     // Log full error details
+    const errorMessage = typeof message === 'string' ? message : (message as any).message || JSON.stringify(message);
     this.logger.error(
       `${request.method} ${request.url} - ${status}`,
-      exception instanceof Error ? exception.stack : JSON.stringify(exception),
     );
+    this.logger.error(`Error message: ${errorMessage}`);
+    this.logger.error(`Error message length: ${errorMessage?.length || 0}`);
+    if (exception instanceof Error) {
+      this.logger.error(`Error stack: ${exception.stack}`);
+    } else {
+      this.logger.error(`Error details: ${JSON.stringify(exception)}`);
+    }
 
     response.status(status).json(errorResponse);
   }
