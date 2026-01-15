@@ -47,6 +47,7 @@ export class ImportController {
       body: req.body,
       bodyKeys: req.body ? Object.keys(req.body) : [],
     });
+    console.log('[ImportController] *** CALLING importService.importExcel ***');
 
     if (!file) {
       console.error('Import error: No file uploaded');

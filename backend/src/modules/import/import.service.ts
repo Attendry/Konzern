@@ -522,13 +522,23 @@ export class ImportService {
 
       const columnMapping = this.findColumnMapping(headers);
       
+      console.log(`[ImportService] ========== AFTER findColumnMapping ==========`);
+      console.log(`[ImportService] Column mapping result:`, JSON.stringify(columnMapping, null, 2));
+      console.log(`[ImportService] Account number columns found: ${columnMapping.accountNumber.length}`);
+      console.log(`[ImportService] Account number columns:`, columnMapping.accountNumber);
+      
       // CRITICAL FIX: Force detect "Kontonummer" if it exists in headers
       // This bypasses all the matching logic and directly checks the headers array
+      console.log(`[ImportService] ========== FORCE DETECTION START ==========`);
       console.log(`[ImportService] Checking ${headers.length} headers for "Kontonummer"...`);
+      console.log(`[ImportService] Headers array:`, JSON.stringify(headers));
+      
       for (let i = 0; i < headers.length; i++) {
         const h = headers[i];
         const hLower = h.toLowerCase();
         const hTrimmed = h.trim().toLowerCase();
+        
+        console.log(`[ImportService] Checking header[${i}]: "${h}" (lower: "${hLower}", trimmed: "${hTrimmed}")`);
         
         // Check every possible variation
         if (h === 'Kontonummer' ||
@@ -543,11 +553,14 @@ export class ImportService {
           if (!columnMapping.accountNumber.includes(h)) {
             columnMapping.accountNumber.push(h);
             console.log(`[ImportService] *** FORCED "${h}" into accountNumber mapping ***`);
+          } else {
+            console.log(`[ImportService] *** "${h}" already in accountNumber mapping ***`);
           }
           break; // Found it, no need to continue
         }
       }
       
+      console.log(`[ImportService] ========== FORCE DETECTION END ==========`);
       console.log(`[ImportService] After force detection, accountNumber mapping has ${columnMapping.accountNumber.length} entries:`, columnMapping.accountNumber);
       
       // If still no account number found, try alternative: use first data row to infer headers
