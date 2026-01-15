@@ -730,38 +730,42 @@ function BalanceSheetVisualization({
               dataKey="value"
               stroke="#fff"
               fill="#8884d8"
-              content={({ x, y, width, height, payload }: any) => (
-                <g>
-                  <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    fill={payload.category === 'Aktiva' ? COLORS.fixedAssets : COLORS.liabilities}
-                    stroke="#fff"
-                    strokeWidth={2}
-                  />
-                  <text
-                    x={x + width / 2}
-                    y={y + height / 2 - 10}
-                    textAnchor="middle"
-                    fill="#fff"
-                    fontSize={14}
-                    fontWeight="bold"
-                  >
-                    {payload.name}
-                  </text>
-                  <text
-                    x={x + width / 2}
-                    y={y + height / 2 + 10}
-                    textAnchor="middle"
-                    fill="#fff"
-                    fontSize={12}
-                  >
-                    {formatCurrency(payload.value)}
-                  </text>
-                </g>
-              )}
+              content={({ x, y, width, height, payload }: any) => {
+                // Guard against undefined payload - return empty g element
+                if (!payload || !payload.name) return <g />;
+                return (
+                  <g>
+                    <rect
+                      x={x}
+                      y={y}
+                      width={width}
+                      height={height}
+                      fill={payload.category === 'Aktiva' ? COLORS.fixedAssets : COLORS.liabilities}
+                      stroke="#fff"
+                      strokeWidth={2}
+                    />
+                    <text
+                      x={x + width / 2}
+                      y={y + height / 2 - 10}
+                      textAnchor="middle"
+                      fill="#fff"
+                      fontSize={14}
+                      fontWeight="bold"
+                    >
+                      {payload.name}
+                    </text>
+                    <text
+                      x={x + width / 2}
+                      y={y + height / 2 + 10}
+                      textAnchor="middle"
+                      fill="#fff"
+                      fontSize={12}
+                    >
+                      {formatCurrency(payload.value)}
+                    </text>
+                  </g>
+                );
+              }}
             />
           </ResponsiveContainer>
         </div>
