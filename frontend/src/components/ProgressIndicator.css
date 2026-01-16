@@ -1,0 +1,15 @@
+.progress-indicator {
+  position: sticky;
+  top: 0;
+  height: 4px;
+  background-color: var(--color-border, #e5e7eb);
+  z-index: 10;
+  margin-bottom: var(--spacing-4, 16px);
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary, #3b82f6) 0%, #6366f1 100%);
+  transition: width 0.1s ease-out;
+  border-radius: 0 2px 2px 0;
+}

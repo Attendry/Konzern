@@ -1,13 +1,23 @@
+export interface DocumentationSubsection {
+  id: string;
+  title: string;
+  content: string;
+  screenshot?: string;
+  example?: string;
+  tldr?: string; // Kurze Zusammenfassung
+  lastUpdated?: string; // Datum der letzten Aktualisierung
+  relatedSections?: string[]; // IDs verwandter Abschnitte
+  contentType?: 'tutorial' | 'reference' | 'concept' | 'workflow' | 'troubleshooting';
+  useCases?: {
+    role: 'wp' | 'buchhalter' | 'controller' | 'geschäftsführung';
+    description: string;
+  }[];
+}
+
 export interface DocumentationSection {
   id: string;
   title: string;
-  subsections: {
-    id: string;
-    title: string;
-    content: string;
-    screenshot?: string;
-    example?: string;
-  }[];
+  subsections: DocumentationSubsection[];
 }
 
 export const documentationContent: DocumentationSection[] = [
@@ -103,11 +113,15 @@ Ein Konzern besteht aus einem Mutterunternehmen und einem oder mehreren Tochteru
 **Konsolidierungskreis:**
 Der Konsolidierungskreis umfasst alle Unternehmen, die in den Konzernabschluss einbezogen werden müssen. Die Anwendung prüft automatisch die Konsolidierungspflicht nach HGB.
 
+[WARNING: **Wichtig:** Die Konsolidierungspflicht muss für jedes Unternehmen einzeln geprüft werden. Bei Unklarheiten konsultieren Sie einen Wirtschaftsprüfer.]
+
 **Konsolidierungspflicht nach HGB:**
 Ein Unternehmen ist konsolidierungspflichtig, wenn:
 - Das Mutterunternehmen mehr als 50% der Anteile hält, ODER
 - Ein Beherrschungsverhältnis besteht, ODER
 - Einheitliche Leitung vorliegt
+
+[HGB: **HGB-Referenz:** Siehe § 290 HGB für die Definition der Konsolidierungspflicht.]
 
 **Jahresabschlüsse im System:**
 Für jedes Unternehmen können Sie Jahresabschlüsse anlegen und importieren. Diese bilden die Grundlage für die Konsolidierung.
@@ -231,8 +245,7 @@ Beim Löschen eines Unternehmens werden automatisch gelöscht:
 - Alle Konsolidierungsdaten
 - Alle Verknüpfungen
 
-**Warnung:**
-Diese Aktion kann nicht rückgängig gemacht werden. Die Anwendung zeigt eine Bestätigungsabfrage.
+[WARNING: **Wichtig:** Diese Aktion kann nicht rückgängig gemacht werden. Die Anwendung zeigt eine Bestätigungsabfrage. Stellen Sie sicher, dass Sie alle Daten gesichert haben, bevor Sie ein Unternehmen löschen.]
 
 **Unternehmenshierarchie visualisieren:**
 Die Anwendung zeigt die Unternehmenshierarchie als Baumstruktur an:
@@ -460,6 +473,20 @@ Das Template enthält:
       {
         id: 'consolidation-circle',
         title: 'Konsolidierungskreis',
+        tldr: 'Der Konsolidierungskreis umfasst alle konsolidierungspflichtigen Unternehmen. Die Anwendung prüft automatisch die Konsolidierungspflicht nach HGB.',
+        lastUpdated: '2026-01-10',
+        relatedSections: ['first-consolidation', 'consolidation-wizard'],
+        contentType: 'concept',
+        useCases: [
+          {
+            role: 'wp',
+            description: 'Als Wirtschaftsprüfer prüfen Sie, ob alle konsolidierungspflichtigen Unternehmen korrekt identifiziert wurden.'
+          },
+          {
+            role: 'controller',
+            description: 'Als Controller stellen Sie sicher, dass der Konsolidierungskreis vollständig ist und alle relevanten Unternehmen erfasst wurden.'
+          }
+        ],
         content: `Der Konsolidierungskreis definiert, welche Unternehmen in den Konzernabschluss einbezogen werden.
 
 **Konsolidierungskreis definieren:**
@@ -536,6 +563,20 @@ Fügen Sie manuelle Konsolidierungsposten hinzu, falls erforderlich:
       {
         id: 'first-consolidation',
         title: 'Erstkonsolidierung',
+        tldr: 'Bei der erstmaligen Konsolidierung werden Buchwert, Zeitwert und Kaufpreis verglichen, um Goodwill und Minderheitenanteile zu berechnen.',
+        lastUpdated: '2026-01-15',
+        relatedSections: ['consolidation-circle', 'minority-interests', 'consolidation-entries'],
+        contentType: 'workflow',
+        useCases: [
+          {
+            role: 'wp',
+            description: 'Als Wirtschaftsprüfer prüfen Sie die Bewertung der Vermögensgegenstände und Schulden zum Erwerbszeitpunkt sowie die Goodwill-Berechnung.'
+          },
+          {
+            role: 'buchhalter',
+            description: 'Als Bilanzbuchhalter führen Sie die Erstkonsolidierung durch, indem Sie die erforderlichen Daten eingeben und die Berechnungen prüfen.'
+          }
+        ],
         content: `Bei der erstmaligen Konsolidierung einer Tochtergesellschaft müssen bestimmte Schritte beachtet werden.
 
 **Erstkonsolidierung durchführen:**
@@ -617,6 +658,20 @@ Eliminierung des Beteiligungsbuchwerts gegen das Eigenkapital der Tochtergesells
       {
         id: 'ic-reconciliation',
         title: 'Intercompany-Verrechnungen (IC)',
+        tldr: 'IC-Verrechnungen zwischen Konzernunternehmen müssen eliminiert werden. Die Anwendung erkennt automatisch IC-Differenzen und unterstützt den Abgleich.',
+        lastUpdated: '2026-01-12',
+        relatedSections: ['consolidation-entries', 'perform-consolidation'],
+        contentType: 'workflow',
+        useCases: [
+          {
+            role: 'buchhalter',
+            description: 'Als Bilanzbuchhalter führen Sie den IC-Abgleich durch, identifizieren Differenzen und beheben diese vor der Konsolidierung.'
+          },
+          {
+            role: 'wp',
+            description: 'Als Wirtschaftsprüfer prüfen Sie die IC-Eliminierungen und verifizieren, dass alle IC-Posten korrekt abgeglichen wurden.'
+          }
+        ],
         content: `Intercompany-Verrechnungen müssen bei der Konsolidierung eliminiert werden.
 
 **IC-Differenzen erkennen:**
