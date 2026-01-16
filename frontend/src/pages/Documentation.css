@@ -169,6 +169,35 @@
   color: var(--color-text-primary, #1f2937);
 }
 
+/* Reset link styles in documentation content - only explicit links should be blue */
+.documentation-content-body {
+  color: var(--color-text-primary, #1f2937);
+}
+
+.documentation-content-body * {
+  color: inherit;
+}
+
+/* Only style actual anchor tags as links */
+.documentation-content-body a[href] {
+  color: var(--color-primary, #3b82f6) !important;
+  text-decoration: underline;
+}
+
+.documentation-content-body a[href]:hover {
+  color: var(--color-primary-hover, #2563eb) !important;
+}
+
+/* Ensure normal text elements are not styled as links */
+.documentation-content-body p,
+.documentation-content-body li,
+.documentation-content-body h2,
+.documentation-content-body h3,
+.documentation-content-body span,
+.documentation-content-body div {
+  color: var(--color-text-primary, #1f2937);
+}
+
 .documentation-content-body h2 {
   font-size: var(--font-size-lg, 18px);
   font-weight: var(--font-weight-semibold, 600);
