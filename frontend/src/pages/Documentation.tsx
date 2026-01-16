@@ -13,8 +13,12 @@ import { GoodwillCalculator } from '../components/GoodwillCalculator';
 const documentation: DocumentationSection[] = documentationContent;
 
 // Helper to parse callouts from content
-const parseContent = (content: string) => {
-  const parts: Array<{ type: 'text' | 'callout'; content: string; calloutType?: 'warning' | 'tip' | 'info' | 'success' | 'hgb' }> = [];
+type ContentPart = 
+  | { type: 'text'; content: string }
+  | { type: 'callout'; content: string; calloutType: 'warning' | 'tip' | 'info' | 'success' | 'hgb' };
+
+const parseContent = (content: string): ContentPart[] => {
+  const parts: ContentPart[] = [];
   const calloutRegex = /\[(WARNING|TIP|INFO|SUCCESS|HGB):(.*?)\]/gs;
   let lastIndex = 0;
   let match;
@@ -109,7 +113,7 @@ export default function Documentation() {
     return parts.map((part, partIndex) => {
       if (part.type === 'callout') {
         return (
-          <Callout key={partIndex} type={part.calloutType!}>
+          <Callout key={partIndex} type={part.calloutType}>
             {part.content.split('\n').map((line, i) => (
               <p key={i}>{line}</p>
             ))}

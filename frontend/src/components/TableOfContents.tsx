@@ -1,4 +1,3 @@
-import React from 'react';
 import { DocumentationSection } from '../data/documentationContent';
 import './TableOfContents.css';
 

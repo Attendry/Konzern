@@ -1,4 +1,3 @@
-import React from 'react';
 import { DocumentationSection, DocumentationSubsection } from '../data/documentationContent';
 import './RelatedContent.css';
 
