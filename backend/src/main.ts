@@ -89,26 +89,47 @@ async function bootstrap() {
     }));
     logger.log('Security headers (Helmet) enabled');
     
-    // CORS Configuration - Restrict to allowed origins in production
+    // CORS Configuration - Allow Vercel preview deployments and configured origins
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/$/, ''))
       : [process.env.FRONTEND_URL || 'http://localhost:5173'];
     
-    // In development, allow all origins for easier testing
-    // In production, strictly use ALLOWED_ORIGINS or FRONTEND_URL
-    const corsOrigin = isProduction
-      ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-          // Allow requests with no origin (like mobile apps, curl, Postman)
-          if (!origin) {
-            return callback(null, true);
-          }
-          // Check if origin is in allowed list
-          if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-          }
-          callback(new Error(`Origin ${origin} not allowed by CORS`));
-        }
-      : true; // Allow all origins in development
+    // Function to check if origin is allowed
+    const isOriginAllowed = (origin: string): boolean => {
+      // Check explicit allowed origins
+      if (allowedOrigins.includes(origin)) {
+        return true;
+      }
+      
+      // Allow Vercel preview deployments (pattern: *.vercel.app)
+      // This covers: konzern-*.vercel.app, konzern-*-attendry.vercel.app, etc.
+      if (origin.endsWith('.vercel.app')) {
+        return true;
+      }
+      
+      // Allow localhost for development
+      if (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:')) {
+        return true;
+      }
+      
+      return false;
+    };
+    
+    // CORS origin validation function
+    const corsOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow requests with no origin (like mobile apps, curl, Postman, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Check if origin is allowed
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    };
     
     app.enableCors({
       origin: corsOrigin,
@@ -127,10 +148,9 @@ async function bootstrap() {
       exposedHeaders: ['Content-Length', 'Content-Type', 'Content-Disposition'],
       maxAge: 86400,
     });
-    logger.log(`CORS enabled (${isProduction ? 'production mode - restricted origins' : 'development mode - all origins'})`);
-    if (isProduction) {
-      logger.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
-    }
+    logger.log('CORS enabled (Vercel preview deployments + configured origins allowed)');
+    logger.log(`Configured origins: ${allowedOrigins.join(', ')}`);
+    logger.log('Also allowing: *.vercel.app, localhost');
     
     // Request logging middleware (after CORS)
     const loggingMiddleware = new LoggingMiddleware();
