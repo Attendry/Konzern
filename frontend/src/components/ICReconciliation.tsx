@@ -7,6 +7,7 @@ import {
   ICDifferenceReason,
 } from '../services/consolidationService';
 import { useToastContext } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
 interface ICReconciliationProps {
@@ -33,6 +34,7 @@ const REASON_LABELS: Record<ICDifferenceReason, string> = {
 
 export function ICReconciliation({ financialStatementId, onEntryCreated }: ICReconciliationProps) {
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
   const [reconciliations, setReconciliations] = useState<ICReconType[]>([]);
   const [summary, setSummary] = useState<ICReconciliationSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,7 +100,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
         status: resolveData.status || undefined,
         differenceReason: resolveData.differenceReason || undefined,
         explanation: resolveData.explanation || undefined,
-        resolvedByUserId: 'current-user-id', // TODO: Get from auth context
+        resolvedByUserId: user?.id,
       });
       success('Abstimmung aktualisiert');
       setShowResolveModal(false);
@@ -115,7 +117,7 @@ export function ICReconciliation({ financialStatementId, onEntryCreated }: ICRec
     try {
       await consolidationService.generateClearingEntry(
         recon.id,
-        'current-user-id', // TODO: Get from auth context
+        user?.id || '',
       );
       success('Ausgleichsbuchung erstellt');
       loadData();

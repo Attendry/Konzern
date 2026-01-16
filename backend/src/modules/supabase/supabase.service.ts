@@ -1,32 +1,30 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
+  private readonly logger = new Logger(SupabaseService.name);
   private client: SupabaseClient;
 
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
     try {
-      // WICHTIG: Verwende exakte Variablennamen Supabase_Public und Supabase_Secret
-      // Diese werden aus .env.local gelesen
-      const supabasePublic = this.configService.get<string>('Supabase_Public');
+      // Use exact variable names Supabase_Public and Supabase_Secret
       const supabaseSecret = this.configService.get<string>('Supabase_Secret');
       
-      // Fallback auf alternative Variablennamen für Kompatibilität
+      // Fallback to alternative variable names for compatibility
       let supabaseUrl = 
         this.configService.get<string>('SUPABASE_URL') ||
         this.configService.get<string>('SUPABASE_PROJECT_URL');
       
-      let supabaseKey = 
-        supabaseSecret ||  // Primär: Supabase_Secret
+      const supabaseKey = 
+        supabaseSecret ||
         this.configService.get<string>('SUPABASE_SECRET_KEY') ||
         this.configService.get<string>('SUPABASE_SECRET');
 
-      // Versuche URL aus Supabase_Public zu extrahieren oder verwende explizite URL
-      // Supabase_Public enthält normalerweise nicht die URL, aber wir prüfen es
+      // Try to construct URL from project ref if not set
       if (!supabaseUrl) {
         const projectRef = this.configService.get<string>('SUPABASE_PROJECT_REF');
         if (projectRef) {
@@ -34,37 +32,19 @@ export class SupabaseService implements OnModuleInit {
         }
       }
 
-      console.log('=== Supabase Configuration ===');
-      console.log('Supabase_Public:', supabasePublic ? `${supabasePublic.substring(0, 20)}...` : 'NOT SET');
-      console.log('Supabase_Secret:', supabaseSecret ? `${supabaseSecret.substring(0, 20)}...` : 'NOT SET');
-      console.log('Supabase URL:', supabaseUrl || 'NOT SET');
-      console.log('Supabase Key (used):', supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'NOT SET');
-      console.log('=============================');
+      // Log configuration status (without revealing secrets)
+      this.logger.log(`Supabase URL: ${supabaseUrl ? 'configured' : 'NOT SET'}`);
+      this.logger.log(`Supabase Key: ${supabaseKey ? 'configured' : 'NOT SET'}`);
 
       if (!supabaseKey) {
-        const errorMsg = 
-          '⚠️  WARNING: Missing Supabase configuration. Please set in .env.local:\n' +
-          '  - Supabase_Secret=[your-service-role-key] (required)\n' +
-          '  - Supabase_Public=[your-anon-key] (optional, for client-side)\n' +
-          '  - SUPABASE_URL=https://[your-project-ref].supabase.co (required)\n\n' +
-          'Die Datei sollte im backend/ Verzeichnis liegen.\n' +
-          'WICHTIG: Verwenden Sie die exakten Variablennamen Supabase_Public und Supabase_Secret!\n' +
-          'Das Backend startet, aber Datenbank-Operationen werden fehlschlagen.';
-        console.warn(errorMsg);
-        // Wir werfen keinen Fehler, damit das Backend trotzdem startet
-        // Die Fehler werden bei der Verwendung auftreten
+        this.logger.warn('Missing Supabase secret key. Set Supabase_Secret or SUPABASE_SECRET_KEY in .env.local');
+        this.logger.warn('The backend will start, but database operations will fail.');
         return;
       }
 
-      // Wenn keine URL gesetzt ist, versuche sie aus dem Public Key zu extrahieren
-      // (normalerweise ist die URL separat erforderlich)
       if (!supabaseUrl) {
-        const errorMsg = 
-          '⚠️  WARNING: Missing SUPABASE_URL. Please set in .env.local:\n' +
-          '  - SUPABASE_URL=https://[your-project-ref].supabase.co (required)\n' +
-          '  - Supabase_Secret=[your-service-role-key] (required)\n' +
-          'Das Backend startet, aber Datenbank-Operationen werden fehlschlagen.';
-        console.warn(errorMsg);
+        this.logger.warn('Missing SUPABASE_URL. Set SUPABASE_URL in .env.local');
+        this.logger.warn('The backend will start, but database operations will fail.');
         return;
       }
 
@@ -83,17 +63,15 @@ export class SupabaseService implements OnModuleInit {
         },
       });
       
-      // Test-Verbindung beim Start (nicht blockierend)
+      // Test connection on startup (non-blocking)
       this.testConnection().catch((err) => {
-        console.warn('⚠️  Supabase-Verbindungstest fehlgeschlagen:', err.message);
-        console.warn('   Das Backend startet trotzdem. Bitte prüfen Sie die Konfiguration.');
+        this.logger.warn(`Connection test failed: ${err.message}`);
       });
       
-      console.log('✅ Supabase Client erfolgreich erstellt');
+      this.logger.log('Supabase client initialized successfully');
     } catch (error: any) {
-      console.error('❌ Fehler beim Erstellen des Supabase Clients:', error);
-      console.error('⚠️  Das Backend startet trotzdem, aber Datenbank-Operationen werden fehlschlagen.');
-      // Wir werfen keinen Fehler, damit das Backend trotzdem startet
+      this.logger.error(`Failed to initialize Supabase client: ${error.message}`);
+      // Don't throw - let the backend start, errors will occur on use
     }
   }
 
@@ -109,27 +87,24 @@ export class SupabaseService implements OnModuleInit {
       
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
-          console.warn('⚠️  WARNING: Die "companies" Tabelle existiert nicht in Supabase!');
-          console.warn('   Bitte führen Sie die Migrationen aus (siehe README_SUPABASE_SETUP.md)');
+          this.logger.warn('The "companies" table does not exist. Please run migrations.');
         } else {
-          console.warn('⚠️  WARNING: Supabase-Verbindungstest fehlgeschlagen:', error.message);
+          this.logger.warn(`Connection test failed: ${error.message}`);
         }
       } else {
-        console.log(`✅ Supabase-Verbindungstest erfolgreich (${duration}ms)`);
+        this.logger.log(`Connection test successful (${duration}ms)`);
       }
     } catch (error: any) {
-      console.warn('⚠️  Supabase-Verbindungstest fehlgeschlagen:', error.message);
+      this.logger.warn(`Connection test failed: ${error.message}`);
     }
   }
 
   getClient(): SupabaseClient {
     if (!this.client) {
       const error = new Error(
-        'Supabase Client nicht initialisiert. Bitte konfigurieren Sie Supabase in .env.local:\n' +
-        '  - SUPABASE_URL=https://[your-project-ref].supabase.co\n' +
-        '  - Supabase_Secret=[your-service-role-key]',
+        'Supabase client not initialized. Configure in .env.local: SUPABASE_URL and Supabase_Secret',
       );
-      console.error('❌ Supabase Client nicht verfügbar:', error.message);
+      this.logger.error('Supabase client not available');
       throw error;
     }
     return this.client;

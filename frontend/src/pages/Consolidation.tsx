@@ -21,6 +21,7 @@ import { ICReconciliation } from '../components/ICReconciliation';
 import { FirstConsolidationWizard } from '../components/FirstConsolidationWizard';
 import { MinorityInterestDashboard } from '../components/MinorityInterestDashboard';
 import { useToastContext } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
 type EntryTab = 'all' | 'manual' | 'pending';
@@ -28,6 +29,7 @@ type EntryTab = 'all' | 'manual' | 'pending';
 function Consolidation() {
   const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedStatementId, setSelectedStatementId] = useState<string>('');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
@@ -173,8 +175,7 @@ function Consolidation() {
   };
 
   const handleApproveEntry = async (entryId: string) => {
-    // In production, this would use the actual logged-in user ID
-    const approverUserId = 'current-user-id'; // TODO: Get from auth context
+    const approverUserId = user?.id || '';
     try {
       await consolidationService.approveEntry(entryId, approverUserId);
       success('Buchung freigegeben');
@@ -188,7 +189,7 @@ function Consolidation() {
     const reason = prompt('Bitte geben Sie einen Ablehnungsgrund ein:');
     if (!reason) return;
     
-    const rejecterUserId = 'current-user-id'; // TODO: Get from auth context
+    const rejecterUserId = user?.id || '';
     try {
       await consolidationService.rejectEntry(entryId, rejecterUserId, reason);
       success('Buchung abgelehnt');
@@ -202,7 +203,7 @@ function Consolidation() {
     const reason = prompt('Bitte geben Sie einen Stornogrund ein:');
     if (!reason) return;
     
-    const userId = 'current-user-id'; // TODO: Get from auth context
+    const userId = user?.id || '';
     try {
       await consolidationService.reverseEntry(entryId, userId, reason);
       success('Buchung storniert');

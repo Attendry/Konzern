@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
@@ -19,6 +19,8 @@ import { CapitalConsolidationService } from './capital-consolidation.service';
 
 @Injectable()
 export class ConsolidationService {
+  private readonly logger = new Logger(ConsolidationService.name);
+
   constructor(
     private supabaseService: SupabaseService,
     private intercompanyService: IntercompanyTransactionService,
@@ -33,7 +35,7 @@ export class ConsolidationService {
   async calculateConsolidation(
     financialStatementId: string,
   ): Promise<{ entries: ConsolidationEntry[]; summary: any }> {
-    console.log(`[ConsolidationService] calculateConsolidation - Starting for financialStatementId: ${financialStatementId}`);
+    this.logger.log(`Starting consolidation for financial statement: ${financialStatementId}`);
     
     const { data: financialStatement, error: fsError } = await this.supabase
       .from('financial_statements')
@@ -42,22 +44,22 @@ export class ConsolidationService {
       .single();
 
     if (fsError) {
-      console.error('[ConsolidationService] Error fetching financial statement:', fsError);
+      this.logger.error(`Error fetching financial statement: ${fsError.message}`);
       SupabaseErrorHandler.handle(fsError, 'Financial Statement', 'fetch');
     }
     SupabaseErrorHandler.handleNotFound(financialStatement, 'Financial Statement');
 
-    console.log(`[ConsolidationService] Financial statement found - company_id: ${financialStatement.company_id}`);
+    this.logger.debug(`Financial statement found - company_id: ${financialStatement.company_id}`);
 
-    // Finde alle konsolidierten Unternehmen im Konzern
+    // Find all consolidated companies in the group
     const consolidatedCompanies = await this.getConsolidatedCompanies(
       financialStatement.company_id,
     );
 
-    console.log(`[ConsolidationService] Found ${consolidatedCompanies.length} consolidated companies`);
+    this.logger.log(`Found ${consolidatedCompanies.length} consolidated companies`);
 
     if (consolidatedCompanies.length === 0) {
-      console.error('[ConsolidationService] No consolidated companies found');
+      this.logger.warn('No consolidated companies found');
       // Check if the parent company exists and is marked for consolidation
       const { data: parentCompany } = await this.supabase
         .from('companies')
@@ -104,7 +106,7 @@ export class ConsolidationService {
     
     // Warnung bei fehlenden Informationen
     if (debtConsolidationResult.summary.missingInfo.length > 0) {
-      console.warn('Fehlende Informationen bei Schuldenkonsolidierung:', debtConsolidationResult.summary.missingInfo);
+      this.logger.warn(`Missing info in debt consolidation: ${JSON.stringify(debtConsolidationResult.summary.missingInfo)}`);
     }
 
     // 3. Kapitalkonsolidierung
@@ -116,7 +118,7 @@ export class ConsolidationService {
     
     // Warnung bei fehlenden Informationen
     if (capitalConsolidationResult.summary.missingInfo.length > 0) {
-      console.warn('Fehlende Informationen bei Kapitalkonsolidierung:', capitalConsolidationResult.summary.missingInfo);
+      this.logger.warn(`Missing info in capital consolidation: ${JSON.stringify(capitalConsolidationResult.summary.missingInfo)}`);
     }
 
     // Zusammenfassung
@@ -134,7 +136,7 @@ export class ConsolidationService {
   private async getConsolidatedCompanies(
     parentCompanyId: string,
   ): Promise<Company[]> {
-    console.log(`[ConsolidationService] getConsolidatedCompanies - Looking for companies with parent: ${parentCompanyId}`);
+    this.logger.debug(`getConsolidatedCompanies - Looking for companies with parent: ${parentCompanyId}`);
     
     // Finde alle Tochterunternehmen, die konsolidiert werden sollen
     const { data: parentCompany, error: parentError } = await this.supabase
@@ -144,7 +146,7 @@ export class ConsolidationService {
       .single();
 
     if (parentError) {
-      console.error('[ConsolidationService] Error fetching parent company:', parentError);
+      this.logger.error(`Error fetching parent company: ${parentError.message}`);
     }
 
     // Check if parent company is marked for consolidation (don't filter here, check later)
@@ -154,11 +156,11 @@ export class ConsolidationService {
       .eq('parent_company_id', parentCompanyId);
 
     if (childrenError) {
-      console.error('[ConsolidationService] Error fetching children companies:', childrenError);
+      this.logger.error(`Error fetching children companies: ${childrenError.message}`);
     }
 
-    console.log(`[ConsolidationService] Parent company found: ${parentCompany ? 'yes' : 'no'}, is_consolidated: ${parentCompany?.is_consolidated}`);
-    console.log(`[ConsolidationService] Direct children found: ${directChildren?.length || 0}`);
+    this.logger.debug(`Parent company found: ${parentCompany ? 'yes' : 'no'}, is_consolidated: ${parentCompany?.is_consolidated}`);
+    this.logger.debug(`Direct children found: ${directChildren?.length || 0}`);
 
     // Rekursiv alle Unter-Tochterunternehmen finden
     const allCompanies: any[] = [];
@@ -166,14 +168,14 @@ export class ConsolidationService {
     // Add parent company if it's marked for consolidation
     if (parentCompany && parentCompany.is_consolidated) {
       allCompanies.push(parentCompany);
-      console.log(`[ConsolidationService] Added parent company: ${parentCompany.name}`);
+      this.logger.debug(`Added parent company: ${parentCompany.name}`);
     }
     
     // Add direct children that are marked for consolidation
     const consolidatedChildren = (directChildren || []).filter((c: any) => c.is_consolidated);
     if (consolidatedChildren.length > 0) {
       allCompanies.push(...consolidatedChildren);
-      console.log(`[ConsolidationService] Added ${consolidatedChildren.length} consolidated children`);
+      this.logger.debug(`Added ${consolidatedChildren.length} consolidated children`);
     }
 
     // Recursively find grandchildren
@@ -184,17 +186,17 @@ export class ConsolidationService {
         .eq('parent_company_id', company.id);
       
       if (grandChildrenError) {
-        console.error(`[ConsolidationService] Error fetching grandchildren for ${company.id}:`, grandChildrenError);
+        this.logger.error(`Error fetching grandchildren for ${company.id}: ${grandChildrenError.message}`);
       }
       
       const consolidatedGrandChildren = (children || []).filter((c: any) => c.is_consolidated);
       if (consolidatedGrandChildren.length > 0) {
         allCompanies.push(...consolidatedGrandChildren);
-        console.log(`[ConsolidationService] Added ${consolidatedGrandChildren.length} consolidated grandchildren for ${company.name}`);
+        this.logger.debug(`Added ${consolidatedGrandChildren.length} consolidated grandchildren for ${company.name}`);
       }
     }
 
-    console.log(`[ConsolidationService] Total consolidated companies found: ${allCompanies.length}`);
+    this.logger.log(`Total consolidated companies found: ${allCompanies.length}`);
 
     return allCompanies.map((c: any) => ({
       id: c.id,
@@ -235,7 +237,7 @@ export class ConsolidationService {
 
     // 2. Prüfe auf fehlende Informationen (Pizzatracker-Hinweis)
     if (detectionResult.missingInfo.length > 0) {
-      console.warn('Fehlende Informationen bei Zwischengesellschaftsgeschäften:', detectionResult.missingInfo);
+      this.logger.warn(`Missing info in intercompany transactions: ${JSON.stringify(detectionResult.missingInfo)}`);
       // Hinweis: In Produktion sollte hier der Nutzer "Pizzatracker" gefragt werden
     }
 

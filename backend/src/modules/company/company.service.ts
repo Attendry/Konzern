@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
@@ -9,6 +9,8 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @Injectable()
 export class CompanyService {
+  private readonly logger = new Logger(CompanyService.name);
+
   constructor(
     private supabaseService: SupabaseService,
     private participationService: ParticipationService,
@@ -18,16 +20,16 @@ export class CompanyService {
     try {
       return this.supabaseService.getClient();
     } catch (error: any) {
-      console.error('❌ Fehler beim Abrufen des Supabase Clients:', error.message);
-      throw new Error('Datenbank-Verbindung nicht verfügbar. Bitte prüfen Sie die Supabase-Konfiguration.');
+      this.logger.error(`Failed to get Supabase client: ${error.message}`);
+      throw new Error('Database connection not available. Check Supabase configuration.');
     }
   }
 
   async create(createCompanyDto: CreateCompanyDto): Promise<Company> {
-    console.log('CompanyService.create called with:', createCompanyDto);
+    this.logger.debug(`Creating company: ${createCompanyDto.name}`);
     
     try {
-      // Timeout für Supabase-Request (30 Sekunden)
+      // Timeout for Supabase request (30 seconds)
       const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) => {
         setTimeout(() => {
           resolve({
@@ -58,15 +60,11 @@ export class CompanyService {
       const result = await Promise.race([insertPromise, timeoutPromise]);
       const { data, error } = result as any;
 
-      console.log('Supabase insert result - data:', data ? 'OK' : 'null', 'error:', error ? error.message : 'none');
-
       if (error) {
-        console.error('Supabase error:', error);
-        console.error('Error code:', error.code);
-        console.error('Error details:', JSON.stringify(error, null, 2));
+        this.logger.error(`Supabase error (${error.code}): ${error.message}`);
         
         if (error.code === 'TIMEOUT') {
-          throw new Error('Verbindung zu Supabase hat zu lange gedauert. Bitte prüfen Sie Ihre Internetverbindung und Supabase-Konfiguration.');
+          throw new Error('Connection to Supabase timed out. Check your internet connection and Supabase configuration.');
         }
         
         SupabaseErrorHandler.handle(error, 'Company', 'create');
@@ -74,13 +72,13 @@ export class CompanyService {
 
       SupabaseErrorHandler.handleNotFound(data, 'Company');
       const company = SupabaseMapper.toCompany(data);
-      console.log('Company created successfully:', company.id);
+      this.logger.log(`Company created: ${company.id}`);
       
       // Automatically create participation if parent company is set
       if (createCompanyDto.parentCompanyId && company.id) {
         try {
-          const participationPercentage = createCompanyDto.participationPercentage ?? 100; // Default: 100% if not specified
-          console.log(`[CompanyService] Creating participation: ${createCompanyDto.parentCompanyId} -> ${company.id} (${participationPercentage}%)`);
+          const participationPercentage = createCompanyDto.participationPercentage ?? 100;
+          this.logger.debug(`Creating participation: ${createCompanyDto.parentCompanyId} -> ${company.id} (${participationPercentage}%)`);
           await this.participationService.createOrUpdate({
             parentCompanyId: createCompanyDto.parentCompanyId,
             subsidiaryCompanyId: company.id,
@@ -88,19 +86,18 @@ export class CompanyService {
             acquisitionCost: null,
             acquisitionDate: null,
           });
-          console.log(`[CompanyService] Participation created successfully`);
+          this.logger.debug('Participation created successfully');
         } catch (participationError: any) {
           // Log error but don't fail company creation
-          console.warn(`[CompanyService] Failed to create participation (non-critical):`, participationError.message);
-          // Participation can be created manually later if needed
+          this.logger.warn(`Failed to create participation (non-critical): ${participationError.message}`);
         }
       }
       
       return company;
     } catch (error: any) {
-      console.error('Error in CompanyService.create:', error);
-      if (error.message?.includes('timeout') || error.message?.includes('zu lange gedauert')) {
-        throw new Error('Verbindung zu Supabase hat zu lange gedauert. Bitte prüfen Sie Ihre Internetverbindung und Supabase-Konfiguration.');
+      this.logger.error(`Error creating company: ${error.message}`);
+      if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
+        throw new Error('Connection to Supabase timed out. Check your internet connection and Supabase configuration.');
       }
       throw error;
     }
@@ -109,9 +106,9 @@ export class CompanyService {
   async findAll(): Promise<Company[]> {
     const startTime = Date.now();
     try {
-      console.log('[CompanyService] findAll() - Starting database query');
+      this.logger.debug('findAll() - Starting database query');
       
-      // Timeout für Supabase-Request (30 Sekunden)
+      // Timeout for Supabase request (30 seconds)
       const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) => {
         setTimeout(() => {
           resolve({
@@ -122,7 +119,6 @@ export class CompanyService {
       });
 
       const dbStartTime = Date.now();
-      // Simplified query - fetch companies first, then relationships if needed
       const selectPromise = this.supabase
         .from('companies')
         .select('*')
@@ -132,31 +128,25 @@ export class CompanyService {
       const { data, error } = result as any;
       const dbDuration = Date.now() - dbStartTime;
 
-      console.log(`[CompanyService] findAll() - Database query completed in ${dbDuration}ms`);
-      console.log('[CompanyService] findAll() - Result:', data ? `${data.length} companies` : 'null', 'error:', error ? error.message : 'none');
+      this.logger.debug(`findAll() - Query completed in ${dbDuration}ms, found ${data?.length || 0} companies`);
 
       if (error) {
-        console.error('[CompanyService] findAll() - Supabase error:', error);
-        console.error('[CompanyService] findAll() - Error code:', error.code);
+        this.logger.error(`findAll() - Supabase error (${error.code}): ${error.message}`);
         
         if (error.code === 'TIMEOUT') {
-          throw new Error('Verbindung zu Supabase hat zu lange gedauert. Bitte prüfen Sie Ihre Internetverbindung und Supabase-Konfiguration.');
+          throw new Error('Connection to Supabase timed out. Check your internet connection and Supabase configuration.');
         }
         
         SupabaseErrorHandler.handle(error, 'Companies', 'fetch');
       }
 
-      const totalDuration = Date.now() - startTime;
-      console.log(`[CompanyService] findAll() - Total duration: ${totalDuration}ms`);
-      
       // Map companies - handle potential mapping errors
       try {
         const companies = (data || []).map((item: any) => {
           try {
             return SupabaseMapper.toCompany(item);
           } catch (mapError: any) {
-            console.error('[CompanyService] findAll() - Error mapping company:', mapError);
-            console.error('[CompanyService] findAll() - Company data:', JSON.stringify(item, null, 2));
+            this.logger.warn(`findAll() - Error mapping company ${item.id}: ${mapError.message}`);
             // Return a basic company object if mapping fails
             return {
               id: item.id,
@@ -176,14 +166,14 @@ export class CompanyService {
         });
         return companies;
       } catch (mapError: any) {
-        console.error('[CompanyService] findAll() - Error in mapping process:', mapError);
-        throw new Error(`Fehler beim Mappen der Unternehmensdaten: ${mapError.message}`);
+        this.logger.error(`findAll() - Mapping error: ${mapError.message}`);
+        throw new Error(`Error mapping company data: ${mapError.message}`);
       }
     } catch (error: any) {
       const totalDuration = Date.now() - startTime;
-      console.error(`[CompanyService] findAll() - Error after ${totalDuration}ms:`, error);
-      if (error.message?.includes('timeout') || error.message?.includes('zu lange gedauert')) {
-        throw new Error('Verbindung zu Supabase hat zu lange gedauert. Bitte prüfen Sie Ihre Internetverbindung und Supabase-Konfiguration.');
+      this.logger.error(`findAll() - Error after ${totalDuration}ms: ${error.message}`);
+      if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
+        throw new Error('Connection to Supabase timed out. Check your internet connection and Supabase configuration.');
       }
       throw error;
     }
@@ -263,13 +253,12 @@ export class CompanyService {
     // Update participation if parent company relationship changed
     if (updateCompanyDto.parentCompanyId !== undefined) {
       try {
-        const oldParentId = currentCompany?.parent_company_id;
         const newParentId = updateCompanyDto.parentCompanyId;
         
         // If parent was added or changed, create/update participation
         if (newParentId) {
-          const participationPercentage = updateCompanyDto.participationPercentage ?? 100; // Default: 100% if not specified
-          console.log(`[CompanyService] Creating/updating participation: ${newParentId} -> ${company.id} (${participationPercentage}%)`);
+          const participationPercentage = updateCompanyDto.participationPercentage ?? 100;
+          this.logger.debug(`Updating participation: ${newParentId} -> ${company.id} (${participationPercentage}%)`);
           await this.participationService.createOrUpdate({
             parentCompanyId: newParentId,
             subsidiaryCompanyId: company.id,
@@ -277,13 +266,10 @@ export class CompanyService {
             acquisitionCost: null,
             acquisitionDate: null,
           });
-          console.log(`[CompanyService] Participation updated successfully`);
+          this.logger.debug('Participation updated successfully');
         }
-        // Note: We don't delete participations when parent is removed
-        // They should be managed separately or can remain for historical purposes
       } catch (participationError: any) {
-        // Log error but don't fail company update
-        console.warn(`[CompanyService] Failed to update participation (non-critical):`, participationError.message);
+        this.logger.warn(`Failed to update participation (non-critical): ${participationError.message}`);
       }
     }
     

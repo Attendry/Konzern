@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { CompanyModule } from './modules/company/company.module';
 import { FinancialStatementModule } from './modules/financial-statement/financial-statement.module';
 import { ConsolidationModule } from './modules/consolidation/consolidation.module';
@@ -20,18 +22,30 @@ import { AIModule } from './modules/ai/ai.module';
       envFilePath: ['.env.local', '.env'],
       expandVariables: true,
     }),
-    HealthModule, // Health-Check sollte immer verfügbar sein
+    // Rate limiting: 100 requests per minute per IP
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // Time window in milliseconds (1 minute)
+      limit: 100, // Max requests per window
+    }]),
+    HealthModule, // Health check should always be available
     SupabaseModule,
-    AuthModule, // Priority Feature: Authentication
+    AuthModule, // Authentication module
     CompanyModule,
     FinancialStatementModule,
     ConsolidationModule,
     ImportModule,
     ParticipationModule,
-    LineageModule, // Phase 4: Data Lineage + Prüfpfad
-    ControlsModule, // Phase 4: Plausibility & Controls Engine
-    PolicyModule, // Phase 4: Accounting Policy & Rules Layer
+    LineageModule, // Data Lineage + Audit Trail
+    ControlsModule, // Plausibility & Controls Engine
+    PolicyModule, // Accounting Policy & Rules Layer
     AIModule, // AI Features: Chat + IC Analysis
+  ],
+  providers: [
+    // Apply rate limiting globally
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
