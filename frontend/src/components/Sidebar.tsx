@@ -144,6 +144,13 @@ const Icons = {
       <path d="M9 17h6" />
     </svg>
   ),
+  help: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <path d="M12 17h.01" />
+    </svg>
+  ),
 };
 
 // Navigation configuration - consolidated groups for compact layout
@@ -180,6 +187,12 @@ const navGroups = [
       { path: '/controls', label: 'Kontrollen', icon: Icons.controls },
       { path: '/policies', label: 'Richtlinien', icon: Icons.policies },
       { path: '/ai-audit', label: 'AI-Protokoll', icon: Icons.ai },
+    ],
+  },
+  {
+    title: 'Hilfe',
+    items: [
+      { path: '/documentation', label: 'Dokumentation', icon: Icons.help },
     ],
   },
 ];
