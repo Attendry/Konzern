@@ -1,11 +1,14 @@
 .documentation-page {
-  min-height: 100vh;
+  width: 100%;
+  min-height: calc(100vh - 64px);
   background-color: var(--color-bg-secondary, #f9fafb);
   padding: var(--spacing-4, 16px);
+  box-sizing: border-box;
 }
 
 .documentation-container {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -14,6 +17,7 @@
   border-radius: var(--radius-lg, 8px);
   box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
   overflow: hidden;
+  min-height: calc(100vh - 100px);
 }
 
 .documentation-sidebar {

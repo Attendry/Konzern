@@ -19,6 +19,7 @@ import CurrencyTranslation from './pages/CurrencyTranslation';
 import ManagementReportPage from './pages/ManagementReportPage';
 // AI Features
 import AIAuditDashboard from './pages/AIAuditDashboard';
+import Documentation from './pages/Documentation';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AIChatProvider } from './contexts/AIChatContext';
@@ -78,6 +79,9 @@ function AppContent() {
                     <Route path="/konzernlagebericht/:id" element={<ManagementReportPage />} />
                     {/* AI Features Routes */}
                     <Route path="/ai-audit" element={<AIAuditDashboard />} />
+                    {/* Documentation */}
+                    <Route path="/documentation" element={<Documentation />} />
+                    <Route path="/dokumentation" element={<Documentation />} />
                   </Routes>
                 </PageTransition>
               </main>
