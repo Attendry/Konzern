@@ -4,15 +4,25 @@ import { financialStatementService } from '../services/financialStatementService
 import { FinancialStatement as FinancialStatementType, AccountBalance } from '../types';
 import BalanceSheetVisualization from '../components/BalanceSheetVisualization';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { useAIChat } from '../contexts/AIChatContext';
 import '../App.css';
 
 function FinancialStatement() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { setFinancialStatementId } = useAIChat();
   const [statement, setStatement] = useState<FinancialStatementType | null>(null);
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Set AI chatbot context when viewing a financial statement
+  useEffect(() => {
+    if (id) {
+      setFinancialStatementId(id);
+    }
+    return () => setFinancialStatementId(null); // Cleanup on unmount
+  }, [id, setFinancialStatementId]);
 
   const loadData = useCallback(async () => {
     if (!id) return;

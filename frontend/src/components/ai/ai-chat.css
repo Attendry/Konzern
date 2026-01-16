@@ -29,6 +29,50 @@
   background-color: var(--color-accent-blue);
 }
 
+/* Context indicator - green dot when financial statement is loaded */
+.ai-chat-fab.has-context {
+  box-shadow: var(--shadow-lg), 0 0 0 3px rgba(78, 205, 196, 0.3);
+}
+
+.ai-chat-context-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-success);
+  border: 2px solid var(--color-bg-primary);
+  animation: ai-chat-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ai-chat-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* Unavailable indicator - orange dot when AI service is down */
+.ai-chat-fab.unavailable {
+  opacity: 0.7;
+}
+
+.ai-chat-unavailable-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-warning);
+  border: 2px solid var(--color-bg-primary);
+}
+
+/* Disabled suggestion when loading */
+.ai-chat-suggestion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ==========================================
    CHAT PANEL
    ========================================== */

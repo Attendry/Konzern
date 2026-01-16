@@ -9,7 +9,7 @@ import './ai-chat.css';
  * The chat button appears in the bottom-right corner.
  */
 export const GlobalAIChat = () => {
-  const { isOpen, toggleChat } = useAIChat();
+  const { isOpen, toggleChat, isAvailable, financialStatementId } = useAIChat();
 
   return (
     <>
@@ -17,9 +17,12 @@ export const GlobalAIChat = () => {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="ai-chat-fab"
+          className={`ai-chat-fab ${!isAvailable ? 'unavailable' : ''} ${financialStatementId ? 'has-context' : ''}`}
           aria-label="AI Assistent öffnen"
-          title="AI Assistent öffnen (Strg+K)"
+          title={isAvailable 
+            ? `AI Assistent öffnen (Strg+K)${financialStatementId ? ' - Daten geladen' : ''}`
+            : 'AI Assistent (derzeit nicht verfügbar)'
+          }
         >
           <svg 
             width="26" 
@@ -33,6 +36,10 @@ export const GlobalAIChat = () => {
           >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
+          {/* Context indicator dot */}
+          {financialStatementId && <span className="ai-chat-context-dot" />}
+          {/* Unavailable indicator */}
+          {!isAvailable && <span className="ai-chat-unavailable-dot" />}
         </button>
       )}
 

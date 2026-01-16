@@ -4,6 +4,7 @@ import { reportService, ConsolidationReport, ConsolidatedIncomeStatement } from 
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
+import { useAIChat } from '../contexts/AIChatContext';
 import '../App.css';
 
 type ReportTab = 'balance-sheet' | 'income-statement' | 'overview' | 'comparison';
@@ -12,6 +13,7 @@ function ConsolidatedReportPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
+  const { setFinancialStatementId } = useAIChat();
   
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedStatementId, setSelectedStatementId] = useState<string>(id || '');
@@ -22,6 +24,14 @@ function ConsolidatedReportPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>('balance-sheet');
   const [exporting, setExporting] = useState<'excel' | 'pdf' | 'xbrl' | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+
+  // Set AI chatbot context when viewing a consolidated report
+  useEffect(() => {
+    if (selectedStatementId) {
+      setFinancialStatementId(selectedStatementId);
+    }
+    return () => setFinancialStatementId(null); // Cleanup on unmount
+  }, [selectedStatementId, setFinancialStatementId]);
 
   useEffect(() => {
     loadStatements();

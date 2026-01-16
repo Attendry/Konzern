@@ -113,8 +113,12 @@ export const AIChatPanel = () => {
               {suggestions.map((s, i) => (
                 <button
                   key={i}
-                  onClick={() => setInput(s)}
+                  onClick={() => {
+                    // Auto-send suggestion with one click
+                    sendMessage(s);
+                  }}
                   className="ai-chat-suggestion"
+                  disabled={isLoading}
                 >
                   {s}
                 </button>

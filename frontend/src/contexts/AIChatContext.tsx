@@ -43,8 +43,20 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [financialStatementId, setFinancialStatementId] = useState<string | null>(null);
-  // Always show the button - errors will be shown in the chat panel
-  const [isAvailable] = useState(true);
+  const [isAvailable, setIsAvailable] = useState(true);
+
+  // Check AI service health on startup
+  useEffect(() => {
+    aiService.checkHealth()
+      .then(health => {
+        setIsAvailable(health.available);
+      })
+      .catch(() => {
+        // Service unavailable but we still show the button
+        // Errors will be shown in chat panel when user tries to send
+        setIsAvailable(false);
+      });
+  }, []);
 
   // Keyboard shortcut: Ctrl+K or Cmd+K to toggle chat
   useEffect(() => {
@@ -69,6 +81,27 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
   const closeChat = useCallback(() => setIsOpen(false), []);
   const toggleChat = useCallback(() => setIsOpen(prev => !prev), []);
 
+  // Helper function to send message with retry logic
+  const sendMessageWithRetry = useCallback(async (
+    content: string,
+    currentMessages: ChatMessage[],
+    statementId: string | undefined,
+    retries = 2,
+    delay = 1000
+  ): Promise<ChatResponse> => {
+    try {
+      return await aiService.sendMessage(content, currentMessages, statementId);
+    } catch (err: any) {
+      // Retry on network timeout errors
+      if (retries > 0 && (err.code === 'ECONNABORTED' || err.message?.includes('timeout'))) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        // Exponential backoff
+        return sendMessageWithRetry(content, currentMessages, statementId, retries - 1, delay * 2);
+      }
+      throw err;
+    }
+  }, []);
+
   const sendMessage = useCallback(async (content: string): Promise<ChatResponse | null> => {
     if (!content.trim()) return null;
     
@@ -80,7 +113,7 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const response = await aiService.sendMessage(
+      const response = await sendMessageWithRetry(
         content,
         messages,
         financialStatementId || undefined,
@@ -100,7 +133,7 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, financialStatementId]);
+  }, [messages, financialStatementId, sendMessageWithRetry]);
 
   const clearHistory = useCallback(() => {
     setMessages([]);

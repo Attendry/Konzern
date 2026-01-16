@@ -11,6 +11,7 @@ import {
   ExceptionSummary,
   RuleCategoryMeta,
 } from '../services/controlsService';
+import { useAIChat } from '../contexts/AIChatContext';
 import './PlausibilityChecks.css';
 
 type TabType = 'checks' | 'variances' | 'exceptions' | 'materiality';
@@ -18,9 +19,18 @@ type TabType = 'checks' | 'variances' | 'exceptions' | 'materiality';
 const PlausibilityChecks = () => {
   const { financialStatementId } = useParams<{ financialStatementId: string }>();
   const navigate = useNavigate();
+  const { setFinancialStatementId } = useAIChat();
   const [activeTab, setActiveTab] = useState<TabType>('checks');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Set AI chatbot context when viewing plausibility checks
+  useEffect(() => {
+    if (financialStatementId) {
+      setFinancialStatementId(financialStatementId);
+    }
+    return () => setFinancialStatementId(null); // Cleanup on unmount
+  }, [financialStatementId, setFinancialStatementId]);
 
   // Check State
   const [checks, setChecks] = useState<PlausibilityCheck[]>([]);
