@@ -130,6 +130,44 @@ export class FinancialStatementService {
     return (data || []).map((item) => SupabaseMapper.toAccountBalance(item));
   }
 
+  async findBalancesByCompanyId(companyId: string): Promise<AccountBalance[]> {
+    // Get all financial statements for the company
+    const { data: financialStatements, error: fsError } = await this.supabase
+      .from('financial_statements')
+      .select('id')
+      .eq('company_id', companyId);
+
+    if (fsError) {
+      SupabaseErrorHandler.handle(fsError, 'Financial Statements', 'fetch');
+    }
+
+    if (!financialStatements || financialStatements.length === 0) {
+      return [];
+    }
+
+    const financialStatementIds = financialStatements.map((fs: any) => fs.id);
+
+    // Get all account balances for all financial statements of this company
+    const { data, error } = await this.supabase
+      .from('account_balances')
+      .select(
+        `
+        *,
+        account:accounts(*),
+        financial_statement:financial_statements(*)
+      `,
+      )
+      .in('financial_statement_id', financialStatementIds)
+      .order('account(account_number)', { ascending: true })
+      .order('financial_statement(fiscal_year)', { ascending: false });
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Account Balances', 'fetch');
+    }
+
+    return (data || []).map((item) => SupabaseMapper.toAccountBalance(item));
+  }
+
   async update(
     id: string,
     updateFinancialStatementDto: UpdateFinancialStatementDto,

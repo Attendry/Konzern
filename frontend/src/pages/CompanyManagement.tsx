@@ -36,6 +36,7 @@ function CompanyManagement() {
   const [companyData, setCompanyData] = useState<Record<string, {
     financialStatements: FinancialStatement[];
     balances: Record<string, AccountBalance[]>;
+    allBalances: AccountBalance[]; // All balances across all financial statements
     loading: boolean;
   }>>({});
 
@@ -287,15 +288,21 @@ function CompanyManagement() {
       [companyId]: { 
         financialStatements: prev[companyId]?.financialStatements || [],
         balances: prev[companyId]?.balances || {},
+        allBalances: prev[companyId]?.allBalances || [],
         loading: true 
       }
     }));
 
     try {
-      const financialStatements = await financialStatementService.getByCompanyId(companyId);
+      // Load all data in parallel
+      const [financialStatements, allBalances] = await Promise.all([
+        financialStatementService.getByCompanyId(companyId),
+        financialStatementService.getBalancesByCompanyId(companyId)
+      ]);
+      
       const balances: Record<string, AccountBalance[]> = {};
       
-      // Load balances for each financial statement
+      // Load balances for each financial statement (for organized view)
       for (const fs of financialStatements) {
         try {
           const fsBalances = await financialStatementService.getBalances(fs.id);
@@ -311,6 +318,7 @@ function CompanyManagement() {
         [companyId]: {
           financialStatements,
           balances,
+          allBalances: allBalances || [],
           loading: false
         }
       }));
@@ -321,6 +329,7 @@ function CompanyManagement() {
         [companyId]: {
           financialStatements: [],
           balances: {},
+          allBalances: [],
           loading: false
         }
       }));
@@ -536,9 +545,7 @@ function CompanyManagement() {
             {companies.map((company) => {
               const isExpanded = expandedCompanyId === company.id;
               const data = companyData[company.id];
-              const totalBalances = data && data.balances
-                ? Object.values(data.balances).reduce((sum, balances) => sum + (balances?.length || 0), 0)
-                : 0;
+              const totalBalances = data?.allBalances?.length || 0;
 
               return (
                 <div key={company.id} className="card" style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
@@ -582,73 +589,76 @@ function CompanyManagement() {
                           <div className="loading-spinner"></div>
                           <span>Lade Daten...</span>
                         </div>
-                      ) : data && data.financialStatements && data.financialStatements.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-                          {data.financialStatements.map((fs) => {
-                            const balances = (data.balances && data.balances[fs.id]) || [];
-                            return (
-                              <div key={fs.id} style={{ marginBottom: 'var(--spacing-4)' }}>
-                                <h3 style={{ marginBottom: 'var(--spacing-3)', fontSize: '1.1rem' }}>
-                                  Geschäftsjahr {fs.fiscalYear}
-                                  <span style={{ marginLeft: 'var(--spacing-2)', fontSize: '0.875rem', fontWeight: 'normal', color: 'var(--color-text-secondary)' }}>
-                                    ({new Date(fs.periodStart).toLocaleDateString('de-DE')} - {new Date(fs.periodEnd).toLocaleDateString('de-DE')})
-                                  </span>
-                                </h3>
-                                {balances.length > 0 ? (
-                                  <div style={{ overflowX: 'auto' }}>
-                                    <table className="table" style={{ fontSize: '0.875rem' }}>
-                                      <thead>
-                                        <tr>
-                                          <th>Kontonummer</th>
-                                          <th>Kontoname</th>
-                                          <th>Soll</th>
-                                          <th>Haben</th>
-                                          <th>Saldo</th>
-                                          <th>Zwischengesellschaft</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {balances.map((balance) => (
-                                          <tr key={balance.id}>
-                                            <td>{balance.account?.accountNumber || '-'}</td>
-                                            <td>{balance.account?.name || '-'}</td>
-                                            <td>{Number(balance.debit).toLocaleString('de-DE', {
-                                              style: 'currency',
-                                              currency: 'EUR'
-                                            })}</td>
-                                            <td>{Number(balance.credit).toLocaleString('de-DE', {
-                                              style: 'currency',
-                                              currency: 'EUR'
-                                            })}</td>
-                                            <td style={{ fontWeight: 'bold' }}>
-                                              {Number(balance.balance).toLocaleString('de-DE', {
-                                                style: 'currency',
-                                                currency: 'EUR'
-                                              })}
-                                            </td>
-                                            <td>{balance.isIntercompany ? 'Ja' : 'Nein'}</td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                ) : (
-                                  <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
-                                    <div className="empty-state-title">Keine Kontensalden vorhanden</div>
-                                    <div className="empty-state-description">
-                                      Für diesen Jahresabschluss wurden noch keine Daten importiert.
-                                    </div>
-                                  </div>
-                                )}
+                      ) : data && data.allBalances && data.allBalances.length > 0 ? (
+                        <div>
+                          <div style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                            <strong>Audit-Ledger:</strong> Alle importierten Kontensalden für dieses Unternehmen ({data.allBalances.length} Einträge)
+                            {data.financialStatements && data.financialStatements.length > 0 && (
+                              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-2)' }}>
+                                {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''} gefunden
                               </div>
-                            );
-                          })}
+                            )}
+                          </div>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table className="table" style={{ fontSize: '0.875rem' }}>
+                              <thead>
+                                <tr>
+                                  <th>Kontonummer</th>
+                                  <th>Kontoname</th>
+                                  <th>Geschäftsjahr</th>
+                                  <th>Soll</th>
+                                  <th>Haben</th>
+                                  <th>Saldo</th>
+                                  <th>Zwischengesellschaft</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {data.allBalances.map((balance) => {
+                                  // Find the financial statement for this balance
+                                  const fs = data.financialStatements?.find(f => f.id === balance.financialStatementId);
+                                  return (
+                                    <tr key={balance.id}>
+                                      <td>{balance.account?.accountNumber || '-'}</td>
+                                      <td>{balance.account?.name || '-'}</td>
+                                      <td>
+                                        {fs ? (
+                                          <span>
+                                            {fs.fiscalYear}
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginLeft: '0.25rem' }}>
+                                              ({new Date(fs.periodStart).toLocaleDateString('de-DE')} - {new Date(fs.periodEnd).toLocaleDateString('de-DE')})
+                                            </span>
+                                          </span>
+                                        ) : (
+                                          <span style={{ color: 'var(--color-text-secondary)' }}>Unbekannt</span>
+                                        )}
+                                      </td>
+                                      <td>{Number(balance.debit).toLocaleString('de-DE', {
+                                        style: 'currency',
+                                        currency: 'EUR'
+                                      })}</td>
+                                      <td>{Number(balance.credit).toLocaleString('de-DE', {
+                                        style: 'currency',
+                                        currency: 'EUR'
+                                      })}</td>
+                                      <td style={{ fontWeight: 'bold' }}>
+                                        {Number(balance.balance).toLocaleString('de-DE', {
+                                          style: 'currency',
+                                          currency: 'EUR'
+                                        })}
+                                      </td>
+                                      <td>{balance.isIntercompany ? 'Ja' : 'Nein'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       ) : (
                         <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
                           <div className="empty-state-title">Keine Daten vorhanden</div>
                           <div className="empty-state-description">
-                            Für dieses Unternehmen wurden noch keine Jahresabschlüsse oder Kontensalden importiert.
+                            Für dieses Unternehmen wurden noch keine Kontensalden importiert.
                           </div>
                         </div>
                       )}

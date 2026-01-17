@@ -33,6 +33,11 @@ export class FinancialStatementController {
     return this.financialStatementService.findByCompanyId(companyId);
   }
 
+  @Get('company/:companyId/balances')
+  findBalancesByCompanyId(@Param('companyId', ParseUUIDPipe) companyId: string) {
+    return this.financialStatementService.findBalancesByCompanyId(companyId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.financialStatementService.findOne(id);
