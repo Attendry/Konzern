@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './ProgressIndicator.css';
 
 interface ProgressIndicatorProps {
-  contentRef: React.RefObject<HTMLElement>;
+  contentRef: React.RefObject<HTMLElement | null>;
 }
 
 export function ProgressIndicator({ contentRef }: ProgressIndicatorProps) {
