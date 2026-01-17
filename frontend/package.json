@@ -17,6 +17,7 @@
     "react": "^19.2.3",
     "react-d3-tree": "^3.6.6",
     "react-dom": "^19.2.3",
+    "react-is": "^19.0.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.20.0",
     "recharts": "^3.6.0",
