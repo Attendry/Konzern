@@ -274,13 +274,8 @@ const PlausibilityChecks = () => {
 
   return (
     <div className="plausibility-page">
-      <div style={{ marginBottom: '16px' }}>
-        <button 
-          className="btn btn-secondary" 
-          onClick={() => navigate('/')}
-        >
-          ← Zurück zum Dashboard
-        </button>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
       </div>
       <Breadcrumbs
         items={[

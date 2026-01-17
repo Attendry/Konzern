@@ -7,6 +7,7 @@ import { MetricCard } from '../components/MetricCard';
 import { Modal } from '../components/Modal';
 import { ErrorState } from '../components/ErrorState';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { BackButton } from '../components/BackButton';
 import '../App.css';
 
 // Node type labels in German
@@ -382,14 +383,8 @@ export default function DataLineage() {
 
   return (
     <div className="data-lineage-page">
-      {/* Back Button */}
-      <div style={{ marginBottom: '16px' }}>
-        <button 
-          className="btn btn-secondary" 
-          onClick={() => navigate('/')}
-        >
-          ← Zurück zum Dashboard
-        </button>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
       </div>
 
       {/* Header */}

@@ -12,6 +12,7 @@ import { FinancialStatement } from '../types';
 import { MetricCard } from '../components/MetricCard';
 import { Modal } from '../components/Modal';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { BackButton } from '../components/BackButton';
 import '../App.css';
 
 // Status labels and colors
@@ -255,15 +256,8 @@ export default function KonzernanhangPage() {
 
   return (
     <div className="konzernanhang-page">
-      {/* Back Button */}
-      <div style={{ marginBottom: '16px' }}>
-        <button 
-          className="btn btn-secondary" 
-          onClick={() => navigate('/')}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-        >
-          ← Zurück zum Dashboard
-        </button>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
       </div>
 
       <Breadcrumbs
