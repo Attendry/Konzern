@@ -14,15 +14,8 @@ function ConsolidatedReportPage() {
   const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
   
-  // Get AI chat context - wrap in try-catch to handle gracefully if context is missing
-  let setFinancialStatementId: ((id: string | null) => void) | undefined;
-  try {
-    const aiChat = useAIChat();
-    setFinancialStatementId = aiChat.setFinancialStatementId;
-  } catch (err) {
-    console.warn('AIChat context not available, continuing without it:', err);
-    // Continue without AI chat functionality
-  }
+  // Get AI chat context - ErrorBoundary will catch if context is missing
+  const { setFinancialStatementId } = useAIChat();
   
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedStatementId, setSelectedStatementId] = useState<string>(id || '');
