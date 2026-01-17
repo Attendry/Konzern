@@ -15,13 +15,21 @@ export class SupabaseMapper {
       address: data.address,
       legalForm: data.legal_form,
       parentCompanyId: data.parent_company_id,
-      parentCompany: data.parent_company ? this.toCompany(data.parent_company) : null,
-      children: data.children ? data.children.map((c: any) => this.toCompany(c)) : [],
+      parentCompany: data.parent_company
+        ? this.toCompany(data.parent_company)
+        : null,
+      children: data.children
+        ? data.children.map((c: any) => this.toCompany(c))
+        : [],
       isConsolidated: data.is_consolidated ?? true,
       consolidationType: data.consolidation_type || 'full',
       exclusionReason: data.exclusion_reason || null,
-      firstConsolidationDate: data.first_consolidation_date ? new Date(data.first_consolidation_date) : null,
-      deconsolidationDate: data.deconsolidation_date ? new Date(data.deconsolidation_date) : null,
+      firstConsolidationDate: data.first_consolidation_date
+        ? new Date(data.first_consolidation_date)
+        : null,
+      deconsolidationDate: data.deconsolidation_date
+        ? new Date(data.deconsolidation_date)
+        : null,
       functionalCurrency: data.functional_currency || 'EUR',
       countryCode: data.country_code || null,
       industry: data.industry || null,
@@ -53,12 +61,26 @@ export class SupabaseMapper {
   }
 
   static toAccountBalance(data: any): AccountBalance {
+    // Map account if it exists (Supabase returns snake_case, we need camelCase)
+    let account = null;
+    if (data.account) {
+      account = {
+        id: data.account.id,
+        accountNumber: data.account.account_number || data.account.accountNumber,
+        name: data.account.name,
+        accountType: data.account.account_type || data.account.accountType,
+        parentAccountId: data.account.parent_account_id || data.account.parentAccountId || null,
+      };
+    }
+    
     return {
       id: data.id,
       financialStatementId: data.financial_statement_id,
-      financialStatement: data.financial_statement ? this.toFinancialStatement(data.financial_statement) : null as any,
+      financialStatement: data.financial_statement
+        ? this.toFinancialStatement(data.financial_statement)
+        : (null as any),
       accountId: data.account_id,
-      account: data.account || null,
+      account: account,
       debit: parseFloat(String(data.debit)) || 0,
       credit: parseFloat(String(data.credit)) || 0,
       balance: parseFloat(String(data.balance)) || 0,
@@ -72,7 +94,9 @@ export class SupabaseMapper {
     return {
       id: data.id,
       financialStatementId: data.financial_statement_id,
-      financialStatement: data.financial_statement ? this.toFinancialStatement(data.financial_statement) : null as any,
+      financialStatement: data.financial_statement
+        ? this.toFinancialStatement(data.financial_statement)
+        : (null as any),
       accountId: data.account_id,
       account: data.account || null,
       debitAccountId: data.debit_account_id || null,

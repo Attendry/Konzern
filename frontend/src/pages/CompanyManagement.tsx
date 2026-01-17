@@ -332,9 +332,8 @@ function CompanyManagement() {
       setExpandedCompanyId(null);
     } else {
       setExpandedCompanyId(companyId);
-      if (!companyData[companyId]) {
-        loadCompanyData(companyId);
-      }
+      // Always reload data when expanding to ensure we have the latest data
+      loadCompanyData(companyId);
     }
   };
 
@@ -568,6 +567,16 @@ function CompanyManagement() {
 
                   {isExpanded && (
                     <div style={{ padding: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+                        <div></div>
+                        <button
+                          className="button button-secondary button-sm"
+                          onClick={() => loadCompanyData(company.id)}
+                          disabled={data?.loading}
+                        >
+                          {data?.loading ? 'Lade...' : 'Aktualisieren'}
+                        </button>
+                      </div>
                       {data?.loading ? (
                         <div className="loading">
                           <div className="loading-spinner"></div>
