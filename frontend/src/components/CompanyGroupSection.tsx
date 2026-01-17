@@ -187,7 +187,7 @@ export function CompanyGroupSection({
               border: '1px solid var(--color-border)'
             }}>
               <CompanyHierarchyTree
-                selectedCompanyId={null}
+                selectedCompanyId={undefined}
                 parentCompanyId={parentCompany.id}
                 compact={true}
                 onCompanyClick={(companyId) => {

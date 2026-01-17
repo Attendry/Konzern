@@ -51,7 +51,6 @@ function CompanyManagement() {
     loading: boolean;
   }>>({});
   const [hierarchyData, setHierarchyData] = useState<CompanyHierarchy[]>([]);
-  const [hierarchyLoading, setHierarchyLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped'); // Default to grouped view
 
   useEffect(() => {
@@ -112,15 +111,12 @@ function CompanyManagement() {
   };
 
   const loadHierarchy = async () => {
-    setHierarchyLoading(true);
     try {
       const data = await companyService.getHierarchy();
       setHierarchyData(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Fehler beim Laden der Hierarchie:', error);
       // Don't show error to user, hierarchy is optional
-    } finally {
-      setHierarchyLoading(false);
     }
   };
 
