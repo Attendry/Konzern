@@ -16,6 +16,43 @@ const ParentCompanyIcon = (
   </svg>
 );
 
+// Chevron icon for expand/collapse
+const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
+  <svg 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    style={{
+      transition: 'transform 0.2s ease',
+      transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+    }}
+  >
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+// Pin icon
+const PinIcon = ({ filled }: { filled: boolean }) => (
+  <svg 
+    width="16" 
+    height="16" 
+    viewBox="0 0 24 24" 
+    fill={filled ? 'currentColor' : 'none'} 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="M12 17v5" />
+    <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 7 15.66V7a6 6 0 0 1 6-6 6 6 0 0 1 6 6v8.66a2 2 0 0 0 .89 1.79l1.78.9a2 2 0 0 1 1.11 1.79V17" />
+  </svg>
+);
+
 interface CompanyHierarchy {
   id: string;
   name: string;
@@ -36,6 +73,10 @@ interface CompanyGroupSectionProps {
     loading: boolean;
   }>;
   expandedCompanyId: string | null;
+  isExpanded: boolean;
+  isPinned: boolean;
+  onToggle: () => void;
+  onTogglePin: () => void;
   onToggleCompanyData: (companyId: string) => void;
   onEditCompany: (company: Company) => void;
   onDeleteCompany: (id: string) => void;
@@ -50,6 +91,10 @@ export function CompanyGroupSection({
   hierarchyData,
   companyData,
   expandedCompanyId,
+  isExpanded,
+  isPinned,
+  onToggle,
+  onTogglePin,
   onToggleCompanyData,
   onEditCompany,
   onDeleteCompany,
@@ -155,34 +200,113 @@ export function CompanyGroupSection({
 
   return (
     <div className="card" style={{ marginBottom: 'var(--spacing-6)' }}>
-      <div className="card-header" style={{ 
-        backgroundColor: 'var(--color-bg-tertiary)',
-        borderBottom: '2px solid var(--color-primary)',
-        padding: 'var(--spacing-4)'
-      }}>
+      <div 
+        className="card-header" 
+        style={{ 
+          backgroundColor: isPinned ? 'var(--color-bg-tertiary)' : 'var(--color-bg-tertiary)',
+          borderBottom: isPinned ? '2px solid var(--color-primary)' : '2px solid var(--color-border)',
+          padding: 'var(--spacing-4)',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s ease, border-color 0.2s ease',
+        }}
+        onClick={onToggle}
+        onMouseEnter={(e) => {
+          if (!isPinned) {
+            e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = isPinned ? 'var(--color-bg-tertiary)' : 'var(--color-bg-tertiary)';
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-controls={`group-content-${parentCompany.id}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', color: 'var(--color-primary)' }}>
-                {ParentCompanyIcon}
-              </span>
-              {parentCompany.name}
-              <span className="badge badge-primary" style={{ marginLeft: 'var(--spacing-2)' }}>
-                Mutterunternehmen
-              </span>
-            </h2>
-            <div style={{ 
-              fontSize: '0.875rem', 
-              color: 'var(--color-text-secondary)', 
-              marginTop: 'var(--spacing-1)' 
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', flex: 1 }}>
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              color: 'var(--color-text-secondary)',
             }}>
-              {companies.length} Unternehmen • {groupStats.totalFinancialStatements} Jahresabschlüsse • {groupStats.totalBalances} Kontensalden
+              <ChevronIcon expanded={isExpanded} />
+            </span>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', color: 'var(--color-primary)' }}>
+                  {ParentCompanyIcon}
+                </span>
+                {parentCompany.name}
+                <span className="badge badge-primary" style={{ marginLeft: 'var(--spacing-2)' }}>
+                  Mutterunternehmen
+                </span>
+                {isPinned && (
+                  <span className="badge" style={{ 
+                    marginLeft: 'var(--spacing-2)',
+                    backgroundColor: 'var(--color-primary)20',
+                    color: 'var(--color-primary)',
+                    fontSize: '0.75rem',
+                    padding: 'var(--spacing-1) var(--spacing-2)',
+                  }}>
+                    Gepinnt
+                  </span>
+                )}
+              </h2>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--color-text-secondary)', 
+                marginTop: 'var(--spacing-1)' 
+              }}>
+                {companies.length} Unternehmen • {groupStats.totalFinancialStatements} Jahresabschlüsse • {groupStats.totalBalances} Kontensalden
+              </div>
             </div>
           </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent header toggle
+              onTogglePin();
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 'var(--spacing-2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: isPinned ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+              borderRadius: 'var(--radius-sm)',
+              transition: 'background-color 0.2s ease, color 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            title={isPinned ? 'Anheften aufheben' : 'Anheften'}
+            aria-label={isPinned ? 'Anheften aufheben' : 'Anheften'}
+          >
+            <PinIcon filled={isPinned} />
+          </button>
         </div>
       </div>
 
-      <div style={{ padding: 'var(--spacing-4)' }}>
+      {isExpanded && (
+        <div 
+          id={`group-content-${parentCompany.id}`}
+          style={{ 
+            padding: 'var(--spacing-4)',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
         {/* Hierarchy Tree Section */}
         {hierarchyData && (
           <div style={{ marginBottom: 'var(--spacing-4)' }}>
@@ -246,7 +370,7 @@ export function CompanyGroupSection({
             </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
             {companies.map((company) => {
-              const isExpanded = expandedCompanyId === company.id;
+              const isCompanyDataExpanded = expandedCompanyId === company.id;
               const data = companyData[company.id];
               const totalBalances = data?.allBalances?.length || 0;
 
@@ -263,7 +387,7 @@ export function CompanyGroupSection({
                     onClick={() => onToggleCompanyData(company.id)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                      <span style={{ fontSize: '1.2rem' }}>{isCompanyDataExpanded ? '▼' : '▶'}</span>
                       <div>
                         <strong>{company.name}</strong>
                         {company.id !== parentCompany.id && (
@@ -284,7 +408,7 @@ export function CompanyGroupSection({
                     </div>
                   </div>
 
-                  {isExpanded && (
+                  {isCompanyDataExpanded && (
                     <div style={{ padding: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
                         <div></div>
@@ -420,7 +544,8 @@ export function CompanyGroupSection({
             })}
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -52,6 +52,12 @@ function CompanyManagement() {
   }>>({});
   const [hierarchyData, setHierarchyData] = useState<CompanyHierarchy[]>([]);
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped'); // Default to grouped view
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  const [pinnedGroupId, setPinnedGroupId] = useState<string | null>(() => {
+    // Load pinned group from localStorage
+    const saved = localStorage.getItem('pinnedCompanyGroupId');
+    return saved || null;
+  });
 
   useEffect(() => {
     loadCompanies();
@@ -82,6 +88,42 @@ function CompanyManagement() {
       loadHierarchy();
     }
   }, [companies.length]);
+
+  // Persist pinned group to localStorage
+  useEffect(() => {
+    if (pinnedGroupId) {
+      localStorage.setItem('pinnedCompanyGroupId', pinnedGroupId);
+    } else {
+      localStorage.removeItem('pinnedCompanyGroupId');
+    }
+  }, [pinnedGroupId]);
+
+  // Auto-expand pinned group on load
+  useEffect(() => {
+    if (pinnedGroupId && Object.keys(groupedCompanies.groups).includes(pinnedGroupId)) {
+      setExpandedGroupId(pinnedGroupId);
+    }
+  }, [pinnedGroupId, groupedCompanies.groups]);
+
+  const handleToggleGroup = (groupId: string) => {
+    // Don't collapse if it's pinned
+    if (pinnedGroupId === groupId) return;
+    setExpandedGroupId(prev => prev === groupId ? null : groupId);
+  };
+
+  const handleTogglePin = (groupId: string) => {
+    setPinnedGroupId(prev => {
+      if (prev === groupId) {
+        // Unpinning - also collapse if it was expanded
+        setExpandedGroupId(null);
+        return null;
+      } else {
+        // Pinning new group - expand it and unpin previous
+        setExpandedGroupId(groupId);
+        return groupId;
+      }
+    });
+  };
 
   // Handle edit query parameter from URL (e.g., /companies?edit=companyId)
   useEffect(() => {
@@ -648,6 +690,10 @@ function CompanyManagement() {
                     hierarchyData={hierarchyNode || null}
                     companyData={companyData}
                     expandedCompanyId={expandedCompanyId}
+                    isExpanded={expandedGroupId === parentId || pinnedGroupId === parentId}
+                    isPinned={pinnedGroupId === parentId}
+                    onToggle={() => handleToggleGroup(parentId)}
+                    onTogglePin={() => handleTogglePin(parentId)}
                     onToggleCompanyData={handleToggleCompanyData}
                     onEditCompany={handleEdit}
                     onDeleteCompany={handleDelete}
