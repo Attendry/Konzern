@@ -44,9 +44,16 @@ interface CompanyHierarchy {
 interface CompanyHierarchyTreeProps {
   selectedCompanyId?: string;
   onCompanyClick?: (companyId: string) => void;
+  parentCompanyId?: string | null; // Filter to show only this parent company's hierarchy
+  compact?: boolean; // Compact mode for inline use
 }
 
-function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHierarchyTreeProps) {
+function CompanyHierarchyTree({ 
+  selectedCompanyId, 
+  onCompanyClick,
+  parentCompanyId,
+  compact = false
+}: CompanyHierarchyTreeProps) {
   const [hierarchyData, setHierarchyData] = useState<CompanyHierarchy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,15 +77,24 @@ function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHier
     }
   }, [selectedCompanyId, hierarchyData]);
 
-  // If no group is selected yet, select the first one
+  // If parentCompanyId is provided, filter to that group
   useEffect(() => {
-    if (!selectedGroupId && hierarchyData.length > 0) {
+    if (parentCompanyId && hierarchyData.length > 0) {
+      const group = hierarchyData.find(g => g.id === parentCompanyId);
+      if (group) {
+        setSelectedGroupId(parentCompanyId);
+        // Expand all nodes in this group
+        const allIds = getAllCompanyIds(group);
+        setExpandedNodes(new Set(allIds));
+      }
+    } else if (!selectedGroupId && hierarchyData.length > 0) {
+      // If no group is selected yet, select the first one
       setSelectedGroupId(hierarchyData[0].id);
       // Expand all by default for initial view
       const allIds = getAllCompanyIds(hierarchyData[0]);
       setExpandedNodes(new Set(allIds));
     }
-  }, [hierarchyData, selectedGroupId]);
+  }, [hierarchyData, selectedGroupId, parentCompanyId]);
 
   const loadHierarchy = async () => {
     try {
@@ -149,8 +165,11 @@ function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHier
   }, []);
 
   const selectedGroup = useMemo(() => {
+    if (parentCompanyId) {
+      return hierarchyData.find(g => g.id === parentCompanyId) || null;
+    }
     return hierarchyData.find(g => g.id === selectedGroupId) || null;
-  }, [hierarchyData, selectedGroupId]);
+  }, [hierarchyData, selectedGroupId, parentCompanyId]);
 
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGroupId = e.target.value;
@@ -202,12 +221,47 @@ function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHier
     );
   }
 
+  // In compact mode, show minimal UI
+  if (compact) {
+    return (
+      <div style={{ width: '100%' }}>
+        {loading ? (
+          <div style={{ padding: 'var(--spacing-2)', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+            Lade Hierarchie...
+          </div>
+        ) : error ? (
+          <div style={{ padding: 'var(--spacing-2)', color: 'var(--color-error)' }}>
+            Fehler: {error}
+          </div>
+        ) : selectedGroup ? (
+          <div style={{ fontSize: '0.875rem' }}>
+            <TreeView
+              node={selectedGroup}
+              level={0}
+              expandedNodes={expandedNodes}
+              hoveredNode={hoveredNode}
+              selectedCompanyId={selectedCompanyId}
+              onToggle={toggleNode}
+              onHover={setHoveredNode}
+              onClick={onCompanyClick}
+              compact={true}
+            />
+          </div>
+        ) : (
+          <div style={{ padding: 'var(--spacing-2)', color: 'var(--color-text-secondary)' }}>
+            Keine Hierarchie verfügbar
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="hierarchy-card">
       <div className="hierarchy-header">
         <div className="hierarchy-title-row">
           <h2 className="hierarchy-title">Unternehmenshierarchie</h2>
-          {hierarchyData.length > 1 && (
+          {!parentCompanyId && hierarchyData.length > 1 && (
             <div className="hierarchy-selector">
               <label htmlFor="group-select">Konzern:</label>
               <select
@@ -238,6 +292,7 @@ function CompanyHierarchyTree({ selectedCompanyId, onCompanyClick }: CompanyHier
             onToggle={toggleNode}
             onHover={setHoveredNode}
             onClick={onCompanyClick}
+            compact={false}
           />
         )}
       </div>
@@ -269,6 +324,7 @@ interface TreeViewProps {
   onToggle: (id: string) => void;
   onHover: (id: string | null) => void;
   onClick?: (id: string) => void;
+  compact?: boolean;
 }
 
 function TreeView({
@@ -280,11 +336,85 @@ function TreeView({
   onToggle,
   onHover,
   onClick,
+  compact = false,
 }: TreeViewProps) {
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
   const isHovered = hoveredNode === node.id;
   const isSelected = selectedCompanyId === node.id;
+
+  if (compact) {
+    return (
+      <div style={{ 
+        marginLeft: level > 0 ? 'var(--spacing-4)' : '0',
+        marginBottom: 'var(--spacing-1)',
+        fontSize: '0.875rem'
+      }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-2)',
+            padding: 'var(--spacing-1)',
+            cursor: onClick ? 'pointer' : 'default',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: isHovered ? 'var(--color-bg-tertiary)' : 'transparent',
+          }}
+          onMouseEnter={() => onHover(node.id)}
+          onMouseLeave={() => onHover(null)}
+          onClick={() => onClick?.(node.id)}
+        >
+          {hasChildren && (
+            <button
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--color-text-secondary)',
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle(node.id);
+              }}
+            >
+              <span style={{ fontSize: '0.75rem' }}>{isExpanded ? '▼' : '▶'}</span>
+            </button>
+          )}
+          {!hasChildren && <span style={{ width: '12px' }} />}
+          <span style={{ fontSize: '0.75rem' }}>
+            {node.type === 'parent' ? '🏢' : node.type === 'subsidiary' ? '📦' : '🔵'}
+          </span>
+          <span style={{ fontWeight: node.type === 'parent' ? '600' : '400' }}>{node.name}</span>
+          {node.participationPercentage !== undefined && node.participationPercentage > 0 && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+              ({node.participationPercentage}%)
+            </span>
+          )}
+        </div>
+        {hasChildren && isExpanded && (
+          <div>
+            {node.children.map((child) => (
+              <TreeView
+                key={child.id}
+                node={child}
+                level={level + 1}
+                expandedNodes={expandedNodes}
+                hoveredNode={hoveredNode}
+                selectedCompanyId={selectedCompanyId}
+                onToggle={onToggle}
+                onHover={onHover}
+                onClick={onClick}
+                compact={true}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="hierarchy-tree-branch" style={{ '--level': level } as React.CSSProperties}>
@@ -351,6 +481,7 @@ function TreeView({
               onToggle={onToggle}
               onHover={onHover}
               onClick={onClick}
+              compact={false}
             />
           ))}
         </div>

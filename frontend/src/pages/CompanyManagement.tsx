@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { companyService } from '../services/companyService';
 import { participationService } from '../services/participationService';
@@ -10,7 +10,17 @@ import { AdvancedTable, TableColumn } from '../components/AdvancedTable';
 import { Modal } from '../components/Modal';
 import { Tooltip } from '../components/Tooltip';
 import { useContextMenu, ContextMenuItem, ContextMenu } from '../components/ContextMenu';
+import { CompanyGroupSection } from '../components/CompanyGroupSection';
 import '../App.css';
+
+interface CompanyHierarchy {
+  id: string;
+  name: string;
+  type: 'parent' | 'subsidiary' | 'standalone';
+  parentCompanyId: string | null;
+  children: CompanyHierarchy[];
+  participationPercentage?: number;
+}
 
 function CompanyManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -40,9 +50,13 @@ function CompanyManagement() {
     allBalances: AccountBalance[]; // All balances across all financial statements
     loading: boolean;
   }>>({});
+  const [hierarchyData, setHierarchyData] = useState<CompanyHierarchy[]>([]);
+  const [hierarchyLoading, setHierarchyLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped'); // Default to grouped view
 
   useEffect(() => {
     loadCompanies();
+    loadHierarchy();
     
     // Listen for command palette events
     const handleOpenForm = () => {
@@ -62,6 +76,13 @@ function CompanyManagement() {
     window.addEventListener('openCompanyForm', handleOpenForm);
     return () => window.removeEventListener('openCompanyForm', handleOpenForm);
   }, []);
+
+  // Reload hierarchy when companies change
+  useEffect(() => {
+    if (companies.length > 0) {
+      loadHierarchy();
+    }
+  }, [companies.length]);
 
   // Handle edit query parameter from URL (e.g., /companies?edit=companyId)
   useEffect(() => {
@@ -89,6 +110,65 @@ function CompanyManagement() {
       setLoading(false);
     }
   };
+
+  const loadHierarchy = async () => {
+    setHierarchyLoading(true);
+    try {
+      const data = await companyService.getHierarchy();
+      setHierarchyData(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.error('Fehler beim Laden der Hierarchie:', error);
+      // Don't show error to user, hierarchy is optional
+    } finally {
+      setHierarchyLoading(false);
+    }
+  };
+
+  // Helper function to get all children of a company recursively
+  const getAllChildren = (parentId: string, allCompanies: Company[]): Company[] => {
+    const children = allCompanies.filter(c => c.parentCompanyId === parentId);
+    const allDescendants = [...children];
+    children.forEach(child => {
+      allDescendants.push(...getAllChildren(child.id, allCompanies));
+    });
+    return allDescendants;
+  };
+
+  // Helper function to check if a company has children
+  const hasChildren = (companyId: string, allCompanies: Company[]): boolean => {
+    return allCompanies.some(c => c.parentCompanyId === companyId);
+  };
+
+  // Group companies by root parent
+  const groupedCompanies = useMemo(() => {
+    const groups: Record<string, Company[]> = {};
+    const standalone: Company[] = [];
+    
+    // Group by parent companies from hierarchy
+    hierarchyData.forEach(root => {
+      if (root.type === 'parent' || root.children.length > 0) {
+        const rootCompany = companies.find(c => c.id === root.id);
+        if (rootCompany) {
+          groups[root.id] = [rootCompany, ...getAllChildren(root.id, companies)];
+        }
+      }
+    });
+    
+    // Find standalone companies (no parent and no children)
+    companies.forEach(company => {
+      if (!company.parentCompanyId && !hasChildren(company.id, companies)) {
+        // Check if it's not already in a group
+        const isInGroup = Object.values(groups).some(group => 
+          group.some(c => c.id === company.id)
+        );
+        if (!isInGroup) {
+          standalone.push(company);
+        }
+      }
+    });
+    
+    return { groups, standalone };
+  }, [hierarchyData, companies]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -366,29 +446,43 @@ function CompanyManagement() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <h1>Unternehmensverwaltung</h1>
-        <Tooltip content="Neues Unternehmen erstellen" position="bottom">
-          <button
-            className="button button-primary"
-            onClick={() => {
-              setShowForm(!showForm);
-              setError(null);
-              if (!showForm) {
-                setEditingCompany(null);
-                setFormData({
-                  name: '',
-                  taxId: '',
-                  address: '',
-                  legalForm: '',
-                  parentCompanyId: null,
-                  participationPercentage: 100,
-                  isConsolidated: true,
-                });
-              }
-            }}
-          >
-            {showForm ? 'Abbrechen' : 'Neues Unternehmen'}
-          </button>
-        </Tooltip>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+            <label style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>Ansicht:</label>
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as 'grouped' | 'flat')}
+              className="button button-secondary button-sm"
+              style={{ padding: 'var(--spacing-1) var(--spacing-2)' }}
+            >
+              <option value="grouped">Gruppiert</option>
+              <option value="flat">Flach</option>
+            </select>
+          </div>
+          <Tooltip content="Neues Unternehmen erstellen" position="bottom">
+            <button
+              className="button button-primary"
+              onClick={() => {
+                setShowForm(!showForm);
+                setError(null);
+                if (!showForm) {
+                  setEditingCompany(null);
+                  setFormData({
+                    name: '',
+                    taxId: '',
+                    address: '',
+                    legalForm: '',
+                    parentCompanyId: null,
+                    participationPercentage: 100,
+                    isConsolidated: true,
+                  });
+                }
+              }}
+            >
+              {showForm ? 'Abbrechen' : 'Neues Unternehmen'}
+            </button>
+          </Tooltip>
+        </div>
       </div>
 
       {error && !loading && (
@@ -530,35 +624,289 @@ function CompanyManagement() {
         </div>
       )}
 
-      <div className="card">
-        <div className="card-header">
-          <h2>Unternehmen ({companies.length})</h2>
-        </div>
-        <AdvancedTable
-          data={companies}
-          columns={companyColumns}
-          loading={loading}
-          emptyMessage="Keine Unternehmen vorhanden"
-          onRowClick={(row) => handleEdit(row)}
-          onRowContextMenu={handleRowContextMenu}
-        />
-      </div>
-
-      {/* Company Data Section */}
-      <div className="card">
-        <div className="card-header">
-          <h2>Importierte Daten</h2>
-        </div>
-        {companies.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-title">Keine Unternehmen vorhanden</div>
-            <div className="empty-state-description">
-              Erstellen Sie ein Unternehmen, um importierte Daten anzuzeigen.
+      {viewMode === 'grouped' ? (
+        // Grouped View
+        <>
+          {Object.keys(groupedCompanies.groups).length === 0 && groupedCompanies.standalone.length === 0 ? (
+            <div className="card">
+              <div className="empty-state">
+                <div className="empty-state-title">Keine Unternehmen vorhanden</div>
+                <div className="empty-state-description">
+                  Erstellen Sie ein Unternehmen, um zu beginnen.
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Render grouped sections */}
+              {Object.entries(groupedCompanies.groups).map(([parentId, groupCompanies]) => {
+                const parentCompany = companies.find(c => c.id === parentId);
+                const hierarchyNode = hierarchyData.find(h => h.id === parentId);
+                if (!parentCompany) return null;
+
+                return (
+                  <CompanyGroupSection
+                    key={parentId}
+                    parentCompany={parentCompany}
+                    companies={groupCompanies}
+                    hierarchyData={hierarchyNode || null}
+                    companyData={companyData}
+                    expandedCompanyId={expandedCompanyId}
+                    onToggleCompanyData={handleToggleCompanyData}
+                    onEditCompany={handleEdit}
+                    onDeleteCompany={handleDelete}
+                    onShowHgbCheck={(company) => {
+                      setEditingCompany(company);
+                      setShowModal(true);
+                    }}
+                    onLoadCompanyData={loadCompanyData}
+                    onNavigateToImport={(companyId, financialStatementId) => {
+                      const params = new URLSearchParams({ companyId });
+                      if (financialStatementId) {
+                        params.set('financialStatementId', financialStatementId);
+                      }
+                      navigate(`/import?${params.toString()}`);
+                    }}
+                  />
+                );
+              })}
+
+              {/* Standalone companies section */}
+              {groupedCompanies.standalone.length > 0 && (
+                <div className="card" style={{ marginBottom: 'var(--spacing-6)' }}>
+                  <div className="card-header" style={{ 
+                    backgroundColor: 'var(--color-bg-tertiary)',
+                    borderBottom: '2px solid var(--color-border)',
+                    padding: 'var(--spacing-4)'
+                  }}>
+                    <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                      <span style={{ fontSize: '1.2rem' }}>🔵</span>
+                      Standalone Unternehmen ({groupedCompanies.standalone.length})
+                    </h2>
+                  </div>
+                  <div style={{ padding: 'var(--spacing-4)' }}>
+                    <AdvancedTable
+                      data={groupedCompanies.standalone}
+                      columns={companyColumns}
+                      loading={false}
+                      emptyMessage="Keine standalone Unternehmen"
+                      onRowClick={(row) => handleEdit(row)}
+                      onRowContextMenu={handleRowContextMenu}
+                    />
+                    <div style={{ marginTop: 'var(--spacing-4)' }}>
+                      <h3 style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '600', 
+                        marginBottom: 'var(--spacing-2)',
+                        color: 'var(--color-text-primary)'
+                      }}>
+                        📊 Importierte Daten
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+                        {groupedCompanies.standalone.map((company) => {
+                          const isExpanded = expandedCompanyId === company.id;
+                          const data = companyData[company.id];
+                          const totalBalances = data?.allBalances?.length || 0;
+
+                          return (
+                            <div key={company.id} className="card" style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  cursor: 'pointer',
+                                  padding: 'var(--spacing-3)',
+                                }}
+                                onClick={() => handleToggleCompanyData(company.id)}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                                  <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                                  <div>
+                                    <strong>{company.name}</strong>
+                                    {data && data.financialStatements && (
+                                      <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+                                        {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''}, {totalBalances} Kontensalden
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {isExpanded && (
+                                <div style={{ padding: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+                                    <div></div>
+                                    <button
+                                      className="button button-secondary button-sm"
+                                      onClick={() => loadCompanyData(company.id)}
+                                      disabled={data?.loading}
+                                    >
+                                      {data?.loading ? 'Lade...' : 'Aktualisieren'}
+                                    </button>
+                                  </div>
+                                  {data?.loading ? (
+                                    <div className="loading">
+                                      <div className="loading-spinner"></div>
+                                      <span>Lade Daten...</span>
+                                    </div>
+                                  ) : data ? (
+                                    <>
+                                      {data.allBalances && Array.isArray(data.allBalances) && data.allBalances.length > 0 ? (
+                                        <div>
+                                          <div style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                                            <strong>Audit-Ledger:</strong> Alle importierten Kontensalden für dieses Unternehmen ({data.allBalances.length} Einträge)
+                                            {data.financialStatements && data.financialStatements.length > 0 && (
+                                              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-2)' }}>
+                                                {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''} gefunden
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div style={{ overflowX: 'auto' }}>
+                                            <table className="table" style={{ fontSize: '0.875rem' }}>
+                                              <thead>
+                                                <tr>
+                                                  <th>Kontonummer</th>
+                                                  <th>Kontoname</th>
+                                                  <th>Geschäftsjahr</th>
+                                                  <th>Soll</th>
+                                                  <th>Haben</th>
+                                                  <th>Saldo</th>
+                                                  <th>Zwischengesellschaft</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {data.allBalances.map((balance) => {
+                                                  const fs = data.financialStatements?.find(f => f.id === balance.financialStatementId);
+                                                  return (
+                                                    <tr key={balance.id}>
+                                                      <td>{balance.account?.accountNumber || balance.accountId?.substring(0, 8) || '-'}</td>
+                                                      <td>{balance.account?.name || 'Konto nicht gefunden'}</td>
+                                                      <td>
+                                                        {fs ? (
+                                                          <span>
+                                                            {fs.fiscalYear}
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginLeft: '0.25rem' }}>
+                                                              ({new Date(fs.periodStart).toLocaleDateString('de-DE')} - {new Date(fs.periodEnd).toLocaleDateString('de-DE')})
+                                                            </span>
+                                                          </span>
+                                                        ) : (
+                                                          <span style={{ color: 'var(--color-text-secondary)' }}>Unbekannt</span>
+                                                        )}
+                                                      </td>
+                                                      <td>{Number(balance.debit).toLocaleString('de-DE', {
+                                                        style: 'currency',
+                                                        currency: 'EUR'
+                                                      })}</td>
+                                                      <td>{Number(balance.credit).toLocaleString('de-DE', {
+                                                        style: 'currency',
+                                                        currency: 'EUR'
+                                                      })}</td>
+                                                      <td style={{ fontWeight: 'bold' }}>
+                                                        {Number(balance.balance).toLocaleString('de-DE', {
+                                                          style: 'currency',
+                                                          currency: 'EUR'
+                                                        })}
+                                                      </td>
+                                                      <td>{balance.isIntercompany ? 'Ja' : 'Nein'}</td>
+                                                    </tr>
+                                                  );
+                                                })}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
+                                          <div className="empty-state-title">Keine Kontensalden vorhanden</div>
+                                          <div className="empty-state-description">
+                                            Für dieses Unternehmen wurden noch keine Kontensalden importiert.
+                                            {data.financialStatements && data.financialStatements.length > 0 && (
+                                              <div style={{ marginTop: 'var(--spacing-2)', fontSize: '0.875rem' }}>
+                                                {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''} vorhanden, aber keine Kontensalden.
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                                              <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: '500', marginBottom: 'var(--spacing-1)' }}>
+                                                  Keine Daten vorhanden
+                                                </div>
+                                                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                                  Für dieses Unternehmen wurden noch keine Kontensalden importiert.
+                                                </div>
+                                              </div>
+                                              <button
+                                                className="button button-primary"
+                                                onClick={() => {
+                                                  const params = new URLSearchParams({ companyId: company.id });
+                                                  if (data.financialStatements && data.financialStatements.length > 0) {
+                                                    params.set('financialStatementId', data.financialStatements[0].id);
+                                                  }
+                                                  navigate(`/import?${params.toString()}`);
+                                                }}
+                                              >
+                                                Daten importieren
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
+                                      <div className="empty-state-title">Keine Daten vorhanden</div>
+                                      <div className="empty-state-description">
+                                        Für dieses Unternehmen wurden noch keine Jahresabschlüsse oder Kontensalden importiert.
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      ) : (
+        // Flat View (Original)
+        <>
+          <div className="card">
+            <div className="card-header">
+              <h2>Unternehmen ({companies.length})</h2>
+            </div>
+            <AdvancedTable
+              data={companies}
+              columns={companyColumns}
+              loading={loading}
+              emptyMessage="Keine Unternehmen vorhanden"
+              onRowClick={(row) => handleEdit(row)}
+              onRowContextMenu={handleRowContextMenu}
+            />
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-            {companies.map((company) => {
+
+          {/* Company Data Section */}
+          <div className="card">
+            <div className="card-header">
+              <h2>Importierte Daten</h2>
+            </div>
+            {companies.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-title">Keine Unternehmen vorhanden</div>
+                <div className="empty-state-description">
+                  Erstellen Sie ein Unternehmen, um importierte Daten anzuzeigen.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+                {companies.map((company) => {
               const isExpanded = expandedCompanyId === company.id;
               const data = companyData[company.id];
               const totalBalances = data?.allBalances?.length || 0;
@@ -748,10 +1096,12 @@ function CompanyManagement() {
                   )}
                 </div>
               );
-            })}
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {showModal && editingCompany && (
         <Modal
