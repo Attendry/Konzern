@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { 
   konzernanhangService, 
   KonzernanhangDocument, 
@@ -36,7 +36,6 @@ const statusColors: Record<string, string> = {
 
 export default function KonzernanhangPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   
   const [financialStatements, setFinancialStatements] = useState<FinancialStatement[]>([]);
   const [selectedFsId, setSelectedFsId] = useState<string>(id || '');

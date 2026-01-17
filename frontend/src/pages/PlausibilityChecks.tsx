@@ -14,6 +14,7 @@ import {
 import { useAIChat } from '../contexts/AIChatContext';
 import { ErrorState } from '../components/ErrorState';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { BackButton } from '../components/BackButton';
 import './PlausibilityChecks.css';
 
 type TabType = 'checks' | 'variances' | 'exceptions' | 'materiality';
