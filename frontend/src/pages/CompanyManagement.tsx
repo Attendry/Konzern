@@ -603,7 +603,7 @@ function CompanyManagement() {
                         </div>
                       ) : data ? (
                         <>
-                        {data.allBalances && data.allBalances.length > 0 ? (
+                        {data.allBalances && Array.isArray(data.allBalances) && data.allBalances.length > 0 ? (
                         <div>
                           <div style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
                             <strong>Audit-Ledger:</strong> Alle importierten Kontensalden für dieses Unternehmen ({data.allBalances.length} Einträge)
