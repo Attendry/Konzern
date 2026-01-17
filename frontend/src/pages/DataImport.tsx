@@ -9,6 +9,8 @@ import { ExcelMappingWizard } from '../components/ExcelMappingWizard';
 import { BatchImportWizard } from '../components/BatchImportWizard';
 import { BackButton } from '../components/BackButton';
 import { ErrorState } from '../components/ErrorState';
+import { QuickActions } from '../components/QuickActions';
+import { RelatedLinks } from '../components/RelatedLinks';
 import '../App.css';
 
 type ImportMode = 'quick' | 'wizard' | 'batch';
@@ -724,6 +726,61 @@ function DataImport() {
             </>
           )}
         </div>
+      )}
+
+      {/* Quick Actions */}
+      {result && result.imported > 0 && financialStatementId && (
+        <QuickActions
+          actions={[
+            {
+              id: 'view-imported',
+              label: 'Importierte Daten anzeigen',
+              icon: '👁️',
+              onClick: () => {
+                if (financialStatementId) {
+                  loadImportedData(financialStatementId);
+                  setShowImportedData(true);
+                }
+              },
+              tooltip: 'Importierte Kontensalden anzeigen',
+            },
+            {
+              id: 'view-statement',
+              label: 'Jahresabschluss anzeigen',
+              icon: '📄',
+              onClick: () => navigate(`/financial-statements/${financialStatementId}`),
+              tooltip: 'Zum Jahresabschluss',
+            },
+            {
+              id: 'go-to-consolidation',
+              label: 'Zur Konsolidierung',
+              icon: '🔄',
+              onClick: () => navigate(`/consolidation?statementId=${financialStatementId}`),
+              tooltip: 'Konsolidierung durchführen',
+            },
+          ]}
+          position="inline"
+        />
+      )}
+
+      {/* Related Links */}
+      {selectedCompanyId && (
+        <RelatedLinks
+          links={[
+            {
+              label: 'Unternehmensverwaltung',
+              to: `/companies?edit=${selectedCompanyId}`,
+              icon: '🏢',
+              description: 'Unternehmensdetails anzeigen',
+            },
+            {
+              label: 'Konsolidierung',
+              to: '/consolidation',
+              icon: '🔄',
+              description: 'Zur Konsolidierung',
+            },
+          ]}
+        />
       )}
     </div>
   );

@@ -27,64 +27,127 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
 
   const commands: Command[] = useMemo(() => [
+    // Navigation Commands
     {
       id: 'dashboard',
-      label: 'Go to Dashboard',
+      label: 'Zum Dashboard',
       category: 'Navigation',
       action: () => {
         navigate('/');
         setOpen(false);
       },
       shortcut: `${modifierKey}1`,
-      keywords: ['dashboard', 'home', 'start'],
+      icon: '🏠',
+      keywords: ['dashboard', 'home', 'start', 'hauptseite'],
     },
     {
       id: 'companies',
-      label: 'Go to Companies',
+      label: 'Unternehmensverwaltung',
       category: 'Navigation',
       action: () => {
         navigate('/companies');
         setOpen(false);
       },
       shortcut: `${modifierKey}2`,
-      keywords: ['companies', 'unternehmen', 'companies'],
+      icon: '🏢',
+      keywords: ['companies', 'unternehmen', 'verwaltung'],
     },
     {
       id: 'import',
-      label: 'Go to Data Import',
+      label: 'Datenimport',
       category: 'Navigation',
       action: () => {
         navigate('/import');
         setOpen(false);
       },
       shortcut: `${modifierKey}3`,
-      keywords: ['import', 'data', 'upload'],
+      icon: '📥',
+      keywords: ['import', 'data', 'upload', 'daten', 'importieren'],
     },
     {
       id: 'consolidation',
-      label: 'Go to Consolidation',
+      label: 'Konsolidierung',
       category: 'Navigation',
       action: () => {
         navigate('/consolidation');
         setOpen(false);
       },
       shortcut: `${modifierKey}4`,
+      icon: '🔄',
       keywords: ['consolidation', 'konsolidierung'],
     },
     {
+      id: 'reports',
+      label: 'Berichte',
+      category: 'Navigation',
+      action: () => {
+        navigate('/reports');
+        setOpen(false);
+      },
+      shortcut: `${modifierKey}5`,
+      icon: '📊',
+      keywords: ['reports', 'berichte', 'reports'],
+    },
+    {
+      id: 'documentation',
+      label: 'Dokumentation',
+      category: 'Navigation',
+      action: () => {
+        navigate('/documentation');
+        setOpen(false);
+      },
+      shortcut: `${modifierKey}D`,
+      icon: '📚',
+      keywords: ['documentation', 'dokumentation', 'help', 'hilfe'],
+    },
+    // Action Commands
+    {
       id: 'new-company',
-      label: 'Create New Company',
-      category: 'Actions',
+      label: 'Neues Unternehmen erstellen',
+      category: 'Aktionen',
       action: () => {
         navigate('/companies');
         setOpen(false);
-        // Trigger form open - would need to be handled by parent
         setTimeout(() => {
           const event = new CustomEvent('openCompanyForm');
           window.dispatchEvent(event);
         }, 100);
       },
-      keywords: ['new', 'create', 'add', 'company'],
+      icon: '➕',
+      keywords: ['new', 'create', 'add', 'company', 'neu', 'erstellen', 'unternehmen'],
+    },
+    {
+      id: 'import-data',
+      label: 'Daten importieren',
+      category: 'Aktionen',
+      action: () => {
+        navigate('/import');
+        setOpen(false);
+      },
+      icon: '📥',
+      keywords: ['import', 'data', 'upload', 'daten', 'importieren'],
+    },
+    {
+      id: 'run-consolidation',
+      label: 'Konsolidierung durchführen',
+      category: 'Aktionen',
+      action: () => {
+        navigate('/consolidation');
+        setOpen(false);
+      },
+      icon: '🔄',
+      keywords: ['consolidate', 'konsolidieren', 'run', 'durchführen'],
+    },
+    {
+      id: 'view-audit',
+      label: 'AI-Nutzungsprotokoll',
+      category: 'Aktionen',
+      action: () => {
+        navigate('/ai-audit');
+        setOpen(false);
+      },
+      icon: '📋',
+      keywords: ['audit', 'protokoll', 'log', 'ai'],
     },
   ], [navigate]);
 
@@ -155,7 +218,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
           <input
             type="text"
             className="command-palette-input"
-            placeholder={`Type a command or search... (${modifierKey}+K to open)`}
+            placeholder={`Befehl eingeben oder suchen... (${modifierKey}+K zum Öffnen)`}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -167,7 +230,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
         <div className="command-palette-results">
           {filteredCommands.length === 0 ? (
             <div className="command-palette-empty">
-              No commands found
+              Keine Befehle gefunden
             </div>
           ) : (
             Object.entries(groupedCommands).map(([category, cmds]) => (
@@ -182,6 +245,11 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
                       onClick={() => cmd.action()}
                       onMouseEnter={() => setSelectedIndex(globalIndex)}
                     >
+                      {cmd.icon && (
+                        <span style={{ marginRight: 'var(--spacing-2)', fontSize: '1.2em' }}>
+                          {cmd.icon}
+                        </span>
+                      )}
                       <span className="command-palette-label">{cmd.label}</span>
                       {cmd.shortcut && (
                         <span className="command-palette-shortcut">{cmd.shortcut}</span>
@@ -195,7 +263,7 @@ export function CommandPalette({ onClose }: CommandPaletteProps) {
         </div>
         <div className="command-palette-footer">
           <div className="command-palette-hint">
-            <kbd>↑</kbd><kbd>↓</kbd> Navigate • <kbd>Enter</kbd> Select • <kbd>Esc</kbd> Close • <kbd>{modifierKey}</kbd><kbd>K</kbd> Open
+            <kbd>↑</kbd><kbd>↓</kbd> Navigieren • <kbd>Enter</kbd> Auswählen • <kbd>Esc</kbd> Schließen • <kbd>{modifierKey}</kbd><kbd>K</kbd> Öffnen
           </div>
         </div>
       </div>

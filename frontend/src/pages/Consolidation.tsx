@@ -25,6 +25,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { BackButton } from '../components/BackButton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
+import { QuickActions } from '../components/QuickActions';
+import { RelatedLinks } from '../components/RelatedLinks';
 import '../App.css';
 
 type EntryTab = 'all' | 'manual' | 'pending';
@@ -408,7 +411,7 @@ function Consolidation() {
         <div className="form-group">
           <label>Jahresabschluss *</label>
           {loadingStatements ? (
-            <p>Lade Jahresabschlüsse...</p>
+            <LoadingState type="form" count={1} message="Lade Jahresabschlüsse..." />
           ) : (
             <>
               <select
@@ -541,10 +544,7 @@ function Consolidation() {
           </div>
 
           {loading ? (
-            <div className="loading">
-              <div className="loading-spinner"></div>
-              <span>Lade Buchungen...</span>
-            </div>
+            <LoadingState type="table" count={5} message="Lade Buchungen..." />
           ) : filteredEntries.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-title">Keine Konsolidierungsbuchungen vorhanden</div>
@@ -712,6 +712,79 @@ function Consolidation() {
           loadCompanies();
         }}
       />
+
+      {/* Quick Actions */}
+      {selectedStatementId && (
+        <QuickActions
+          actions={[
+            {
+              id: 'view-report',
+              label: 'Konzernabschluss anzeigen',
+              icon: '📊',
+              onClick: () => navigate(`/konzernabschluss/${selectedStatementId}`),
+              tooltip: 'Konzernabschluss für diesen Jahresabschluss anzeigen',
+            },
+            {
+              id: 'view-notes',
+              label: 'Konzernanhang',
+              icon: '📄',
+              onClick: () => navigate(`/consolidated-notes/${selectedStatementId}`),
+              tooltip: 'Konzernanhang anzeigen',
+            },
+            {
+              id: 'export',
+              label: 'Exportieren',
+              icon: '📥',
+              onClick: async () => {
+                await handleExport('excel');
+              },
+              tooltip: 'Konsolidierung exportieren',
+            },
+            {
+              id: 'plausibility-checks',
+              label: 'Plausibilitätsprüfungen',
+              icon: '✅',
+              onClick: () => navigate(`/plausibility-checks/${selectedStatementId}`),
+              tooltip: 'Plausibilitätsprüfungen durchführen',
+              requiredRoles: ['admin', 'auditor'],
+            },
+          ]}
+          position="inline"
+        />
+      )}
+
+      {/* Related Links */}
+      {selectedStatementId && (
+        <RelatedLinks
+          links={[
+            {
+              label: 'Konzernabschluss',
+              to: `/konzernabschluss/${selectedStatementId}`,
+              icon: '📊',
+              description: 'Vollständigen Konzernabschluss anzeigen',
+            },
+            {
+              label: 'Konzernanhang',
+              to: `/consolidated-notes/${selectedStatementId}`,
+              icon: '📄',
+              description: 'Konzernanhang anzeigen',
+            },
+            {
+              label: 'Plausibilitätsprüfungen',
+              to: `/plausibility-checks/${selectedStatementId}`,
+              icon: '✅',
+              description: 'Prüfungen durchführen',
+              requiredRoles: ['admin', 'auditor'],
+            },
+            {
+              label: 'Datenherkunft',
+              to: `/data-lineage/${selectedStatementId}`,
+              icon: '🔗',
+              description: 'Prüfpfad anzeigen',
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

@@ -9,12 +9,16 @@ import { Breadcrumbs } from '../components/Breadcrumbs';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
+import { QuickActions } from '../components/QuickActions';
+import { RelatedLinks } from '../components/RelatedLinks';
+import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
 function FinancialStatement() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { setFinancialStatementId } = useAIChat();
+  const { user } = useAuth();
   const [statement, setStatement] = useState<FinancialStatementType | null>(null);
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,6 +238,87 @@ function FinancialStatement() {
           </table>
         )}
       </div>
+
+      {/* Quick Actions */}
+      {statement && (
+        <QuickActions
+          actions={[
+            {
+              id: 'consolidate',
+              label: 'Konsolidieren',
+              icon: '🔄',
+              onClick: () => navigate(`/consolidation?statementId=${statement.id}`),
+              requiredRoles: ['admin', 'editor'],
+              tooltip: 'Konsolidierung für diesen Jahresabschluss durchführen',
+            },
+            {
+              id: 'export',
+              label: 'Exportieren',
+              icon: '📥',
+              onClick: async () => {
+                // TODO: Implement export functionality
+                console.log('Export functionality to be implemented');
+              },
+              tooltip: 'Jahresabschluss exportieren',
+            },
+            {
+              id: 'view-notes',
+              label: 'Konzernanhang',
+              icon: '📄',
+              onClick: () => navigate(`/consolidated-notes/${statement.id}`),
+              tooltip: 'Konzernanhang anzeigen',
+            },
+            {
+              id: 'view-lineage',
+              label: 'Prüfpfad',
+              icon: '🔗',
+              onClick: () => navigate(`/data-lineage/${statement.id}`),
+              tooltip: 'Datenherkunft und Prüfpfad anzeigen',
+            },
+          ]}
+          position="inline"
+          className="quick-actions-section"
+        />
+      )}
+
+      {/* Related Links */}
+      {statement && (
+        <RelatedLinks
+          links={[
+            {
+              label: 'Unternehmensverwaltung',
+              to: `/companies?edit=${statement.companyId}`,
+              icon: '🏢',
+              description: 'Unternehmensdetails anzeigen',
+            },
+            {
+              label: 'Konsolidierung',
+              to: `/consolidation?statementId=${statement.id}`,
+              icon: '🔄',
+              description: 'Zur Konsolidierung',
+            },
+            {
+              label: 'Konzernanhang',
+              to: `/consolidated-notes/${statement.id}`,
+              icon: '📄',
+              description: 'Konzernanhang anzeigen',
+            },
+            {
+              label: 'Plausibilitätsprüfungen',
+              to: `/plausibility-checks/${statement.id}`,
+              icon: '✅',
+              description: 'Prüfungen für diesen Jahresabschluss',
+              requiredRoles: ['admin', 'auditor'],
+            },
+            {
+              label: 'Datenherkunft',
+              to: `/data-lineage/${statement.id}`,
+              icon: '🔗',
+              description: 'Prüfpfad anzeigen',
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

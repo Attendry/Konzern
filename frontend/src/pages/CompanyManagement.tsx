@@ -14,6 +14,11 @@ import { CompanyGroupSection } from '../components/CompanyGroupSection';
 import { BackButton } from '../components/BackButton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
+import { QuickActions } from '../components/QuickActions';
+import { RelatedLinks } from '../components/RelatedLinks';
+import { useFormValidation, validationHelpers } from '../hooks/useFormValidation';
+import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
 interface CompanyHierarchy {
@@ -29,6 +34,7 @@ function CompanyManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
+  const { user } = useAuth();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +51,31 @@ function CompanyManagement() {
     parentCompanyId: null,
     participationPercentage: 100,
     isConsolidated: true,
+  });
+
+  // Form validation
+  const validation = useFormValidation<Partial<Company> & { participationPercentage?: number }>({
+    rules: [
+      {
+        field: 'name',
+        validate: validationHelpers.required('Name ist erforderlich'),
+        trigger: 'onBlur',
+      },
+      {
+        field: 'participationPercentage',
+        validate: (value, data) => {
+          if (data.parentCompanyId && (value === null || value === undefined || value === '')) {
+            return 'Beteiligungsquote ist erforderlich, wenn ein Mutterunternehmen ausgewählt ist';
+          }
+          if (data.parentCompanyId && value !== null && value !== undefined && value !== '') {
+            return validationHelpers.percentage('Beteiligungsquote muss zwischen 0 und 100 liegen')(value);
+          }
+          return null;
+        },
+        trigger: 'onBlur',
+      },
+    ],
+    context: 'CompanyManagement',
   });
   const [expandedCompanyId, setExpandedCompanyId] = useState<string | null>(null);
   const [companyData, setCompanyData] = useState<Record<string, {
@@ -214,6 +245,13 @@ function CompanyManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate all fields before submission
+    if (!validation.validateAll(formData)) {
+      showError('Bitte korrigieren Sie die Fehler im Formular');
+      return;
+    }
+    
     setSaving(true);
     setError(null);
     
@@ -576,9 +614,18 @@ function CompanyManagement() {
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  validation.clearError('name');
+                }}
+                onBlur={(e) => validation.validateField('name', e.target.value, formData)}
                 required
               />
+              {validation.errors.name && (
+                <div style={{ color: 'var(--color-error)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-1)' }}>
+                  {validation.errors.name}
+                </div>
+              )}
             </div>
             <div className="form-group">
               <label>Steuernummer</label>
@@ -669,7 +716,11 @@ function CompanyManagement() {
                 Wird konsolidiert
               </label>
             </div>
-            <button type="submit" className="button button-primary" disabled={saving}>
+            <button 
+              type="submit" 
+              className="button button-primary" 
+              disabled={saving || !validation.isValid}
+            >
               {saving ? 'Speichere...' : editingCompany ? 'Aktualisieren' : 'Erstellen'}
             </button>
           </form>
@@ -816,10 +867,7 @@ function CompanyManagement() {
                                     </button>
                                   </div>
                                   {data?.loading ? (
-                                    <div className="loading">
-                                      <div className="loading-spinner"></div>
-                                      <span>Lade Daten...</span>
-                                    </div>
+                                    <LoadingState type="list" count={3} message="Lade Daten..." />
                                   ) : data ? (
                                     <>
                                       {data.allBalances && Array.isArray(data.allBalances) && data.allBalances.length > 0 ? (
@@ -1034,10 +1082,7 @@ function CompanyManagement() {
                         </button>
                       </div>
                       {data?.loading ? (
-                        <div className="loading">
-                          <div className="loading-spinner"></div>
-                          <span>Lade Daten...</span>
-                        </div>
+                        <LoadingState type="list" count={3} message="Lade Daten..." />
                       ) : data ? (
                         <>
                         {data.allBalances && Array.isArray(data.allBalances) && data.allBalances.length > 0 ? (
@@ -1208,6 +1253,69 @@ function CompanyManagement() {
             }}
           />
         </Modal>
+      )}
+
+      {/* Quick Actions for selected company */}
+      {editingCompany && showForm && (
+        <QuickActions
+          actions={[
+            {
+              id: 'view-statements',
+              label: 'Jahresabschlüsse anzeigen',
+              icon: '📊',
+              onClick: () => {
+                setShowForm(false);
+                navigate(`/companies?edit=${editingCompany.id}`);
+              },
+              tooltip: 'Jahresabschlüsse für dieses Unternehmen anzeigen',
+            },
+            {
+              id: 'import-data',
+              label: 'Daten importieren',
+              icon: '📥',
+              onClick: () => {
+                const params = new URLSearchParams({ companyId: editingCompany.id });
+                navigate(`/import?${params.toString()}`);
+              },
+              tooltip: 'Daten für dieses Unternehmen importieren',
+            },
+            {
+              id: 'view-consolidation',
+              label: 'Konsolidierung',
+              icon: '🔄',
+              onClick: () => navigate('/consolidation'),
+              tooltip: 'Zur Konsolidierung',
+            },
+          ]}
+          position="inline"
+        />
+      )}
+
+      {/* Related Links */}
+      {!showForm && companies.length > 0 && (
+        <RelatedLinks
+          links={[
+            {
+              label: 'Datenimport',
+              to: '/import',
+              icon: '📥',
+              description: 'Daten importieren',
+            },
+            {
+              label: 'Konsolidierung',
+              to: '/consolidation',
+              icon: '🔄',
+              description: 'Zur Konsolidierung',
+            },
+            {
+              label: 'Bilanzierungsrichtlinien',
+              to: '/policies',
+              icon: '📋',
+              description: 'Richtlinien verwalten',
+              requiredRoles: ['admin', 'editor'],
+            },
+          ]}
+        />
       )}
 
       {contextMenu && (

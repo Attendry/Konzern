@@ -15,6 +15,8 @@ import { useAIChat } from '../contexts/AIChatContext';
 import { ErrorState } from '../components/ErrorState';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { BackButton } from '../components/BackButton';
+import { QuickActions } from '../components/QuickActions';
+import { RelatedLinks } from '../components/RelatedLinks';
 import './PlausibilityChecks.css';
 
 type TabType = 'checks' | 'variances' | 'exceptions' | 'materiality';
@@ -956,6 +958,68 @@ const PlausibilityChecks = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Quick Actions */}
+      {financialStatementId && (
+        <QuickActions
+          actions={[
+            {
+              id: 'view-statement',
+              label: 'Jahresabschluss anzeigen',
+              icon: '📄',
+              onClick: () => navigate(`/financial-statements/${financialStatementId}`),
+              tooltip: 'Zum Jahresabschluss',
+            },
+            {
+              id: 'view-consolidation',
+              label: 'Konsolidierung',
+              icon: '🔄',
+              onClick: () => navigate(`/consolidation?statementId=${financialStatementId}`),
+              tooltip: 'Zur Konsolidierung',
+            },
+            {
+              id: 'view-lineage',
+              label: 'Prüfpfad',
+              icon: '🔗',
+              onClick: () => navigate(`/data-lineage/${financialStatementId}`),
+              tooltip: 'Datenherkunft anzeigen',
+            },
+          ]}
+          position="inline"
+        />
+      )}
+
+      {/* Related Links */}
+      {financialStatementId && (
+        <RelatedLinks
+          links={[
+            {
+              label: 'Jahresabschluss',
+              to: `/financial-statements/${financialStatementId}`,
+              icon: '📄',
+              description: 'Zum Jahresabschluss',
+            },
+            {
+              label: 'Konsolidierung',
+              to: `/consolidation?statementId=${financialStatementId}`,
+              icon: '🔄',
+              description: 'Zur Konsolidierung',
+            },
+            {
+              label: 'Konzernabschluss',
+              to: `/konzernabschluss/${financialStatementId}`,
+              icon: '📊',
+              description: 'Konzernabschluss anzeigen',
+            },
+            {
+              label: 'Datenherkunft',
+              to: `/data-lineage/${financialStatementId}`,
+              icon: '🔗',
+              description: 'Prüfpfad anzeigen',
+            },
+          ]}
+        />
       )}
     </div>
   );
