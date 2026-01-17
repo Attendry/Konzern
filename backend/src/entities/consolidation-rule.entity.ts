@@ -45,7 +45,16 @@ export interface RuleConfig {
 
 export interface RuleCondition {
   field: string;
-  operator: 'eq' | 'ne' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'not_in' | 'between';
+  operator:
+    | 'eq'
+    | 'ne'
+    | 'gt'
+    | 'lt'
+    | 'gte'
+    | 'lte'
+    | 'in'
+    | 'not_in'
+    | 'between';
   value: unknown;
 }
 
@@ -76,7 +85,12 @@ export class ConsolidationRule {
   ruleType: ConsolidationRuleType;
 
   // HGB Reference
-  @Column({ type: 'varchar', length: 100, name: 'hgb_reference', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'hgb_reference',
+    nullable: true,
+  })
   hgbReference: string | null;
 
   @Column({ type: 'text', name: 'hgb_description', nullable: true })
@@ -102,17 +116,39 @@ export class ConsolidationRule {
   parameters: Record<string, unknown>;
 
   // Thresholds
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'threshold_amount', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'threshold_amount',
+    nullable: true,
+  })
   thresholdAmount: number | null;
 
-  @Column({ type: 'decimal', precision: 8, scale: 4, name: 'threshold_percentage', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 8,
+    scale: 4,
+    name: 'threshold_percentage',
+    nullable: true,
+  })
   thresholdPercentage: number | null;
 
   // Applicability
-  @Column({ type: 'text', array: true, name: 'applies_to_entity_types', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'applies_to_entity_types',
+    nullable: true,
+  })
   appliesToEntityTypes: string[] | null;
 
-  @Column({ type: 'text', array: true, name: 'applies_to_industries', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'applies_to_industries',
+    nullable: true,
+  })
   appliesToIndustries: string[] | null;
 
   // Ordering
@@ -135,9 +171,17 @@ export class ConsolidationRule {
   @Column({ type: 'uuid', name: 'created_by_user_id', nullable: true })
   createdByUserId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

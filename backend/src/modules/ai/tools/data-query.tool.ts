@@ -72,7 +72,8 @@ export class DataQueryTool implements AgentTool {
     context: AgentContext,
   ): Promise<ToolResult> {
     const question = params.question;
-    const financialStatementId = params.financial_statement_id || context.financialStatementId;
+    const financialStatementId =
+      params.financial_statement_id || context.financialStatementId;
 
     if (!question) {
       return this.errorResult('Bitte stellen Sie eine Frage.');
@@ -80,23 +81,30 @@ export class DataQueryTool implements AgentTool {
 
     try {
       // Analyze the question and determine what data is needed
-      const queryIntent = await this.analyzeQuestion(question, financialStatementId);
-      
+      const queryIntent = await this.analyzeQuestion(
+        question,
+        financialStatementId,
+      );
+
       if (!queryIntent.success) {
         return this.errorResult(queryIntent.message);
       }
 
       // Execute the query
       const result = await this.executeQuery(queryIntent, financialStatementId);
-      
+
       if (!result.success) {
         return this.errorResult(result.message);
       }
 
       // Format the answer
       const answer = await this.formatAnswer(question, result.data!);
-      
-      const reasoning = this.buildReasoning(question, queryIntent, result.data!);
+
+      const reasoning = this.buildReasoning(
+        question,
+        queryIntent,
+        result.data!,
+      );
       const quality = this.buildQuality(result.data!);
       const provenance = this.buildProvenance(result.data!);
 
@@ -136,78 +144,161 @@ export class DataQueryTool implements AgentTool {
   }> {
     // Simple keyword-based analysis first
     const lower = question.toLowerCase();
-    
+
     // Company queries
-    if (lower.includes('unternehmen') || lower.includes('gesellschaft') || lower.includes('firma')) {
+    if (
+      lower.includes('unternehmen') ||
+      lower.includes('gesellschaft') ||
+      lower.includes('firma')
+    ) {
       return {
         success: true,
         message: 'Query companies',
         table: 'companies',
-        columns: ['id', 'name', 'legal_form', 'parent_company_id', 'is_consolidated', 'consolidation_type', 'is_ultimate_parent'],
+        columns: [
+          'id',
+          'name',
+          'legal_form',
+          'parent_company_id',
+          'is_consolidated',
+          'consolidation_type',
+          'is_ultimate_parent',
+        ],
       };
     }
 
     // IC transactions
-    if (lower.includes('ic') || lower.includes('intercompany') || lower.includes('konzernintern')) {
+    if (
+      lower.includes('ic') ||
+      lower.includes('intercompany') ||
+      lower.includes('konzernintern')
+    ) {
       return {
         success: true,
         message: 'Query IC transactions',
         table: 'intercompany_transactions',
-        columns: ['id', 'from_company_id', 'to_company_id', 'amount', 'transaction_date', 'description'],
-        filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
+        columns: [
+          'id',
+          'from_company_id',
+          'to_company_id',
+          'amount',
+          'transaction_date',
+          'description',
+        ],
+        filters: financialStatementId
+          ? { financial_statement_id: financialStatementId }
+          : undefined,
       };
     }
 
     // IC reconciliation
-    if (lower.includes('abstimmung') || lower.includes('differenz') || lower.includes('reconciliation')) {
+    if (
+      lower.includes('abstimmung') ||
+      lower.includes('differenz') ||
+      lower.includes('reconciliation')
+    ) {
       return {
         success: true,
         message: 'Query IC reconciliation',
         table: 'ic_reconciliations',
-        columns: ['id', 'company_a_id', 'company_b_id', 'amount_company_a', 'amount_company_b', 'difference_amount', 'status', 'difference_reason'],
-        filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
+        columns: [
+          'id',
+          'company_a_id',
+          'company_b_id',
+          'amount_company_a',
+          'amount_company_b',
+          'difference_amount',
+          'status',
+          'difference_reason',
+        ],
+        filters: financialStatementId
+          ? { financial_statement_id: financialStatementId }
+          : undefined,
       };
     }
 
     // Plausibility checks
-    if (lower.includes('prüfung') || lower.includes('kontrolle') || lower.includes('plausibilität')) {
+    if (
+      lower.includes('prüfung') ||
+      lower.includes('kontrolle') ||
+      lower.includes('plausibilität')
+    ) {
       return {
         success: true,
         message: 'Query plausibility checks',
         table: 'plausibility_checks',
         columns: ['id', 'check_type', 'result', 'message', 'created_at'],
-        filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
+        filters: financialStatementId
+          ? { financial_statement_id: financialStatementId }
+          : undefined,
       };
     }
 
     // Consolidation entries
-    if (lower.includes('buchung') || lower.includes('konsolidierung') || lower.includes('eintrag')) {
+    if (
+      lower.includes('buchung') ||
+      lower.includes('konsolidierung') ||
+      lower.includes('eintrag')
+    ) {
       return {
         success: true,
         message: 'Query consolidation entries',
         table: 'consolidation_entries',
-        columns: ['id', 'adjustment_type', 'account_id', 'debit_account_id', 'credit_account_id', 'amount', 'description', 'hgb_reference', 'created_at'],
-        filters: financialStatementId ? { financial_statement_id: financialStatementId } : undefined,
+        columns: [
+          'id',
+          'adjustment_type',
+          'account_id',
+          'debit_account_id',
+          'credit_account_id',
+          'amount',
+          'description',
+          'hgb_reference',
+          'created_at',
+        ],
+        filters: financialStatementId
+          ? { financial_statement_id: financialStatementId }
+          : undefined,
       };
     }
 
     // Financial statements
-    if (lower.includes('abschluss') || lower.includes('bilanz') || lower.includes('jahres')) {
+    if (
+      lower.includes('abschluss') ||
+      lower.includes('bilanz') ||
+      lower.includes('jahres')
+    ) {
       return {
         success: true,
         message: 'Query financial statements',
         table: 'financial_statements',
-        columns: ['id', 'company_id', 'fiscal_year', 'period_start', 'period_end', 'status'],
+        columns: [
+          'id',
+          'company_id',
+          'fiscal_year',
+          'period_start',
+          'period_end',
+          'status',
+        ],
       };
     }
 
     // Participations
-    if (lower.includes('beteiligung') || lower.includes('anteil') || lower.includes('tochter')) {
+    if (
+      lower.includes('beteiligung') ||
+      lower.includes('anteil') ||
+      lower.includes('tochter')
+    ) {
       return {
         success: true,
         message: 'Query participations',
         table: 'participations',
-        columns: ['id', 'parent_company_id', 'subsidiary_company_id', 'ownership_percentage', 'acquisition_date'],
+        columns: [
+          'id',
+          'parent_company_id',
+          'subsidiary_company_id',
+          'ownership_percentage',
+          'acquisition_date',
+        ],
       };
     }
 
@@ -218,7 +309,8 @@ export class DataQueryTool implements AgentTool {
 
     return {
       success: false,
-      message: 'Ich konnte die Frage nicht interpretieren. Bitte fragen Sie nach Unternehmen, IC-Transaktionen, Abstimmungen, Prüfungen oder Konsolidierungsbuchungen.',
+      message:
+        'Ich konnte die Frage nicht interpretieren. Bitte fragen Sie nach Unternehmen, IC-Transaktionen, Abstimmungen, Prüfungen oder Konsolidierungsbuchungen.',
     };
   }
 
@@ -255,7 +347,7 @@ Antworte mit JSON:
     try {
       const response = await this.gemini.complete(prompt);
       const parsed = this.parseJsonResponse(response);
-      
+
       if (!parsed.understood || !parsed.table) {
         return {
           success: false,
@@ -294,17 +386,13 @@ Antworte mit JSON:
     financialStatementId?: string,
   ): Promise<{ success: boolean; message: string; data?: QueryResult }> {
     const client = this.supabase.getClient();
-    
+
     try {
       // For companies table, use '*' to get all columns to avoid column name issues
-      const selectColumns = intent.table === 'companies' 
-        ? '*' 
-        : (intent.columns?.join(',') || '*');
-      
-      let query = client
-        .from(intent.table)
-        .select(selectColumns)
-        .limit(100);
+      const selectColumns =
+        intent.table === 'companies' ? '*' : intent.columns?.join(',') || '*';
+
+      let query = client.from(intent.table).select(selectColumns).limit(100);
 
       // Apply filters
       if (intent.filters) {
@@ -315,17 +403,22 @@ Antworte mit JSON:
 
       // Apply financial statement filter if provided
       // Note: intercompany_transactions doesn't have financial_statement_id in the base schema
-      if (financialStatementId && 
-          intent.table !== 'companies' && 
-          intent.table !== 'participations' &&
-          intent.table !== 'intercompany_transactions') {
+      if (
+        financialStatementId &&
+        intent.table !== 'companies' &&
+        intent.table !== 'participations' &&
+        intent.table !== 'intercompany_transactions'
+      ) {
         query = query.eq('financial_statement_id', financialStatementId);
       }
 
       const { data, error } = await query;
 
       if (error) {
-        this.logger.error(`Database query error for table ${intent.table}:`, error);
+        this.logger.error(
+          `Database query error for table ${intent.table}:`,
+          error,
+        );
         return {
           success: false,
           message: `Datenbankfehler: ${error.message}`,
@@ -333,7 +426,9 @@ Antworte mit JSON:
       }
 
       // Log query result for debugging
-      this.logger.log(`Query ${intent.table}: Found ${data?.length || 0} results`);
+      this.logger.log(
+        `Query ${intent.table}: Found ${data?.length || 0} results`,
+      );
 
       return {
         success: true,
@@ -362,7 +457,9 @@ Antworte mit JSON:
     result: QueryResult,
   ): Promise<{ text: string }> {
     // Log for debugging
-    this.logger.log(`Formatting answer for ${result.tableName} with ${result.count} results`);
+    this.logger.log(
+      `Formatting answer for ${result.tableName} with ${result.count} results`,
+    );
     const { tableName, results, count } = result;
 
     if (count === 0) {
@@ -404,13 +501,15 @@ Antworte mit JSON:
     if (!results || results.length === 0) {
       return 'Keine Unternehmen gefunden.';
     }
-    
+
     let text = '';
     results.slice(0, 10).forEach((company, i) => {
       // Determine if it's a parent or subsidiary
       const isParent = !company.parent_company_id || company.is_ultimate_parent;
       const typeLabel = isParent ? '[MU]' : '[TU]';
-      const consolidationLabel = company.is_consolidated ? ' (konsolidiert)' : ' (nicht konsolidiert)';
+      const consolidationLabel = company.is_consolidated
+        ? ' (konsolidiert)'
+        : ' (nicht konsolidiert)';
       text += `${i + 1}. ${typeLabel} **${company.name}**`;
       if (company.legal_form) {
         text += ` - ${company.legal_form}`;
@@ -434,19 +533,21 @@ Antworte mit JSON:
     if (!results || results.length === 0) {
       return 'Keine IC-Abstimmungen gefunden.';
     }
-    
+
     let text = '';
-    const withDiff = results.filter(r => Math.abs(r.difference_amount || 0) > 0.01);
+    const withDiff = results.filter(
+      (r) => Math.abs(r.difference_amount || 0) > 0.01,
+    );
     const matched = results.length - withDiff.length;
 
     text += `${matched} abgestimmt | ${withDiff.length} mit Differenz\n\n`;
-    
+
     withDiff.slice(0, 5).forEach((r, i) => {
       const diff = r.difference_amount || 0;
       const reason = r.difference_reason ? ` (${r.difference_reason})` : '';
       text += `${i + 1}. Differenz: ${this.formatCurrency(diff)} - Status: ${r.status}${reason}\n`;
     });
-    
+
     return text;
   }
 
@@ -455,18 +556,18 @@ Antworte mit JSON:
    */
   private formatChecksResult(results: any[]): string {
     let text = '';
-    const passed = results.filter(r => r.result === 'PASS').length;
-    const failed = results.filter(r => r.result === 'FAIL').length;
-    const warnings = results.filter(r => r.result === 'WARNING').length;
+    const passed = results.filter((r) => r.result === 'PASS').length;
+    const failed = results.filter((r) => r.result === 'FAIL').length;
+    const warnings = results.filter((r) => r.result === 'WARNING').length;
 
     text += `${passed} bestanden | ${warnings} Warnung | ${failed} fehlgeschlagen\n\n`;
-    
-    const issues = results.filter(r => r.result !== 'PASS');
+
+    const issues = results.filter((r) => r.result !== 'PASS');
     issues.slice(0, 5).forEach((check, i) => {
       const status = check.result === 'FAIL' ? '[FEHLER]' : '[WARNUNG]';
       text += `${status} ${check.check_type}: ${check.message || 'Keine Details'}\n`;
     });
-    
+
     return text;
   }
 
@@ -477,22 +578,25 @@ Antworte mit JSON:
     if (!results || results.length === 0) {
       return 'Keine Konsolidierungsbuchungen gefunden.';
     }
-    
+
     let text = '';
-    const totalAmount = results.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    
+    const totalAmount = results.reduce(
+      (sum, e) => sum + (Number(e.amount) || 0),
+      0,
+    );
+
     text += `Gesamtbetrag: ${this.formatCurrency(totalAmount)}\n\n`;
-    
+
     const byType: Record<string, number> = {};
-    results.forEach(e => {
+    results.forEach((e) => {
       const type = e.adjustment_type || 'unknown';
       byType[type] = (byType[type] || 0) + 1;
     });
-    
+
     for (const [type, count] of Object.entries(byType)) {
       text += `• ${type}: ${count} Buchungen\n`;
     }
-    
+
     return text;
   }
 
@@ -502,18 +606,19 @@ Antworte mit JSON:
   private formatTransactionsResult(results: any[]): string {
     let text = '';
     const totalAmount = results.reduce((sum, t) => sum + (t.amount || 0), 0);
-    
+
     text += `Gesamtvolumen: ${this.formatCurrency(totalAmount)}\n\n`;
-    
+
     const byStatus: Record<string, number> = {};
-    results.forEach(t => {
-      byStatus[t.status || 'unbekannt'] = (byStatus[t.status || 'unbekannt'] || 0) + 1;
+    results.forEach((t) => {
+      byStatus[t.status || 'unbekannt'] =
+        (byStatus[t.status || 'unbekannt'] || 0) + 1;
     });
-    
+
     for (const [status, count] of Object.entries(byStatus)) {
       text += `• ${status}: ${count} Transaktionen\n`;
     }
-    
+
     return text;
   }
 

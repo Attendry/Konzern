@@ -42,7 +42,12 @@ export class AuditEvidence {
   })
   evidenceType: AuditEvidenceTypeEnum;
 
-  @Column({ type: 'varchar', length: 255, name: 'evidence_ref', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'evidence_ref',
+    nullable: true,
+  })
   evidenceRef: string | null;
 
   @Column({ type: 'text', name: 'evidence_description' })
@@ -57,10 +62,20 @@ export class AuditEvidence {
   documentAttachment: DocumentAttachment | null;
 
   // External reference
-  @Column({ type: 'varchar', length: 100, name: 'external_system', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'external_system',
+    nullable: true,
+  })
   externalSystem: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'external_ref', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'external_ref',
+    nullable: true,
+  })
   externalRef: string | null;
 
   // Verification
@@ -73,14 +88,23 @@ export class AuditEvidence {
   @Column({ type: 'timestamp', name: 'verified_at', nullable: true })
   verifiedAt: Date | null;
 
-  @Column({ type: 'varchar', length: 100, name: 'verification_method', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'verification_method',
+    nullable: true,
+  })
   verificationMethod: string | null;
 
   @Column({ type: 'text', name: 'verification_notes', nullable: true })
   verificationNotes: string | null;
 
   // Timestamp
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 }
 

@@ -65,7 +65,9 @@ export class KonzernanhangController {
    * POST /api/konzernanhang/documents
    */
   @Post('documents')
-  async createDocument(@Body() dto: CreateDocumentDto): Promise<KonzernanhangDocument> {
+  async createDocument(
+    @Body() dto: CreateDocumentDto,
+  ): Promise<KonzernanhangDocument> {
     if (!dto.financialStatementId) {
       throw new BadRequestException('financialStatementId is required');
     }
@@ -77,7 +79,9 @@ export class KonzernanhangController {
    * GET /api/konzernanhang/documents/:id
    */
   @Get('documents/:id')
-  async getDocument(@Param('id', ParseUUIDPipe) id: string): Promise<KonzernanhangDocument> {
+  async getDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<KonzernanhangDocument> {
     const doc = await this.dokumentService.getDocumentById(id);
     if (!doc) {
       throw new BadRequestException(`Document with ID ${id} not found`);
@@ -106,7 +110,9 @@ export class KonzernanhangController {
     @Body() dto: ReviewDocumentDto,
   ): Promise<KonzernanhangDocument> {
     if (!dto.reviewedByUserId || !dto.reviewedByName) {
-      throw new BadRequestException('reviewedByUserId and reviewedByName are required');
+      throw new BadRequestException(
+        'reviewedByUserId and reviewedByName are required',
+      );
     }
     return this.dokumentService.reviewDocument(
       id,
@@ -126,7 +132,9 @@ export class KonzernanhangController {
     @Body() dto: ApproveDocumentDto,
   ): Promise<KonzernanhangDocument> {
     if (!dto.approvedByUserId || !dto.approvedByName) {
-      throw new BadRequestException('approvedByUserId and approvedByName are required');
+      throw new BadRequestException(
+        'approvedByUserId and approvedByName are required',
+      );
     }
     return this.dokumentService.approveDocument(
       id,
@@ -155,14 +163,19 @@ export class KonzernanhangController {
   async createAndGenerate(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Body() options?: { generatedByUserId?: string; generatedByName?: string },
-  ): Promise<{ document: KonzernanhangDocument; sections: KonzernanhangSection[] }> {
+  ): Promise<{
+    document: KonzernanhangDocument;
+    sections: KonzernanhangSection[];
+  }> {
     const document = await this.dokumentService.createDocument({
       financialStatementId,
       generatedByUserId: options?.generatedByUserId,
       generatedByName: options?.generatedByName,
     });
 
-    const sections = await this.dokumentService.generateAllSections(document.id);
+    const sections = await this.dokumentService.generateAllSections(
+      document.id,
+    );
 
     return { document, sections };
   }
@@ -187,9 +200,13 @@ export class KonzernanhangController {
    * POST /api/konzernanhang/sections
    */
   @Post('sections')
-  async createSection(@Body() dto: CreateSectionDto): Promise<KonzernanhangSection> {
+  async createSection(
+    @Body() dto: CreateSectionDto,
+  ): Promise<KonzernanhangSection> {
     if (!dto.documentId || !dto.disclosureType || !dto.sectionTitle) {
-      throw new BadRequestException('documentId, disclosureType, and sectionTitle are required');
+      throw new BadRequestException(
+        'documentId, disclosureType, and sectionTitle are required',
+      );
     }
     return this.dokumentService.createSection(dto);
   }
@@ -211,7 +228,9 @@ export class KonzernanhangController {
    * DELETE /api/konzernanhang/sections/:id
    */
   @Delete('sections/:id')
-  async deleteSection(@Param('id', ParseUUIDPipe) id: string): Promise<{ success: boolean }> {
+  async deleteSection(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ success: boolean }> {
     await this.dokumentService.deleteSection(id);
     return { success: true };
   }
@@ -223,7 +242,12 @@ export class KonzernanhangController {
   @Put('sections/:id/review')
   async reviewSection(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: { reviewedByUserId: string; reviewedByName: string; reviewNotes?: string },
+    @Body()
+    dto: {
+      reviewedByUserId: string;
+      reviewedByName: string;
+      reviewNotes?: string;
+    },
   ): Promise<KonzernanhangSection> {
     return this.dokumentService.updateSection(id, {
       status: NoteSectionStatus.REVIEWED,
@@ -259,7 +283,10 @@ export class KonzernanhangController {
     });
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
     res.setHeader('X-Content-Hash', result.contentHash);
     res.send(result.content);
   }
@@ -273,9 +300,15 @@ export class KonzernanhangController {
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ) {
-    const result = await this.exportService.exportDocument(id, ExportFormat.JSON);
+    const result = await this.exportService.exportDocument(
+      id,
+      ExportFormat.JSON,
+    );
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
     res.json(JSON.parse(result.content as string));
   }
 
@@ -288,9 +321,15 @@ export class KonzernanhangController {
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ) {
-    const result = await this.exportService.exportDocument(id, ExportFormat.TEXT);
+    const result = await this.exportService.exportDocument(
+      id,
+      ExportFormat.TEXT,
+    );
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
     res.send(result.content);
   }
 
@@ -303,9 +342,15 @@ export class KonzernanhangController {
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ) {
-    const result = await this.exportService.exportDocument(id, ExportFormat.HTML);
+    const result = await this.exportService.exportDocument(
+      id,
+      ExportFormat.HTML,
+    );
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
     res.send(result.content);
   }
 
@@ -318,9 +363,15 @@ export class KonzernanhangController {
     @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ) {
-    const result = await this.exportService.exportDocument(id, ExportFormat.MARKDOWN);
+    const result = await this.exportService.exportDocument(
+      id,
+      ExportFormat.MARKDOWN,
+    );
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.fileName}"`,
+    );
     res.send(result.content);
   }
 
@@ -344,23 +395,87 @@ export class KonzernanhangController {
    * GET /api/konzernanhang/disclosure-types
    */
   @Get('disclosure-types')
-  getDisclosureTypes(): { type: DisclosureType; label: string; hgbSection: string }[] {
+  getDisclosureTypes(): {
+    type: DisclosureType;
+    label: string;
+    hgbSection: string;
+  }[] {
     return [
-      { type: DisclosureType.CONSOLIDATION_SCOPE, label: 'Konsolidierungskreis', hgbSection: '§ 313 Abs. 2 Nr. 1-3' },
-      { type: DisclosureType.CONSOLIDATION_METHODS, label: 'Konsolidierungsgrundsätze', hgbSection: '§ 313 Abs. 1 Nr. 1' },
-      { type: DisclosureType.ACCOUNTING_POLICIES, label: 'Bilanzierungs- und Bewertungsmethoden', hgbSection: '§ 313 Abs. 1 Nr. 2' },
-      { type: DisclosureType.GOODWILL, label: 'Geschäfts- oder Firmenwert', hgbSection: '§ 313 Abs. 1 Nr. 3' },
-      { type: DisclosureType.MINORITY_INTERESTS, label: 'Anteile anderer Gesellschafter', hgbSection: '§ 307' },
-      { type: DisclosureType.INTERCOMPANY_TRANSACTIONS, label: 'Zwischengesellschaftsgeschäfte', hgbSection: '§ 313 Abs. 2 Nr. 5' },
-      { type: DisclosureType.CURRENCY_TRANSLATION, label: 'Währungsumrechnung', hgbSection: '§ 308a' },
-      { type: DisclosureType.DEFERRED_TAXES, label: 'Latente Steuern', hgbSection: '§ 306, § 314 Abs. 1 Nr. 21' },
-      { type: DisclosureType.CONTINGENT_LIABILITIES, label: 'Eventualverbindlichkeiten', hgbSection: '§ 314 Abs. 1 Nr. 2' },
-      { type: DisclosureType.EMPLOYEES, label: 'Arbeitnehmer', hgbSection: '§ 314 Abs. 1 Nr. 4' },
-      { type: DisclosureType.BOARD_COMPENSATION, label: 'Organbezüge', hgbSection: '§ 314 Abs. 1 Nr. 6' },
-      { type: DisclosureType.SIGNIFICANT_EVENTS, label: 'Wesentliche Ereignisse', hgbSection: '§ 314 Abs. 1 Nr. 25' },
-      { type: DisclosureType.SUBSEQUENT_EVENTS, label: 'Ereignisse nach dem Bilanzstichtag', hgbSection: '§ 314 Abs. 1 Nr. 25' },
-      { type: DisclosureType.RELATED_PARTIES, label: 'Nahestehende Unternehmen und Personen', hgbSection: '§ 314 Abs. 1 Nr. 13' },
-      { type: DisclosureType.SEGMENT_REPORTING, label: 'Segmentberichterstattung', hgbSection: '§ 314 Abs. 1 Nr. 3' },
+      {
+        type: DisclosureType.CONSOLIDATION_SCOPE,
+        label: 'Konsolidierungskreis',
+        hgbSection: '§ 313 Abs. 2 Nr. 1-3',
+      },
+      {
+        type: DisclosureType.CONSOLIDATION_METHODS,
+        label: 'Konsolidierungsgrundsätze',
+        hgbSection: '§ 313 Abs. 1 Nr. 1',
+      },
+      {
+        type: DisclosureType.ACCOUNTING_POLICIES,
+        label: 'Bilanzierungs- und Bewertungsmethoden',
+        hgbSection: '§ 313 Abs. 1 Nr. 2',
+      },
+      {
+        type: DisclosureType.GOODWILL,
+        label: 'Geschäfts- oder Firmenwert',
+        hgbSection: '§ 313 Abs. 1 Nr. 3',
+      },
+      {
+        type: DisclosureType.MINORITY_INTERESTS,
+        label: 'Anteile anderer Gesellschafter',
+        hgbSection: '§ 307',
+      },
+      {
+        type: DisclosureType.INTERCOMPANY_TRANSACTIONS,
+        label: 'Zwischengesellschaftsgeschäfte',
+        hgbSection: '§ 313 Abs. 2 Nr. 5',
+      },
+      {
+        type: DisclosureType.CURRENCY_TRANSLATION,
+        label: 'Währungsumrechnung',
+        hgbSection: '§ 308a',
+      },
+      {
+        type: DisclosureType.DEFERRED_TAXES,
+        label: 'Latente Steuern',
+        hgbSection: '§ 306, § 314 Abs. 1 Nr. 21',
+      },
+      {
+        type: DisclosureType.CONTINGENT_LIABILITIES,
+        label: 'Eventualverbindlichkeiten',
+        hgbSection: '§ 314 Abs. 1 Nr. 2',
+      },
+      {
+        type: DisclosureType.EMPLOYEES,
+        label: 'Arbeitnehmer',
+        hgbSection: '§ 314 Abs. 1 Nr. 4',
+      },
+      {
+        type: DisclosureType.BOARD_COMPENSATION,
+        label: 'Organbezüge',
+        hgbSection: '§ 314 Abs. 1 Nr. 6',
+      },
+      {
+        type: DisclosureType.SIGNIFICANT_EVENTS,
+        label: 'Wesentliche Ereignisse',
+        hgbSection: '§ 314 Abs. 1 Nr. 25',
+      },
+      {
+        type: DisclosureType.SUBSEQUENT_EVENTS,
+        label: 'Ereignisse nach dem Bilanzstichtag',
+        hgbSection: '§ 314 Abs. 1 Nr. 25',
+      },
+      {
+        type: DisclosureType.RELATED_PARTIES,
+        label: 'Nahestehende Unternehmen und Personen',
+        hgbSection: '§ 314 Abs. 1 Nr. 13',
+      },
+      {
+        type: DisclosureType.SEGMENT_REPORTING,
+        label: 'Segmentberichterstattung',
+        hgbSection: '§ 314 Abs. 1 Nr. 3',
+      },
     ];
   }
 
@@ -369,14 +484,22 @@ export class KonzernanhangController {
    * GET /api/konzernanhang/export-formats
    */
   @Get('export-formats')
-  getExportFormats(): { format: ExportFormat; label: string; available: boolean }[] {
+  getExportFormats(): {
+    format: ExportFormat;
+    label: string;
+    available: boolean;
+  }[] {
     return [
       { format: ExportFormat.JSON, label: 'JSON', available: true },
       { format: ExportFormat.TEXT, label: 'Reiner Text', available: true },
       { format: ExportFormat.MARKDOWN, label: 'Markdown', available: true },
       { format: ExportFormat.HTML, label: 'HTML', available: true },
       { format: ExportFormat.PDF, label: 'PDF', available: false },
-      { format: ExportFormat.WORD_DOCX, label: 'Microsoft Word', available: false },
+      {
+        format: ExportFormat.WORD_DOCX,
+        label: 'Microsoft Word',
+        available: false,
+      },
       { format: ExportFormat.XBRL, label: 'XBRL', available: false },
     ];
   }

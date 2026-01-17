@@ -11,13 +11,40 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { PlausibilityService, PlausibilityCheckRun, PlausibilityCheckSummary } from './plausibility.service';
-import { VarianceAnalysisService, MaterialityThresholds, VarianceSummary, AnalysisLevel } from './variance-analysis.service';
-import { ExceptionReportingService, ExceptionSummary, CreateExceptionDto } from './exception-reporting.service';
-import { PlausibilityRule, PlausibilityRuleCategory } from '../../entities/plausibility-rule.entity';
-import { PlausibilityCheck, PlausibilityCheckStatus } from '../../entities/plausibility-check.entity';
-import { VarianceAnalysis, VarianceExplanationCategory } from '../../entities/variance-analysis.entity';
-import { ExceptionReport, ExceptionStatus, ExceptionPriority, ExceptionResolutionType } from '../../entities/exception-report.entity';
+import {
+  PlausibilityService,
+  PlausibilityCheckRun,
+  PlausibilityCheckSummary,
+} from './plausibility.service';
+import {
+  VarianceAnalysisService,
+  MaterialityThresholds,
+  VarianceSummary,
+  AnalysisLevel,
+} from './variance-analysis.service';
+import {
+  ExceptionReportingService,
+  ExceptionSummary,
+  CreateExceptionDto,
+} from './exception-reporting.service';
+import {
+  PlausibilityRule,
+  PlausibilityRuleCategory,
+} from '../../entities/plausibility-rule.entity';
+import {
+  PlausibilityCheck,
+  PlausibilityCheckStatus,
+} from '../../entities/plausibility-check.entity';
+import {
+  VarianceAnalysis,
+  VarianceExplanationCategory,
+} from '../../entities/variance-analysis.entity';
+import {
+  ExceptionReport,
+  ExceptionStatus,
+  ExceptionPriority,
+  ExceptionResolutionType,
+} from '../../entities/exception-report.entity';
 
 // ==================== DTOs ====================
 
@@ -225,7 +252,10 @@ export class ControlsController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Query('status') status?: PlausibilityCheckStatus,
   ): Promise<PlausibilityCheck[]> {
-    return this.plausibilityService.getCheckResults(financialStatementId, status);
+    return this.plausibilityService.getCheckResults(
+      financialStatementId,
+      status,
+    );
   }
 
   /**
@@ -256,7 +286,11 @@ export class ControlsController {
     @Param('checkId', ParseUUIDPipe) checkId: string,
     @Body() dto: AcknowledgeCheckDto,
   ): Promise<PlausibilityCheck> {
-    return this.plausibilityService.acknowledgeCheck(checkId, dto.userId, dto.comment);
+    return this.plausibilityService.acknowledgeCheck(
+      checkId,
+      dto.userId,
+      dto.comment,
+    );
   }
 
   /**
@@ -279,7 +313,9 @@ export class ControlsController {
   async getMaterialityThresholds(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ): Promise<MaterialityThresholds | null> {
-    return this.varianceAnalysisService.getMaterialityThresholds(financialStatementId);
+    return this.varianceAnalysisService.getMaterialityThresholds(
+      financialStatementId,
+    );
   }
 
   /**
@@ -295,7 +331,9 @@ export class ControlsController {
     suggestedPerformance: number;
     suggestedTrivial: number;
   }> {
-    return this.varianceAnalysisService.calculateSuggestedMateriality(financialStatementId);
+    return this.varianceAnalysisService.calculateSuggestedMateriality(
+      financialStatementId,
+    );
   }
 
   /**
@@ -306,7 +344,10 @@ export class ControlsController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Body() dto: SetMaterialityDto,
   ): Promise<MaterialityThresholds> {
-    return this.varianceAnalysisService.setMaterialityThresholds(financialStatementId, dto);
+    return this.varianceAnalysisService.setMaterialityThresholds(
+      financialStatementId,
+      dto,
+    );
   }
 
   /**
@@ -317,7 +358,10 @@ export class ControlsController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Body('userId') userId: string,
   ): Promise<MaterialityThresholds> {
-    return this.varianceAnalysisService.approveMaterialityThresholds(financialStatementId, userId);
+    return this.varianceAnalysisService.approveMaterialityThresholds(
+      financialStatementId,
+      userId,
+    );
   }
 
   // ==================== VARIANCE ANALYSIS ====================
@@ -361,7 +405,9 @@ export class ControlsController {
   async getVarianceSummary(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ): Promise<VarianceSummary> {
-    return this.varianceAnalysisService.getVarianceSummary(financialStatementId);
+    return this.varianceAnalysisService.getVarianceSummary(
+      financialStatementId,
+    );
   }
 
   /**
@@ -388,7 +434,11 @@ export class ControlsController {
     @Param('varianceId', ParseUUIDPipe) varianceId: string,
     @Body() dto: ReviewVarianceDto,
   ): Promise<VarianceAnalysis> {
-    return this.varianceAnalysisService.reviewVariance(varianceId, dto.userId, dto.comment);
+    return this.varianceAnalysisService.reviewVariance(
+      varianceId,
+      dto.userId,
+      dto.comment,
+    );
   }
 
   // ==================== EXCEPTION REPORTS ====================
@@ -402,7 +452,11 @@ export class ControlsController {
     @Query('status') status?: ExceptionStatus,
     @Query('priority') priority?: ExceptionPriority,
   ): Promise<ExceptionReport[]> {
-    return this.exceptionReportingService.getExceptions(financialStatementId, status, priority);
+    return this.exceptionReportingService.getExceptions(
+      financialStatementId,
+      status,
+      priority,
+    );
   }
 
   /**
@@ -412,7 +466,9 @@ export class ControlsController {
   async getOpenExceptions(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ): Promise<ExceptionReport[]> {
-    return this.exceptionReportingService.getOpenExceptions(financialStatementId);
+    return this.exceptionReportingService.getOpenExceptions(
+      financialStatementId,
+    );
   }
 
   /**
@@ -422,7 +478,9 @@ export class ControlsController {
   async getExceptionSummary(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ): Promise<ExceptionSummary> {
-    return this.exceptionReportingService.getExceptionSummary(financialStatementId);
+    return this.exceptionReportingService.getExceptionSummary(
+      financialStatementId,
+    );
   }
 
   /**
@@ -530,7 +588,11 @@ export class ControlsController {
     @Param('exceptionId', ParseUUIDPipe) exceptionId: string,
     @Body() dto: ReopenExceptionDto,
   ): Promise<ExceptionReport> {
-    return this.exceptionReportingService.reopenException(exceptionId, dto.reason, dto.userId);
+    return this.exceptionReportingService.reopenException(
+      exceptionId,
+      dto.reason,
+      dto.userId,
+    );
   }
 
   /**
@@ -541,7 +603,11 @@ export class ControlsController {
     @Param('exceptionId', ParseUUIDPipe) exceptionId: string,
     @Body() dto: UpdatePriorityDto,
   ): Promise<ExceptionReport> {
-    return this.exceptionReportingService.updatePriority(exceptionId, dto.priority, dto.userId);
+    return this.exceptionReportingService.updatePriority(
+      exceptionId,
+      dto.priority,
+      dto.userId,
+    );
   }
 
   /**
@@ -552,7 +618,10 @@ export class ControlsController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Body('userId') userId?: string,
   ): Promise<ExceptionReport[]> {
-    return this.exceptionReportingService.generateExceptionsFromChecks(financialStatementId, userId);
+    return this.exceptionReportingService.generateExceptionsFromChecks(
+      financialStatementId,
+      userId,
+    );
   }
 
   /**
@@ -563,7 +632,10 @@ export class ControlsController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Body('userId') userId?: string,
   ): Promise<ExceptionReport[]> {
-    return this.exceptionReportingService.generateExceptionsFromVariances(financialStatementId, userId);
+    return this.exceptionReportingService.generateExceptionsFromVariances(
+      financialStatementId,
+      userId,
+    );
   }
 
   // ==================== RULE CATEGORIES METADATA ====================
@@ -572,24 +644,67 @@ export class ControlsController {
    * Get available rule categories
    */
   @Get('metadata/categories')
-  getRuleCategories(): { value: string; label: string; hgbReference?: string }[] {
+  getRuleCategories(): {
+    value: string;
+    label: string;
+    hgbReference?: string;
+  }[] {
     return [
       { value: 'balance_sheet_structure', label: 'Bilanzstrukturprüfungen' },
       { value: 'income_statement_structure', label: 'GuV-Strukturprüfungen' },
       { value: 'balance_equation', label: 'Bilanzgleichung' },
       { value: 'intercompany_consistency', label: 'IC-Konsistenz' },
-      { value: 'capital_consolidation', label: 'Kapitalkonsolidierung', hgbReference: '§ 301 HGB' },
-      { value: 'debt_consolidation', label: 'Schuldenkonsolidierung', hgbReference: '§ 303 HGB' },
-      { value: 'intercompany_profit', label: 'Zwischenergebniseliminierung', hgbReference: '§ 304 HGB' },
-      { value: 'income_expense_consolidation', label: 'Aufwands-/Ertragskonsolidierung', hgbReference: '§ 305 HGB' },
-      { value: 'deferred_tax', label: 'Latente Steuern', hgbReference: '§ 306 HGB' },
-      { value: 'currency_translation', label: 'Währungsumrechnung', hgbReference: '§ 308a HGB' },
-      { value: 'minority_interest', label: 'Minderheitenanteile', hgbReference: '§ 307 HGB' },
-      { value: 'equity_method', label: 'At-Equity-Bewertung', hgbReference: '§ 312 HGB' },
-      { value: 'proportional_consolidation', label: 'Quotenkonsolidierung', hgbReference: '§ 310 HGB' },
+      {
+        value: 'capital_consolidation',
+        label: 'Kapitalkonsolidierung',
+        hgbReference: '§ 301 HGB',
+      },
+      {
+        value: 'debt_consolidation',
+        label: 'Schuldenkonsolidierung',
+        hgbReference: '§ 303 HGB',
+      },
+      {
+        value: 'intercompany_profit',
+        label: 'Zwischenergebniseliminierung',
+        hgbReference: '§ 304 HGB',
+      },
+      {
+        value: 'income_expense_consolidation',
+        label: 'Aufwands-/Ertragskonsolidierung',
+        hgbReference: '§ 305 HGB',
+      },
+      {
+        value: 'deferred_tax',
+        label: 'Latente Steuern',
+        hgbReference: '§ 306 HGB',
+      },
+      {
+        value: 'currency_translation',
+        label: 'Währungsumrechnung',
+        hgbReference: '§ 308a HGB',
+      },
+      {
+        value: 'minority_interest',
+        label: 'Minderheitenanteile',
+        hgbReference: '§ 307 HGB',
+      },
+      {
+        value: 'equity_method',
+        label: 'At-Equity-Bewertung',
+        hgbReference: '§ 312 HGB',
+      },
+      {
+        value: 'proportional_consolidation',
+        label: 'Quotenkonsolidierung',
+        hgbReference: '§ 310 HGB',
+      },
       { value: 'year_over_year', label: 'Vorjahresvergleich' },
       { value: 'materiality', label: 'Wesentlichkeitsprüfungen' },
-      { value: 'disclosure_completeness', label: 'Vollständigkeit der Angaben' },
+      {
+        value: 'disclosure_completeness',
+        label: 'Vollständigkeit der Angaben',
+      },
       { value: 'custom', label: 'Benutzerdefiniert' },
     ];
   }

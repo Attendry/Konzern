@@ -1,7 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ParticipationService } from '../company/participation.service';
-import { ConsolidationEntry, AdjustmentType } from '../../entities/consolidation-entry.entity';
+import {
+  ConsolidationEntry,
+  AdjustmentType,
+} from '../../entities/consolidation-entry.entity';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 
 export interface EquityBreakdown {
@@ -55,14 +58,15 @@ export class CapitalConsolidationService {
     let totalMinorityInterests = 0;
 
     // 1. Hole alle Beteiligungsverhältnisse
-    let participations = await this.participationService.getByParentCompany(
-      parentCompanyId,
-    );
+    let participations =
+      await this.participationService.getByParentCompany(parentCompanyId);
 
     // 2. Wenn keine Beteiligungsverhältnisse gefunden, erstelle sie automatisch aus parent-child Beziehungen
     if (participations.length === 0) {
-      console.log(`[CapitalConsolidation] No participations found, creating from parent-child relationships for ${parentCompanyId}`);
-      
+      console.log(
+        `[CapitalConsolidation] No participations found, creating from parent-child relationships for ${parentCompanyId}`,
+      );
+
       // Finde alle Tochterunternehmen mit parent_company_id
       const { data: childCompanies, error: childrenError } = await this.supabase
         .from('companies')
@@ -71,7 +75,10 @@ export class CapitalConsolidationService {
         .eq('is_consolidated', true);
 
       if (childrenError) {
-        console.error('[CapitalConsolidation] Error fetching child companies:', childrenError);
+        console.error(
+          '[CapitalConsolidation] Error fetching child companies:',
+          childrenError,
+        );
         throw new BadRequestException(
           `Fehler beim Abrufen der Tochterunternehmen: ${childrenError.message}`,
         );
@@ -80,7 +87,7 @@ export class CapitalConsolidationService {
       if (!childCompanies || childCompanies.length === 0) {
         throw new BadRequestException(
           `Keine Beteiligungsverhältnisse für Unternehmen ${parentCompanyId} gefunden und keine Tochterunternehmen vorhanden. ` +
-          `Bitte erstellen Sie Beteiligungsverhältnisse oder verknüpfen Sie Tochterunternehmen über parent_company_id.`,
+            `Bitte erstellen Sie Beteiligungsverhältnisse oder verknüpfen Sie Tochterunternehmen über parent_company_id.`,
         );
       }
 
@@ -89,7 +96,9 @@ export class CapitalConsolidationService {
       const createdParticipations = [];
       for (const child of childCompanies) {
         try {
-          console.log(`[CapitalConsolidation] Creating participation: ${parentCompanyId} -> ${child.id} (100%)`);
+          console.log(
+            `[CapitalConsolidation] Creating participation: ${parentCompanyId} -> ${child.id} (100%)`,
+          );
           const participation = await this.participationService.createOrUpdate({
             parentCompanyId,
             subsidiaryCompanyId: child.id,
@@ -99,7 +108,10 @@ export class CapitalConsolidationService {
           });
           createdParticipations.push(participation);
         } catch (error: any) {
-          console.error(`[CapitalConsolidation] Error creating participation for ${child.id}:`, error);
+          console.error(
+            `[CapitalConsolidation] Error creating participation for ${child.id}:`,
+            error,
+          );
           // Continue with other children even if one fails
         }
       }
@@ -111,8 +123,11 @@ export class CapitalConsolidationService {
       }
 
       // Lade die neu erstellten Beteiligungsverhältnisse
-      participations = await this.participationService.getByParentCompany(parentCompanyId);
-      console.log(`[CapitalConsolidation] Created ${createdParticipations.length} participations, now have ${participations.length} total`);
+      participations =
+        await this.participationService.getByParentCompany(parentCompanyId);
+      console.log(
+        `[CapitalConsolidation] Created ${createdParticipations.length} participations, now have ${participations.length} total`,
+      );
     }
 
     let participationsProcessed = 0;
@@ -123,10 +138,11 @@ export class CapitalConsolidationService {
     for (const participation of participations) {
       try {
         // Berechne Beteiligungsbuchwert nach HGB § 301
-        const bookValueResult = await this.participationService.calculateBookValue(
-          participation.id,
-          financialStatementId,
-        );
+        const bookValueResult =
+          await this.participationService.calculateBookValue(
+            participation.id,
+            financialStatementId,
+          );
 
         if (bookValueResult.missingInfo.length > 0) {
           missingInfo.push(
@@ -147,10 +163,13 @@ export class CapitalConsolidationService {
         }
 
         // Berechne anteiliges Eigenkapital
-        const participationPercentage = parseFloat(participation.participation_percentage) || 0;
-        const proportionalEquity = (equityBreakdown.totalEquity * participationPercentage) / 100;
+        const participationPercentage =
+          parseFloat(participation.participation_percentage) || 0;
+        const proportionalEquity =
+          (equityBreakdown.totalEquity * participationPercentage) / 100;
         const minorityPercentage = 100 - participationPercentage;
-        const minorityEquity = (equityBreakdown.totalEquity * minorityPercentage) / 100;
+        const minorityEquity =
+          (equityBreakdown.totalEquity * minorityPercentage) / 100;
 
         // Berechne Goodwill oder passivischen Unterschiedsbetrag
         const goodwill = bookValueResult.bookValue - proportionalEquity;
@@ -189,7 +208,8 @@ export class CapitalConsolidationService {
         );
 
         for (const equityAccount of equityAccounts) {
-          const proportionalAmount = (equityAccount.balance * participationPercentage) / 100;
+          const proportionalAmount =
+            (equityAccount.balance * participationPercentage) / 100;
 
           if (proportionalAmount !== 0) {
             const { data: equityEntry, error: eqError } = await this.supabase
@@ -337,7 +357,9 @@ export class CapitalConsolidationService {
 
     for (const balance of equityBalances || []) {
       const balanceValue = parseFloat(balance.balance) || 0;
-      const account = Array.isArray(balance.accounts) ? balance.accounts[0] : balance.accounts;
+      const account = Array.isArray(balance.accounts)
+        ? balance.accounts[0]
+        : balance.accounts;
       const accountNumber = account?.account_number || '';
       const accountName = account?.name?.toLowerCase() || '';
 
@@ -376,7 +398,8 @@ export class CapitalConsolidationService {
       }
     }
 
-    const totalEquity = shareCapital + capitalReserves + retainedEarnings + currentYearResult;
+    const totalEquity =
+      shareCapital + capitalReserves + retainedEarnings + currentYearResult;
 
     if (totalEquity === 0) {
       missingInfo.push('Keine Eigenkapital-Positionen gefunden');

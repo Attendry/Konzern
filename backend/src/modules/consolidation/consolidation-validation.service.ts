@@ -53,7 +53,8 @@ export class ConsolidationValidationService {
     const warnings: string[] = [];
 
     // 1. Bilanzgleichheit prüfen
-    const balanceEquality = await this.validateBalanceEquality(financialStatementId);
+    const balanceEquality =
+      await this.validateBalanceEquality(financialStatementId);
     if (!balanceEquality.isValid) {
       errors.push(...balanceEquality.errors);
     }
@@ -96,7 +97,9 @@ export class ConsolidationValidationService {
       );
     }
     if (!plausibility.temporalConsistency) {
-      errors.push('Zeitliche Inkonsistenz: Nicht alle Daten stammen aus demselben Geschäftsjahr');
+      errors.push(
+        'Zeitliche Inkonsistenz: Nicht alle Daten stammen aus demselben Geschäftsjahr',
+      );
     }
 
     return {
@@ -119,9 +122,7 @@ export class ConsolidationValidationService {
   /**
    * Validiert die Bilanzgleichheit
    */
-  private async validateBalanceEquality(
-    financialStatementId: string,
-  ): Promise<{
+  private async validateBalanceEquality(financialStatementId: string): Promise<{
     isValid: boolean;
     totalAssets: number;
     totalLiabilities: number;
@@ -132,9 +133,10 @@ export class ConsolidationValidationService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    const validation = await this.balanceSheetService.validateBalanceEquality(
-      financialStatementId,
-    );
+    const validation =
+      await this.balanceSheetService.validateBalanceEquality(
+        financialStatementId,
+      );
 
     if (!validation.isValid) {
       errors.push(...validation.errors);
@@ -156,9 +158,7 @@ export class ConsolidationValidationService {
   /**
    * Vollständigkeitsprüfung
    */
-  private async validateCompleteness(
-    financialStatementId: string,
-  ): Promise<{
+  private async validateCompleteness(financialStatementId: string): Promise<{
     allCompaniesIncluded: boolean;
     allPositionsIncluded: boolean;
     allEliminationsApplied: boolean;
@@ -185,9 +185,10 @@ export class ConsolidationValidationService {
       };
     }
 
-    const consolidationCircle = await this.dependencyService.determineConsolidationCircle(
-      financialStatement.company_id,
-    );
+    const consolidationCircle =
+      await this.dependencyService.determineConsolidationCircle(
+        financialStatement.company_id,
+      );
 
     const expectedCompanyIds = [
       consolidationCircle.parentCompany.id,
@@ -199,11 +200,16 @@ export class ConsolidationValidationService {
       .from('financial_statements')
       .select('company_id')
       .in('company_id', expectedCompanyIds)
-      .eq('fiscal_year', (await this.supabase
-        .from('financial_statements')
-        .select('fiscal_year')
-        .eq('id', financialStatementId)
-        .single()).data?.fiscal_year);
+      .eq(
+        'fiscal_year',
+        (
+          await this.supabase
+            .from('financial_statements')
+            .select('fiscal_year')
+            .eq('id', financialStatementId)
+            .single()
+        ).data?.fiscal_year,
+      );
 
     const existingCompanyIds = new Set(
       (existingStatements || []).map((fs: any) => fs.company_id),
@@ -223,10 +229,14 @@ export class ConsolidationValidationService {
       .eq('financial_statement_id', financialStatementId);
 
     const accountTypes = new Set(
-      (balances || []).map((b: any) => {
-        const account = Array.isArray(b.accounts) ? b.accounts[0] : b.accounts;
-        return account?.account_type;
-      }).filter(Boolean),
+      (balances || [])
+        .map((b: any) => {
+          const account = Array.isArray(b.accounts)
+            ? b.accounts[0]
+            : b.accounts;
+          return account?.account_type;
+        })
+        .filter(Boolean),
     );
 
     const expectedAccountTypes = ['asset', 'liability', 'equity'];
@@ -257,9 +267,7 @@ export class ConsolidationValidationService {
   /**
    * Plausibilitätsprüfungen
    */
-  private async validatePlausibility(
-    financialStatementId: string,
-  ): Promise<{
+  private async validatePlausibility(financialStatementId: string): Promise<{
     amountPlausibility: boolean;
     structurePlausibility: boolean;
     temporalConsistency: boolean;
@@ -279,8 +287,10 @@ export class ConsolidationValidationService {
       for (const balance of balances) {
         const balanceValue = Math.abs(parseFloat(balance.balance) || 0);
 
-        const account = Array.isArray(balance.accounts) ? balance.accounts[0] : balance.accounts;
-        
+        const account = Array.isArray(balance.accounts)
+          ? balance.accounts[0]
+          : balance.accounts;
+
         // Ungewöhnlich hohe Beträge (> 1 Milliarde)
         if (balanceValue > 1000000000) {
           unusualAmounts.push(
@@ -302,15 +312,19 @@ export class ConsolidationValidationService {
     }
 
     // 2. Strukturplausibilität
-    const balanceSheet = await this.balanceSheetService.createConsolidatedBalanceSheet(
-      financialStatementId,
-    );
+    const balanceSheet =
+      await this.balanceSheetService.createConsolidatedBalanceSheet(
+        financialStatementId,
+      );
 
     // Prüfe Bilanzstruktur
-    const assetsRatio = balanceSheet.assets.totalAssets > 0
-      ? balanceSheet.assets.fixedAssets.reduce((sum, a) => sum + a.balance, 0) /
-        balanceSheet.assets.totalAssets
-      : 0;
+    const assetsRatio =
+      balanceSheet.assets.totalAssets > 0
+        ? balanceSheet.assets.fixedAssets.reduce(
+            (sum, a) => sum + a.balance,
+            0,
+          ) / balanceSheet.assets.totalAssets
+        : 0;
 
     // Warnung bei ungewöhnlicher Struktur (z.B. zu wenig Anlagevermögen)
     if (assetsRatio < 0.1 && balanceSheet.assets.totalAssets > 10000) {
@@ -350,9 +364,9 @@ export class ConsolidationValidationService {
     return {
       amountPlausibility: unusualAmounts.length === 0,
       structurePlausibility: structuralIssues.length === 0,
-      temporalConsistency: structuralIssues.filter((s) =>
-        s.includes('Geschäftsjahr'),
-      ).length === 0,
+      temporalConsistency:
+        structuralIssues.filter((s) => s.includes('Geschäftsjahr')).length ===
+        0,
       unusualAmounts,
       structuralIssues,
     };

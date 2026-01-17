@@ -27,7 +27,10 @@ export class ChatService {
     financialStatementId?: string,
   ): Promise<ChatResponseDto> {
     // 1. Build context from database if we have a financial statement
-    let contextData: ContextData = { contextString: 'Keine Daten geladen.', data: {} };
+    let contextData: ContextData = {
+      contextString: 'Keine Daten geladen.',
+      data: {},
+    };
 
     if (financialStatementId) {
       try {
@@ -53,7 +56,8 @@ export class ChatService {
 
     return {
       message: response,
-      data: Object.keys(contextData.data).length > 0 ? contextData.data : undefined,
+      data:
+        Object.keys(contextData.data).length > 0 ? contextData.data : undefined,
     };
   }
 
@@ -86,35 +90,57 @@ export class ChatService {
     data.financialStatement = fs;
 
     // If asking about IC/intercompany
-    if (this.matchesAny(lowerMessage, ['ic', 'intercompany', 'differenz', 'abstimmung', 'konzernintern'])) {
+    if (
+      this.matchesAny(lowerMessage, [
+        'ic',
+        'intercompany',
+        'differenz',
+        'abstimmung',
+        'konzernintern',
+      ])
+    ) {
       const { data: icData } = await client
         .from('ic_reconciliations')
-        .select(`
+        .select(
+          `
           *,
           company_a:companies!ic_reconciliations_company_a_id_fkey(name),
           company_b:companies!ic_reconciliations_company_b_id_fkey(name)
-        `)
+        `,
+        )
         .eq('financial_statement_id', financialStatementId);
 
       if (icData && icData.length > 0) {
-        const openDiffs = icData.filter(ic => ic.status === 'open');
-        const totalDiff = openDiffs.reduce((sum, ic) => sum + Math.abs(ic.difference_amount || 0), 0);
-        
+        const openDiffs = icData.filter((ic) => ic.status === 'open');
+        const totalDiff = openDiffs.reduce(
+          (sum, ic) => sum + Math.abs(ic.difference_amount || 0),
+          0,
+        );
+
         contextParts.push('');
         contextParts.push('IC-Abstimmungen:');
         contextParts.push(`  - Gesamt: ${icData.length} Positionen`);
         contextParts.push(`  - Offen: ${openDiffs.length} Positionen`);
-        contextParts.push(`  - Offene Differenzsumme: €${totalDiff.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`);
-        
+        contextParts.push(
+          `  - Offene Differenzsumme: €${totalDiff.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`,
+        );
+
         // Show top 5 open differences
         if (openDiffs.length > 0) {
           contextParts.push('  - Größte offene Differenzen:');
-          const sorted = openDiffs.sort((a, b) => Math.abs(b.difference_amount) - Math.abs(a.difference_amount)).slice(0, 5);
+          const sorted = openDiffs
+            .sort(
+              (a, b) =>
+                Math.abs(b.difference_amount) - Math.abs(a.difference_amount),
+            )
+            .slice(0, 5);
           for (const diff of sorted) {
-            contextParts.push(`    • ${diff.company_a?.name} ↔ ${diff.company_b?.name}: €${Math.abs(diff.difference_amount).toLocaleString('de-DE', { minimumFractionDigits: 2 })}`);
+            contextParts.push(
+              `    • ${diff.company_a?.name} ↔ ${diff.company_b?.name}: €${Math.abs(diff.difference_amount).toLocaleString('de-DE', { minimumFractionDigits: 2 })}`,
+            );
           }
         }
-        
+
         data.icReconciliations = icData;
       } else {
         contextParts.push('');
@@ -123,7 +149,14 @@ export class ChatService {
     }
 
     // If asking about goodwill
-    if (this.matchesAny(lowerMessage, ['goodwill', 'firmenwert', 'geschäftswert', 'kapitalkonsolidierung'])) {
+    if (
+      this.matchesAny(lowerMessage, [
+        'goodwill',
+        'firmenwert',
+        'geschäftswert',
+        'kapitalkonsolidierung',
+      ])
+    ) {
       const { data: entries } = await client
         .from('consolidation_entries')
         .select('*, companies:affected_company_ids')
@@ -131,19 +164,31 @@ export class ChatService {
         .eq('adjustment_type', 'capital_consolidation');
 
       if (entries && entries.length > 0) {
-        const goodwillTotal = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
-        
+        const goodwillTotal = entries.reduce(
+          (sum, e) => sum + (e.amount || 0),
+          0,
+        );
+
         contextParts.push('');
         contextParts.push('Kapitalkonsolidierung:');
-        contextParts.push(`  - Goodwill gesamt: €${goodwillTotal.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`);
+        contextParts.push(
+          `  - Goodwill gesamt: €${goodwillTotal.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`,
+        );
         contextParts.push(`  - Anzahl Buchungen: ${entries.length}`);
-        
+
         data.goodwillEntries = entries;
       }
     }
 
     // If asking about consolidation status/summary
-    if (this.matchesAny(lowerMessage, ['status', 'übersicht', 'zusammenfassung', 'konsolidierung'])) {
+    if (
+      this.matchesAny(lowerMessage, [
+        'status',
+        'übersicht',
+        'zusammenfassung',
+        'konsolidierung',
+      ])
+    ) {
       const { data: entries } = await client
         .from('consolidation_entries')
         .select('adjustment_type, amount')
@@ -152,44 +197,57 @@ export class ChatService {
       if (entries && entries.length > 0) {
         const byType: Record<string, number> = {};
         for (const e of entries) {
-          byType[e.adjustment_type] = (byType[e.adjustment_type] || 0) + (e.amount || 0);
+          byType[e.adjustment_type] =
+            (byType[e.adjustment_type] || 0) + (e.amount || 0);
         }
-        
+
         contextParts.push('');
         contextParts.push('Konsolidierungsbuchungen:');
         for (const [type, amount] of Object.entries(byType)) {
           const label = this.getAdjustmentTypeLabel(type);
-          contextParts.push(`  - ${label}: €${amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`);
+          contextParts.push(
+            `  - ${label}: €${amount.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`,
+          );
         }
-        
+
         data.consolidationSummary = byType;
       }
     }
 
     // If asking about companies/consolidation circle
-    if (this.matchesAny(lowerMessage, ['gesellschaft', 'unternehmen', 'tochter', 'kreis', 'konzern'])) {
+    if (
+      this.matchesAny(lowerMessage, [
+        'gesellschaft',
+        'unternehmen',
+        'tochter',
+        'kreis',
+        'konzern',
+      ])
+    ) {
       const { data: companies } = await client
         .from('companies')
         .select('id, name, legal_form, is_consolidated, parent_company_id')
         .order('name');
 
       if (companies && companies.length > 0) {
-        const consolidated = companies.filter(c => c.is_consolidated);
-        
+        const consolidated = companies.filter((c) => c.is_consolidated);
+
         contextParts.push('');
         contextParts.push('Konsolidierungskreis:');
         contextParts.push(`  - Unternehmen gesamt: ${companies.length}`);
         contextParts.push(`  - Konsolidiert: ${consolidated.length}`);
-        
+
         for (const c of consolidated.slice(0, 10)) {
           const isParent = !c.parent_company_id;
-          contextParts.push(`  - ${c.name} (${c.legal_form || 'k.A.'})${isParent ? ' [Mutter]' : ''}`);
+          contextParts.push(
+            `  - ${c.name} (${c.legal_form || 'k.A.'})${isParent ? ' [Mutter]' : ''}`,
+          );
         }
-        
+
         if (consolidated.length > 10) {
           contextParts.push(`  ... und ${consolidated.length - 10} weitere`);
         }
-        
+
         data.companies = companies;
       }
     }
@@ -204,7 +262,7 @@ export class ChatService {
    * Check if message contains any of the keywords
    */
   private matchesAny(message: string, keywords: string[]): boolean {
-    return keywords.some(kw => message.includes(kw));
+    return keywords.some((kw) => message.includes(kw));
   }
 
   /**
@@ -212,11 +270,11 @@ export class ChatService {
    */
   private getAdjustmentTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'capital_consolidation': 'Kapitalkonsolidierung',
-      'debt_consolidation': 'Schuldenkonsolidierung',
-      'elimination': 'Eliminierung',
-      'reclassification': 'Umbuchung',
-      'other': 'Sonstige',
+      capital_consolidation: 'Kapitalkonsolidierung',
+      debt_consolidation: 'Schuldenkonsolidierung',
+      elimination: 'Eliminierung',
+      reclassification: 'Umbuchung',
+      other: 'Sonstige',
     };
     return labels[type] || type;
   }

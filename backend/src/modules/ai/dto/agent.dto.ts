@@ -1,7 +1,15 @@
-import { IsString, IsOptional, IsUUID, IsEnum, IsArray, IsNumber, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsEnum,
+  IsArray,
+  IsNumber,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { 
-  AgentModeType, 
+import {
+  AgentModeType,
   OverrideDecision,
   ConfidenceLevel,
 } from '../types/agent.types';

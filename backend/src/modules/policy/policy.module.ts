@@ -12,15 +12,7 @@ import { ConsolidationModule } from '../consolidation/consolidation.module';
     forwardRef(() => ConsolidationModule), // For AuditLogService
   ],
   controllers: [PolicyController],
-  providers: [
-    PolicyService,
-    RulesEngineService,
-    GaapHgbMappingService,
-  ],
-  exports: [
-    PolicyService,
-    RulesEngineService,
-    GaapHgbMappingService,
-  ],
+  providers: [PolicyService, RulesEngineService, GaapHgbMappingService],
+  exports: [PolicyService, RulesEngineService, GaapHgbMappingService],
 })
 export class PolicyModule {}

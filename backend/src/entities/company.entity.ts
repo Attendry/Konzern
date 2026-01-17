@@ -10,15 +10,15 @@ import { FinancialStatement } from './financial-statement.entity';
 
 // Consolidation method according to HGB
 export enum ConsolidationType {
-  FULL = 'full',           // Vollkonsolidierung (§ 301 HGB)
+  FULL = 'full', // Vollkonsolidierung (§ 301 HGB)
   PROPORTIONAL = 'proportional', // Quotenkonsolidierung (§ 310 HGB)
-  EQUITY = 'equity',       // Equity-Methode (§ 311-312 HGB)
-  NONE = 'none',           // Nicht konsolidiert
+  EQUITY = 'equity', // Equity-Methode (§ 311-312 HGB)
+  NONE = 'none', // Nicht konsolidiert
 }
 
 // Reason for exclusion from consolidation (§ 296 HGB)
 export enum ExclusionReason {
-  MATERIALITY = 'materiality',           // Unwesentlichkeit
+  MATERIALITY = 'materiality', // Unwesentlichkeit
   TEMPORARY_CONTROL = 'temporary_control', // Vorübergehende Beherrschung
   SEVERE_RESTRICTIONS = 'severe_restrictions', // Schwerwiegende Beschränkungen
   DISPROPORTIONATE_COST = 'disproportionate_cost', // Unverhältnismäßig hohe Kosten
@@ -134,9 +134,17 @@ export class Company {
   @OneToMany(() => FinancialStatement, (fs) => fs.company)
   financialStatements: FinancialStatement[];
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

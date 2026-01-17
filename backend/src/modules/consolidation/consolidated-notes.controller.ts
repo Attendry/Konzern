@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { ConsolidatedNotesService } from './consolidated-notes.service';
 import { ConsolidatedNotes } from './consolidated-notes.service';
@@ -37,9 +31,10 @@ export class ConsolidatedNotesController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Res() res: Response,
   ) {
-    const notes = await this.consolidatedNotesService.generateConsolidatedNotes(
-      financialStatementId,
-    );
+    const notes =
+      await this.consolidatedNotesService.generateConsolidatedNotes(
+        financialStatementId,
+      );
     res.setHeader('Content-Type', 'application/json');
     res.setHeader(
       'Content-Disposition',
@@ -57,9 +52,10 @@ export class ConsolidatedNotesController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Res() res: Response,
   ) {
-    const notes = await this.consolidatedNotesService.generateConsolidatedNotes(
-      financialStatementId,
-    );
+    const notes =
+      await this.consolidatedNotesService.generateConsolidatedNotes(
+        financialStatementId,
+      );
 
     // Generiere Text-Format
     let text = `KONZERNANHANG\n`;

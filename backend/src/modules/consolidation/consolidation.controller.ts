@@ -20,13 +20,17 @@ import { ConsolidationValidationService } from './consolidation-validation.servi
 import { ReportingService } from './reporting.service';
 import { ExportService } from './export.service';
 import { ParticipationService } from '../company/participation.service';
-import { 
-  CreateConsolidationEntryDto, 
+import {
+  CreateConsolidationEntryDto,
   UpdateConsolidationEntryDto,
   ApproveEntryDto,
   RejectEntryDto,
 } from './dto/create-consolidation-entry.dto';
-import { AdjustmentType, EntryStatus, EntrySource } from '../../entities/consolidation-entry.entity';
+import {
+  AdjustmentType,
+  EntryStatus,
+  EntrySource,
+} from '../../entities/consolidation-entry.entity';
 
 @Controller('consolidation')
 export class ConsolidationController {
@@ -46,7 +50,9 @@ export class ConsolidationController {
   async calculate(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ) {
-    return this.consolidationService.calculateConsolidation(financialStatementId);
+    return this.consolidationService.calculateConsolidation(
+      financialStatementId,
+    );
   }
 
   @Get('entries/:financialStatementId')
@@ -56,11 +62,14 @@ export class ConsolidationController {
     @Query('status') status?: EntryStatus,
     @Query('source') source?: EntrySource,
   ) {
-    return this.consolidationService.getConsolidationEntries(financialStatementId, {
-      adjustmentType,
-      status,
-      source,
-    });
+    return this.consolidationService.getConsolidationEntries(
+      financialStatementId,
+      {
+        adjustmentType,
+        status,
+        source,
+      },
+    );
   }
 
   @Post('entries')
@@ -73,7 +82,10 @@ export class ConsolidationController {
     @Param('entryId', ParseUUIDPipe) entryId: string,
     @Body() updateDto: UpdateConsolidationEntryDto,
   ) {
-    return this.consolidationService.updateConsolidationEntry(entryId, updateDto);
+    return this.consolidationService.updateConsolidationEntry(
+      entryId,
+      updateDto,
+    );
   }
 
   @Delete('entries/:entryId')
@@ -93,7 +105,10 @@ export class ConsolidationController {
     @Param('entryId', ParseUUIDPipe) entryId: string,
     @Body() approveDto: ApproveEntryDto,
   ) {
-    return this.consolidationService.approveEntry(entryId, approveDto.approvedByUserId);
+    return this.consolidationService.approveEntry(
+      entryId,
+      approveDto.approvedByUserId,
+    );
   }
 
   @Post('entries/:entryId/reject')
@@ -161,27 +176,35 @@ export class ConsolidationController {
   async getICReconciliationSummary(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ) {
-    return this.intercompanyService.getICReconciliationSummary(financialStatementId);
+    return this.intercompanyService.getICReconciliationSummary(
+      financialStatementId,
+    );
   }
 
   @Post('intercompany/reconciliation/:financialStatementId/create')
   async createICReconciliations(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ) {
-    return this.intercompanyService.createICReconciliationsFromMatching(financialStatementId);
+    return this.intercompanyService.createICReconciliationsFromMatching(
+      financialStatementId,
+    );
   }
 
   @Put('intercompany/reconciliation/:reconciliationId')
   async updateICReconciliation(
     @Param('reconciliationId', ParseUUIDPipe) reconciliationId: string,
-    @Body() updateData: {
+    @Body()
+    updateData: {
       status?: string;
       differenceReason?: string;
       explanation?: string;
       resolvedByUserId?: string;
     },
   ) {
-    return this.intercompanyService.updateICReconciliation(reconciliationId, updateData);
+    return this.intercompanyService.updateICReconciliation(
+      reconciliationId,
+      updateData,
+    );
   }
 
   @Post('intercompany/reconciliation/:reconciliationId/clear')
@@ -189,7 +212,10 @@ export class ConsolidationController {
     @Param('reconciliationId', ParseUUIDPipe) reconciliationId: string,
     @Body() body: { userId: string },
   ) {
-    return this.intercompanyService.generateClearingEntry(reconciliationId, body.userId);
+    return this.intercompanyService.generateClearingEntry(
+      reconciliationId,
+      body.userId,
+    );
   }
 
   // Debt Consolidation Endpoints
@@ -233,7 +259,9 @@ export class ConsolidationController {
   async getParticipationsBySubsidiary(
     @Param('subsidiaryCompanyId', ParseUUIDPipe) subsidiaryCompanyId: string,
   ) {
-    return this.participationService.getBySubsidiaryCompany(subsidiaryCompanyId);
+    return this.participationService.getBySubsidiaryCompany(
+      subsidiaryCompanyId,
+    );
   }
 
   @Get('participations/:participationId/book-value/:financialStatementId')
@@ -305,9 +333,8 @@ export class ConsolidationController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Res() res: Response,
   ) {
-    const excelBuffer = await this.exportService.exportToExcel(
-      financialStatementId,
-    );
+    const excelBuffer =
+      await this.exportService.exportToExcel(financialStatementId);
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -338,9 +365,8 @@ export class ConsolidationController {
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
     @Res() res: Response,
   ) {
-    const pdfBuffer = await this.exportService.exportToPdf(
-      financialStatementId,
-    );
+    const pdfBuffer =
+      await this.exportService.exportToPdf(financialStatementId);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',

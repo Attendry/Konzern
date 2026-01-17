@@ -1,23 +1,18 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  Index,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
 // Rate type for different purposes
 export enum RateType {
-  SPOT = 'spot',           // Stichtagskurs (balance sheet)
-  AVERAGE = 'average',     // Durchschnittskurs (income statement)
+  SPOT = 'spot', // Stichtagskurs (balance sheet)
+  AVERAGE = 'average', // Durchschnittskurs (income statement)
   HISTORICAL = 'historical', // Historischer Kurs (equity items)
 }
 
 // Source of the exchange rate
 export enum RateSource {
-  ECB = 'ecb',             // European Central Bank
+  ECB = 'ecb', // European Central Bank
   BUNDESBANK = 'bundesbank', // Deutsche Bundesbank
-  MANUAL = 'manual',       // Manual entry
-  IMPORT = 'import',       // Imported from file
+  MANUAL = 'manual', // Manual entry
+  IMPORT = 'import', // Imported from file
 }
 
 @Entity('exchange_rates')
@@ -72,10 +67,18 @@ export class ExchangeRate {
   @Column({ type: 'text', nullable: true, name: 'notes' })
   notes: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 
@@ -112,34 +115,73 @@ export class CurrencyTranslationDifference {
   @Column({ type: 'decimal', precision: 18, scale: 8, name: 'average_rate' })
   averageRate: number;
 
-  @Column({ type: 'decimal', precision: 18, scale: 8, nullable: true, name: 'historical_rate' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 8,
+    nullable: true,
+    name: 'historical_rate',
+  })
   historicalRate: number | null;
 
   // Translation difference amounts
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'balance_sheet_difference' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'balance_sheet_difference',
+  })
   balanceSheetDifference: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'income_statement_difference' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'income_statement_difference',
+  })
   incomeStatementDifference: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'equity_difference' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'equity_difference',
+  })
   equityDifference: number;
 
   // Total translation difference
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'total_difference' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'total_difference',
+  })
   totalDifference: number;
 
   // Cumulative translation difference (since first consolidation)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'cumulative_difference' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'cumulative_difference',
+  })
   cumulativeDifference: number;
 
   // Reference to consolidation entry
   @Column({ type: 'uuid', nullable: true, name: 'consolidation_entry_id' })
   consolidationEntryId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

@@ -10,45 +10,45 @@ import { Account } from './account.entity';
 
 // Buchungstyp nach HGB-Konsolidierungsvorschriften
 export enum AdjustmentType {
-  ELIMINATION = 'elimination',                      // Allgemeine Eliminierung
-  RECLASSIFICATION = 'reclassification',            // Umgliederung
-  CAPITAL_CONSOLIDATION = 'capital_consolidation',  // Kapitalkonsolidierung (§ 301 HGB)
-  DEBT_CONSOLIDATION = 'debt_consolidation',        // Schuldenkonsolidierung (§ 303 HGB)
-  INTERCOMPANY_PROFIT = 'intercompany_profit',      // Zwischenergebniseliminierung (§ 304 HGB)
-  INCOME_EXPENSE = 'income_expense',                // Aufwands-/Ertragskonsolidierung (§ 305 HGB)
-  CURRENCY_TRANSLATION = 'currency_translation',    // Währungsumrechnung (§ 308a HGB)
-  DEFERRED_TAX = 'deferred_tax',                    // Latente Steuern
-  MINORITY_INTEREST = 'minority_interest',          // Minderheitenanteile
-  OTHER = 'other',                                  // Sonstige
+  ELIMINATION = 'elimination', // Allgemeine Eliminierung
+  RECLASSIFICATION = 'reclassification', // Umgliederung
+  CAPITAL_CONSOLIDATION = 'capital_consolidation', // Kapitalkonsolidierung (§ 301 HGB)
+  DEBT_CONSOLIDATION = 'debt_consolidation', // Schuldenkonsolidierung (§ 303 HGB)
+  INTERCOMPANY_PROFIT = 'intercompany_profit', // Zwischenergebniseliminierung (§ 304 HGB)
+  INCOME_EXPENSE = 'income_expense', // Aufwands-/Ertragskonsolidierung (§ 305 HGB)
+  CURRENCY_TRANSLATION = 'currency_translation', // Währungsumrechnung (§ 308a HGB)
+  DEFERRED_TAX = 'deferred_tax', // Latente Steuern
+  MINORITY_INTEREST = 'minority_interest', // Minderheitenanteile
+  OTHER = 'other', // Sonstige
 }
 
 // Status für Freigabe-Workflow
 export enum EntryStatus {
-  DRAFT = 'draft',           // Entwurf - kann bearbeitet werden
-  PENDING = 'pending',       // Zur Prüfung eingereicht
-  APPROVED = 'approved',     // Freigegeben
-  REJECTED = 'rejected',     // Abgelehnt
-  REVERSED = 'reversed',     // Storniert
+  DRAFT = 'draft', // Entwurf - kann bearbeitet werden
+  PENDING = 'pending', // Zur Prüfung eingereicht
+  APPROVED = 'approved', // Freigegeben
+  REJECTED = 'rejected', // Abgelehnt
+  REVERSED = 'reversed', // Storniert
 }
 
 // Quelle der Buchung
 export enum EntrySource {
-  AUTOMATIC = 'automatic',   // Automatisch generiert
-  MANUAL = 'manual',         // Manuell erfasst
-  IMPORT = 'import',         // Importiert
+  AUTOMATIC = 'automatic', // Automatisch generiert
+  MANUAL = 'manual', // Manuell erfasst
+  IMPORT = 'import', // Importiert
 }
 
 // HGB-Referenzen für Dokumentation
 export enum HgbReference {
-  SECTION_301 = '§ 301 HGB',  // Kapitalkonsolidierung
-  SECTION_303 = '§ 303 HGB',  // Schuldenkonsolidierung
-  SECTION_304 = '§ 304 HGB',  // Zwischenergebniseliminierung
-  SECTION_305 = '§ 305 HGB',  // Aufwands-/Ertragskonsolidierung
-  SECTION_306 = '§ 306 HGB',  // Latente Steuern
-  SECTION_307 = '§ 307 HGB',  // Anteile anderer Gesellschafter
-  SECTION_308 = '§ 308 HGB',  // Einheitliche Bewertung
+  SECTION_301 = '§ 301 HGB', // Kapitalkonsolidierung
+  SECTION_303 = '§ 303 HGB', // Schuldenkonsolidierung
+  SECTION_304 = '§ 304 HGB', // Zwischenergebniseliminierung
+  SECTION_305 = '§ 305 HGB', // Aufwands-/Ertragskonsolidierung
+  SECTION_306 = '§ 306 HGB', // Latente Steuern
+  SECTION_307 = '§ 307 HGB', // Anteile anderer Gesellschafter
+  SECTION_308 = '§ 308 HGB', // Einheitliche Bewertung
   SECTION_308A = '§ 308a HGB', // Währungsumrechnung
-  SECTION_312 = '§ 312 HGB',  // Equity-Methode
+  SECTION_312 = '§ 312 HGB', // Equity-Methode
   OTHER = 'Sonstige',
 }
 
@@ -129,7 +129,12 @@ export class ConsolidationEntry {
   hgbReference: HgbReference | null;
 
   // NEW: Affected company IDs (for multi-company entries)
-  @Column({ type: 'uuid', array: true, name: 'affected_company_ids', nullable: true })
+  @Column({
+    type: 'uuid',
+    array: true,
+    name: 'affected_company_ids',
+    nullable: true,
+  })
   affectedCompanyIds: string[] | null;
 
   // NEW: Created by user
@@ -152,9 +157,17 @@ export class ConsolidationEntry {
   @Column({ type: 'uuid', name: 'reverses_entry_id', nullable: true })
   reversesEntryId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

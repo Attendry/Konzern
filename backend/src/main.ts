@@ -8,39 +8,51 @@ import helmet from 'helmet';
 // Environment variable validation
 function validateEnvironment(): void {
   const requiredVars = ['SUPABASE_URL'];
-  const requiredSecrets = ['Supabase_Secret', 'SUPABASE_SECRET_KEY', 'SUPABASE_SECRET'];
-  
-  const missingVars = requiredVars.filter(v => !process.env[v]);
-  const hasSecret = requiredSecrets.some(v => !!process.env[v]);
-  
+  const requiredSecrets = [
+    'Supabase_Secret',
+    'SUPABASE_SECRET_KEY',
+    'SUPABASE_SECRET',
+  ];
+
+  const missingVars = requiredVars.filter((v) => !process.env[v]);
+  const hasSecret = requiredSecrets.some((v) => !!process.env[v]);
+
   if (missingVars.length > 0) {
-    console.warn(`⚠️  Missing required environment variables: ${missingVars.join(', ')}`);
-    console.warn('   The application will start, but database operations may fail.');
+    console.warn(
+      `⚠️  Missing required environment variables: ${missingVars.join(', ')}`,
+    );
+    console.warn(
+      '   The application will start, but database operations may fail.',
+    );
   }
-  
+
   if (!hasSecret) {
-    console.warn('⚠️  Missing Supabase secret key. Set one of: Supabase_Secret, SUPABASE_SECRET_KEY, or SUPABASE_SECRET');
-    console.warn('   The application will start, but database operations may fail.');
+    console.warn(
+      '⚠️  Missing Supabase secret key. Set one of: Supabase_Secret, SUPABASE_SECRET_KEY, or SUPABASE_SECRET',
+    );
+    console.warn(
+      '   The application will start, but database operations may fail.',
+    );
   }
 }
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   // Validate environment variables
   validateEnvironment();
-  
+
   // Catch unhandled errors (log but don't exit immediately - let NestJS handle it)
   process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', error);
     // Don't exit immediately - let the app try to handle it
   });
-  
+
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
     // Don't exit immediately - let the app try to handle it
   });
-  
+
   // Graceful shutdown handlers
   const signals = ['SIGTERM', 'SIGINT'];
   signals.forEach((signal) => {
@@ -58,21 +70,25 @@ async function bootstrap() {
       process.exit(0);
     });
   });
-  
+
   try {
     logger.log('Starting NestJS application...');
     const isProduction = process.env.NODE_ENV === 'production';
     logger.log(`Environment: ${isProduction ? 'production' : 'development'}`);
     logger.log(`Port: ${process.env.PORT || '8080'}`);
-    logger.log(`Supabase URL: ${process.env.SUPABASE_URL ? 'configured' : 'not configured'}`);
-    logger.log(`Supabase Secret: ${process.env.Supabase_Secret || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SECRET ? 'configured' : 'not configured'}`);
-    
+    logger.log(
+      `Supabase URL: ${process.env.SUPABASE_URL ? 'configured' : 'not configured'}`,
+    );
+    logger.log(
+      `Supabase Secret: ${process.env.Supabase_Secret || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SECRET ? 'configured' : 'not configured'}`,
+    );
+
     logger.log('Creating NestJS app...');
     let app;
     try {
       app = await NestFactory.create(AppModule, {
-        logger: isProduction 
-          ? ['error', 'warn', 'log'] 
+        logger: isProduction
+          ? ['error', 'warn', 'log']
           : ['error', 'warn', 'log', 'debug', 'verbose'],
       });
       (global as any).__app = app; // Store for graceful shutdown
@@ -81,56 +97,66 @@ async function bootstrap() {
       logger.error('Failed to create NestJS app:', createError.message);
       throw createError;
     }
-    
+
     // Security: Add Helmet for security headers
-    app.use(helmet({
-      contentSecurityPolicy: isProduction ? undefined : false, // Disable CSP in development for easier debugging
-      crossOriginEmbedderPolicy: false, // Allow embedding (for API documentation, etc.)
-    }));
+    app.use(
+      helmet({
+        contentSecurityPolicy: isProduction ? undefined : false, // Disable CSP in development for easier debugging
+        crossOriginEmbedderPolicy: false, // Allow embedding (for API documentation, etc.)
+      }),
+    );
     logger.log('Security headers (Helmet) enabled');
-    
+
     // CORS Configuration - Allow Vercel preview deployments and configured origins
-    const allowedOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim().replace(/\/$/, ''))
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((o) =>
+          o.trim().replace(/\/$/, ''),
+        )
       : [process.env.FRONTEND_URL || 'http://localhost:5173'];
-    
+
     // Function to check if origin is allowed
     const isOriginAllowed = (origin: string): boolean => {
       // Check explicit allowed origins
       if (allowedOrigins.includes(origin)) {
         return true;
       }
-      
+
       // Allow Vercel preview deployments (pattern: *.vercel.app)
       // This covers: konzern-*.vercel.app, konzern-*-attendry.vercel.app, etc.
       if (origin.endsWith('.vercel.app')) {
         return true;
       }
-      
+
       // Allow localhost for development
-      if (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:')) {
+      if (
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('https://localhost:')
+      ) {
         return true;
       }
-      
+
       return false;
     };
-    
+
     // CORS origin validation function
-    const corsOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const corsOrigin = (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Allow requests with no origin (like mobile apps, curl, Postman, server-to-server)
       if (!origin) {
         return callback(null, true);
       }
-      
+
       // Check if origin is allowed
       if (isOriginAllowed(origin)) {
         return callback(null, true);
       }
-      
+
       logger.warn(`CORS blocked origin: ${origin}`);
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     };
-    
+
     app.enableCors({
       origin: corsOrigin,
       credentials: true,
@@ -148,17 +174,21 @@ async function bootstrap() {
       exposedHeaders: ['Content-Length', 'Content-Type', 'Content-Disposition'],
       maxAge: 86400,
     });
-    logger.log('CORS enabled (Vercel preview deployments + configured origins allowed)');
+    logger.log(
+      'CORS enabled (Vercel preview deployments + configured origins allowed)',
+    );
     logger.log(`Configured origins: ${allowedOrigins.join(', ')}`);
     logger.log('Also allowing: *.vercel.app, localhost');
-    
+
     // Request logging middleware (after CORS)
     const loggingMiddleware = new LoggingMiddleware();
-    app.use((req: any, res: any, next: any) => loggingMiddleware.use(req, res, next));
-    
+    app.use((req: any, res: any, next: any) =>
+      loggingMiddleware.use(req, res, next),
+    );
+
     // Global exception filter for error handling
     app.useGlobalFilters(new AllExceptionsFilter());
-    
+
     // Global validation pipe
     app.useGlobalPipes(
       new ValidationPipe({
@@ -178,9 +208,9 @@ async function bootstrap() {
     // Railway requires listening on 0.0.0.0 and PORT env var
     const port = process.env.PORT || 8080;
     const host = '0.0.0.0';
-    
+
     await app.listen(port, host);
-    
+
     logger.log('═══════════════════════════════════════════════════════════');
     logger.log(`API listening on http://localhost:${port}/${apiPrefix}`);
     logger.log(`Health check: http://localhost:${port}/${apiPrefix}/health`);

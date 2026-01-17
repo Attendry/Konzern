@@ -1,10 +1,19 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { AdjustmentType, EntrySource, EntryStatus, HgbReference } from '../../entities/consolidation-entry.entity';
+import {
+  AdjustmentType,
+  EntrySource,
+  EntryStatus,
+  HgbReference,
+} from '../../entities/consolidation-entry.entity';
 
 /**
  * First Consolidation (Erstkonsolidierung) according to HGB § 301
- * 
+ *
  * This service handles the initial consolidation of a subsidiary including:
  * - Purchase Price Allocation (Kaufpreisallokation)
  * - Goodwill calculation (Geschäfts- oder Firmenwert)
@@ -80,27 +89,35 @@ export class FirstConsolidationService {
   /**
    * Perform first consolidation (Erstkonsolidierung) according to HGB § 301
    */
-  async performFirstConsolidation(input: FirstConsolidationInput): Promise<FirstConsolidationResult> {
+  async performFirstConsolidation(
+    input: FirstConsolidationInput,
+  ): Promise<FirstConsolidationResult> {
     // Validate input
-    if (input.participationPercentage <= 0 || input.participationPercentage > 100) {
-      throw new BadRequestException('Beteiligungsquote muss zwischen 0 und 100% liegen');
+    if (
+      input.participationPercentage <= 0 ||
+      input.participationPercentage > 100
+    ) {
+      throw new BadRequestException(
+        'Beteiligungsquote muss zwischen 0 und 100% liegen',
+      );
     }
 
     // Calculate total equity at acquisition
-    const equityAtAcquisition = 
-      input.subscribedCapital + 
-      input.capitalReserves + 
-      input.revenueReserves + 
+    const equityAtAcquisition =
+      input.subscribedCapital +
+      input.capitalReserves +
+      input.revenueReserves +
       input.retainedEarnings;
 
     // Adjust for hidden reserves/liabilities
     const hiddenReserves = input.hiddenReserves || 0;
     const hiddenLiabilities = input.hiddenLiabilities || 0;
-    const adjustedEquity = equityAtAcquisition + hiddenReserves - hiddenLiabilities;
+    const adjustedEquity =
+      equityAtAcquisition + hiddenReserves - hiddenLiabilities;
 
     // Calculate parent's share of adjusted equity
     const parentShare = adjustedEquity * (input.participationPercentage / 100);
-    
+
     // Calculate minority interest (if < 100% ownership)
     const minorityPercentage = 100 - input.participationPercentage;
     const minorityShare = adjustedEquity * (minorityPercentage / 100);
@@ -182,20 +199,18 @@ export class FirstConsolidationService {
       .eq('id', input.subsidiaryCompanyId);
 
     // Create ownership history entry
-    await this.supabase
-      .from('ownership_history')
-      .insert({
-        participation_id: participationId,
-        change_type: 'initial',
-        effective_date: input.acquisitionDate,
-        percentage_before: 0,
-        percentage_after: input.participationPercentage,
-        percentage_change: input.participationPercentage,
-        transaction_amount: input.acquisitionCost,
-        goodwill_change: goodwill - negativeGoodwill,
-        description: `Erstkonsolidierung: Erwerb von ${input.participationPercentage}% der Anteile`,
-        created_at: new Date().toISOString(),
-      });
+    await this.supabase.from('ownership_history').insert({
+      participation_id: participationId,
+      change_type: 'initial',
+      effective_date: input.acquisitionDate,
+      percentage_before: 0,
+      percentage_after: input.participationPercentage,
+      percentage_change: input.participationPercentage,
+      transaction_amount: input.acquisitionCost,
+      goodwill_change: goodwill - negativeGoodwill,
+      description: `Erstkonsolidierung: Erwerb von ${input.participationPercentage}% der Anteile`,
+      created_at: new Date().toISOString(),
+    });
 
     // Create consolidation entries
     const consolidationEntries: any[] = [];
@@ -213,7 +228,10 @@ export class FirstConsolidationService {
         source: EntrySource.MANUAL,
         status: EntryStatus.DRAFT,
         hgb_reference: HgbReference.SECTION_301,
-        affected_company_ids: [input.parentCompanyId, input.subsidiaryCompanyId],
+        affected_company_ids: [
+          input.parentCompanyId,
+          input.subsidiaryCompanyId,
+        ],
         created_by_user_id: input.userId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -235,7 +253,10 @@ export class FirstConsolidationService {
           source: EntrySource.MANUAL,
           status: EntryStatus.DRAFT,
           hgb_reference: HgbReference.SECTION_301,
-          affected_company_ids: [input.parentCompanyId, input.subsidiaryCompanyId],
+          affected_company_ids: [
+            input.parentCompanyId,
+            input.subsidiaryCompanyId,
+          ],
           created_by_user_id: input.userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -258,7 +279,10 @@ export class FirstConsolidationService {
           source: EntrySource.MANUAL,
           status: EntryStatus.DRAFT,
           hgb_reference: HgbReference.SECTION_301,
-          affected_company_ids: [input.parentCompanyId, input.subsidiaryCompanyId],
+          affected_company_ids: [
+            input.parentCompanyId,
+            input.subsidiaryCompanyId,
+          ],
           created_by_user_id: input.userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -336,11 +360,15 @@ export class FirstConsolidationService {
   /**
    * Perform deconsolidation (Entkonsolidierung)
    */
-  async performDeconsolidation(input: DeconsolidationInput): Promise<DeconsolidationResult> {
+  async performDeconsolidation(
+    input: DeconsolidationInput,
+  ): Promise<DeconsolidationResult> {
     // Get participation details
     const { data: participation, error: partError } = await this.supabase
       .from('participations')
-      .select('*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)')
+      .select(
+        '*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)',
+      )
       .eq('id', input.participationId)
       .single();
 
@@ -349,14 +377,16 @@ export class FirstConsolidationService {
     }
 
     if (!participation.is_active) {
-      throw new BadRequestException('Diese Beteiligung wurde bereits entkonsolidiert');
+      throw new BadRequestException(
+        'Diese Beteiligung wurde bereits entkonsolidiert',
+      );
     }
 
     // Calculate book value of investment
     const acquisitionCost = parseFloat(participation.acquisition_cost) || 0;
     const goodwill = parseFloat(participation.goodwill) || 0;
     const negativeGoodwill = parseFloat(participation.negative_goodwill) || 0;
-    
+
     // Get cumulative goodwill amortization (simplified - would need tracking)
     const cumulativeGoodwillWriteOff = 0; // TODO: Track goodwill amortization
 
@@ -369,20 +399,28 @@ export class FirstConsolidationService {
       .limit(1)
       .single();
 
-    const cumulativeTranslationDifference = translationDiffs 
-      ? parseFloat(translationDiffs.cumulative_difference) || 0 
+    const cumulativeTranslationDifference = translationDiffs
+      ? parseFloat(translationDiffs.cumulative_difference) || 0
       : 0;
 
     // Calculate minority interest to be released
-    const minorityPercentage = 100 - parseFloat(participation.participation_percentage);
-    const equityAtAcquisition = parseFloat(participation.equity_at_acquisition) || 0;
-    const minorityInterestReleased = equityAtAcquisition * (minorityPercentage / 100);
+    const minorityPercentage =
+      100 - parseFloat(participation.participation_percentage);
+    const equityAtAcquisition =
+      parseFloat(participation.equity_at_acquisition) || 0;
+    const minorityInterestReleased =
+      equityAtAcquisition * (minorityPercentage / 100);
 
     // Calculate book value
-    const bookValue = acquisitionCost + goodwill - negativeGoodwill - cumulativeGoodwillWriteOff;
+    const bookValue =
+      acquisitionCost +
+      goodwill -
+      negativeGoodwill -
+      cumulativeGoodwillWriteOff;
 
     // Calculate disposal gain/loss
-    const disposalGainLoss = input.disposalProceeds - bookValue + cumulativeTranslationDifference;
+    const disposalGainLoss =
+      input.disposalProceeds - bookValue + cumulativeTranslationDifference;
 
     // Update participation
     await this.supabase
@@ -407,20 +445,18 @@ export class FirstConsolidationService {
       .eq('id', participation.subsidiary_company_id);
 
     // Create ownership history entry
-    await this.supabase
-      .from('ownership_history')
-      .insert({
-        participation_id: input.participationId,
-        change_type: 'full_sale',
-        effective_date: input.disposalDate,
-        percentage_before: participation.participation_percentage,
-        percentage_after: 0,
-        percentage_change: -participation.participation_percentage,
-        transaction_amount: input.disposalProceeds,
-        goodwill_change: -goodwill,
-        description: `Entkonsolidierung: Vollständige Veräußerung`,
-        created_at: new Date().toISOString(),
-      });
+    await this.supabase.from('ownership_history').insert({
+      participation_id: input.participationId,
+      change_type: 'full_sale',
+      effective_date: input.disposalDate,
+      percentage_before: participation.participation_percentage,
+      percentage_after: 0,
+      percentage_change: -participation.participation_percentage,
+      transaction_amount: input.disposalProceeds,
+      goodwill_change: -goodwill,
+      description: `Entkonsolidierung: Vollständige Veräußerung`,
+      created_at: new Date().toISOString(),
+    });
 
     // Create consolidation entries
     const consolidationEntries: any[] = [];
@@ -437,7 +473,10 @@ export class FirstConsolidationService {
           source: EntrySource.MANUAL,
           status: EntryStatus.DRAFT,
           hgb_reference: HgbReference.SECTION_301,
-          affected_company_ids: [participation.parent_company_id, participation.subsidiary_company_id],
+          affected_company_ids: [
+            participation.parent_company_id,
+            participation.subsidiary_company_id,
+          ],
           created_by_user_id: input.userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -482,7 +521,10 @@ export class FirstConsolidationService {
         source: EntrySource.MANUAL,
         status: EntryStatus.DRAFT,
         hgb_reference: HgbReference.SECTION_301,
-        affected_company_ids: [participation.parent_company_id, participation.subsidiary_company_id],
+        affected_company_ids: [
+          participation.parent_company_id,
+          participation.subsidiary_company_id,
+        ],
         created_by_user_id: input.userId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -548,12 +590,21 @@ export class FirstConsolidationService {
       .single();
 
     if (!participation) {
-      return { minorityInterestEquity: 0, minorityInterestProfit: 0, details: [] };
+      return {
+        minorityInterestEquity: 0,
+        minorityInterestProfit: 0,
+        details: [],
+      };
     }
 
-    const minorityPercentage = 100 - parseFloat(participation.participation_percentage);
+    const minorityPercentage =
+      100 - parseFloat(participation.participation_percentage);
     if (minorityPercentage <= 0) {
-      return { minorityInterestEquity: 0, minorityInterestProfit: 0, details: [] };
+      return {
+        minorityInterestEquity: 0,
+        minorityInterestProfit: 0,
+        details: [],
+      };
     }
 
     // Get current equity from account balances
@@ -585,28 +636,34 @@ export class FirstConsolidationService {
     return {
       minorityInterestEquity,
       minorityInterestProfit,
-      details: [{
-        companyId,
-        minorityPercentage,
-        totalEquity,
-        totalProfit,
-        minorityInterestEquity,
-        minorityInterestProfit,
-      }],
+      details: [
+        {
+          companyId,
+          minorityPercentage,
+          totalEquity,
+          totalProfit,
+          minorityInterestEquity,
+          minorityInterestProfit,
+        },
+      ],
     };
   }
 
   /**
    * Get first consolidation summary for a subsidiary
    */
-  async getFirstConsolidationSummary(subsidiaryCompanyId: string): Promise<any> {
+  async getFirstConsolidationSummary(
+    subsidiaryCompanyId: string,
+  ): Promise<any> {
     const { data: participation } = await this.supabase
       .from('participations')
-      .select(`
+      .select(
+        `
         *,
         parent_company:companies!participations_parent_company_id_fkey(id, name),
         subsidiary_company:companies!participations_subsidiary_company_id_fkey(id, name)
-      `)
+      `,
+      )
       .eq('subsidiary_company_id', subsidiaryCompanyId)
       .eq('is_active', true)
       .single();

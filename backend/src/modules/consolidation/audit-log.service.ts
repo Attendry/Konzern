@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
-import { 
-  AuditLog, 
-  AuditAction, 
-  AuditEntityType, 
-  AuditLogQuery 
+import {
+  AuditLog,
+  AuditAction,
+  AuditEntityType,
+  AuditLogQuery,
 } from '../../entities/audit-log.entity';
 
 interface CreateAuditLogDto {
@@ -114,7 +114,7 @@ export class AuditLogService {
     companyId?: string,
   ): Promise<void> {
     const changes = this.calculateChanges(beforeState, afterState);
-    
+
     await this.log({
       userId,
       action: AuditAction.UPDATE,
@@ -182,7 +182,9 @@ export class AuditLogService {
   /**
    * Get audit logs with filtering
    */
-  async getAuditLogs(query: AuditLogQuery): Promise<{ logs: AuditLog[]; total: number }> {
+  async getAuditLogs(
+    query: AuditLogQuery,
+  ): Promise<{ logs: AuditLog[]; total: number }> {
     let queryBuilder = this.supabase
       .from('audit_logs')
       .select('*', { count: 'exact' });
@@ -200,13 +202,19 @@ export class AuditLogService {
       queryBuilder = queryBuilder.eq('action', query.action);
     }
     if (query.financialStatementId) {
-      queryBuilder = queryBuilder.eq('financial_statement_id', query.financialStatementId);
+      queryBuilder = queryBuilder.eq(
+        'financial_statement_id',
+        query.financialStatementId,
+      );
     }
     if (query.companyId) {
       queryBuilder = queryBuilder.eq('company_id', query.companyId);
     }
     if (query.fromDate) {
-      queryBuilder = queryBuilder.gte('created_at', query.fromDate.toISOString());
+      queryBuilder = queryBuilder.gte(
+        'created_at',
+        query.fromDate.toISOString(),
+      );
     }
     if (query.toDate) {
       queryBuilder = queryBuilder.lte('created_at', query.toDate.toISOString());
@@ -218,7 +226,10 @@ export class AuditLogService {
       queryBuilder = queryBuilder.limit(query.limit);
     }
     if (query.offset) {
-      queryBuilder = queryBuilder.range(query.offset, query.offset + (query.limit || 50) - 1);
+      queryBuilder = queryBuilder.range(
+        query.offset,
+        query.offset + (query.limit || 50) - 1,
+      );
     }
 
     const { data, error, count } = await queryBuilder;
@@ -257,7 +268,10 @@ export class AuditLogService {
   /**
    * Get recent activity for a user
    */
-  async getUserActivity(userId: string, limit: number = 50): Promise<AuditLog[]> {
+  async getUserActivity(
+    userId: string,
+    limit: number = 50,
+  ): Promise<AuditLog[]> {
     const { data, error } = await this.supabase
       .from('audit_logs')
       .select('*')
@@ -301,13 +315,16 @@ export class AuditLogService {
     after: Record<string, any>,
   ): Record<string, { from: any; to: any }> {
     const changes: Record<string, { from: any; to: any }> = {};
-    
-    const allKeys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
-    
+
+    const allKeys = new Set([
+      ...Object.keys(before || {}),
+      ...Object.keys(after || {}),
+    ]);
+
     for (const key of allKeys) {
       const fromValue = before?.[key];
       const toValue = after?.[key];
-      
+
       if (JSON.stringify(fromValue) !== JSON.stringify(toValue)) {
         changes[key] = { from: fromValue, to: toValue };
       }

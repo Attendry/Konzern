@@ -106,7 +106,8 @@ export class ExchangeRateController {
    */
   @Post('calculate-translation')
   async calculateTranslation(
-    @Body() body: {
+    @Body()
+    body: {
       companyId: string;
       financialStatementId: string;
       sourceCurrency: string;
@@ -157,7 +158,8 @@ export class ExchangeRateController {
    */
   @Post('fetch/date')
   async fetchRatesForDate(@Body('date') date: string) {
-    const result = await this.exchangeRateFetcherService.fetchBalanceSheetRates(date);
+    const result =
+      await this.exchangeRateFetcherService.fetchBalanceSheetRates(date);
     return {
       message: `Stichtagskurse für ${date} abgerufen: ${result.success} erfolgreich, ${result.failed} fehlgeschlagen`,
       date,
@@ -176,14 +178,29 @@ export class ExchangeRateController {
   ) {
     if (fiscalMonth) {
       // Calculate for specific month
-      const currencies = ['USD', 'GBP', 'CHF', 'PLN', 'CZK', 'SEK', 'DKK', 'NOK', 'HUF', 'JPY', 'CNY'];
+      const currencies = [
+        'USD',
+        'GBP',
+        'CHF',
+        'PLN',
+        'CZK',
+        'SEK',
+        'DKK',
+        'NOK',
+        'HUF',
+        'JPY',
+        'CNY',
+      ];
       let success = 0;
       let failed = 0;
 
       for (const currency of currencies) {
-        const result = await this.exchangeRateFetcherService.calculateAndStoreAverageRate(
-          currency, fiscalYear, fiscalMonth
-        );
+        const result =
+          await this.exchangeRateFetcherService.calculateAndStoreAverageRate(
+            currency,
+            fiscalYear,
+            fiscalMonth,
+          );
         if (result !== null) success++;
         else failed++;
       }
@@ -198,7 +215,10 @@ export class ExchangeRateController {
     }
 
     // Calculate for entire year
-    const result = await this.exchangeRateFetcherService.calculateAllAverageRates(fiscalYear);
+    const result =
+      await this.exchangeRateFetcherService.calculateAllAverageRates(
+        fiscalYear,
+      );
     return {
       message: `Jährliche Durchschnittskurse für ${fiscalYear} berechnet`,
       fiscalYear,
@@ -242,7 +262,9 @@ export class ExchangeRateController {
       .select('from_currency')
       .limit(1000);
 
-    const uniqueCurrencies = new Set((currencyCount || []).map(r => r.from_currency));
+    const uniqueCurrencies = new Set(
+      (currencyCount || []).map((r) => r.from_currency),
+    );
 
     return {
       currencies: Array.from(uniqueCurrencies),

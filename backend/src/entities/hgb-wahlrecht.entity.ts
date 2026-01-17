@@ -51,18 +51,32 @@ export class HgbWahlrecht {
   @Column({ type: 'jsonb', name: 'available_options' })
   availableOptions: WahlrechtOption[];
 
-  @Column({ type: 'varchar', length: 100, name: 'default_option', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'default_option',
+    nullable: true,
+  })
   defaultOption: string | null;
 
   // Restrictions
   @Column({ type: 'boolean', name: 'once_chosen_binding', default: false })
   onceChosenBinding: boolean;
 
-  @Column({ type: 'boolean', name: 'change_requires_disclosure', default: true })
+  @Column({
+    type: 'boolean',
+    name: 'change_requires_disclosure',
+    default: true,
+  })
   changeRequiresDisclosure: boolean;
 
   // Documentation
-  @Column({ type: 'varchar', length: 100, name: 'ifrs_equivalent', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'ifrs_equivalent',
+    nullable: true,
+  })
   ifrsEquivalent: string | null;
 
   @Column({ type: 'text', name: 'differences_to_ifrs', nullable: true })
@@ -72,10 +86,18 @@ export class HgbWahlrecht {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 
@@ -130,9 +152,17 @@ export class WahlrechtSelection {
   @Column({ type: 'uuid', name: 'created_by_user_id', nullable: true })
   createdByUserId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

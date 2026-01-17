@@ -27,15 +27,29 @@ export class IncomeStatementBalance {
   @JoinColumn({ name: 'account_id' })
   account: IncomeStatementAccount;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'amount' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'amount',
+  })
   amount: number;
 
   @Column({ type: 'boolean', default: false, name: 'is_intercompany' })
   isIntercompany: boolean;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

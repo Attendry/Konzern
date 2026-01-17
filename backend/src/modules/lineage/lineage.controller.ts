@@ -9,10 +9,27 @@ import {
   ParseUUIDPipe,
   BadRequestException,
 } from '@nestjs/common';
-import { LineageService, AuditTrailExport, LineageGraph } from './lineage.service';
-import { LineageNodeType, CreateLineageNodeDto, LineageNodeQuery } from '../../entities/data-lineage-node.entity';
-import { LineageTransformationType, CreateLineageTraceDto, LineageTraceQuery } from '../../entities/data-lineage-trace.entity';
-import { PruefpfadStatus, CreatePruefpfadDto, UpdatePruefpfadDto, PruefpfadQuery } from '../../entities/pruefpfad-documentation.entity';
+import {
+  LineageService,
+  AuditTrailExport,
+  LineageGraph,
+} from './lineage.service';
+import {
+  LineageNodeType,
+  CreateLineageNodeDto,
+  LineageNodeQuery,
+} from '../../entities/data-lineage-node.entity';
+import {
+  LineageTransformationType,
+  CreateLineageTraceDto,
+  LineageTraceQuery,
+} from '../../entities/data-lineage-trace.entity';
+import {
+  PruefpfadStatus,
+  CreatePruefpfadDto,
+  UpdatePruefpfadDto,
+  PruefpfadQuery,
+} from '../../entities/pruefpfad-documentation.entity';
 
 // Query DTOs
 class QueryNodesDto {
@@ -69,8 +86,15 @@ export class LineageController {
    */
   @Post('nodes')
   async createNode(@Body() dto: CreateLineageNodeDto) {
-    if (!dto.financialStatementId || !dto.nodeType || !dto.nodeCode || !dto.nodeName) {
-      throw new BadRequestException('financialStatementId, nodeType, nodeCode, and nodeName are required');
+    if (
+      !dto.financialStatementId ||
+      !dto.nodeType ||
+      !dto.nodeCode ||
+      !dto.nodeName
+    ) {
+      throw new BadRequestException(
+        'financialStatementId, nodeType, nodeCode, and nodeName are required',
+      );
     }
     return this.lineageService.createNode(dto);
   }
@@ -81,7 +105,9 @@ export class LineageController {
   @Post('nodes/batch')
   async createNodesBatch(@Body() nodes: CreateLineageNodeDto[]) {
     if (!Array.isArray(nodes) || nodes.length === 0) {
-      throw new BadRequestException('Request body must be a non-empty array of nodes');
+      throw new BadRequestException(
+        'Request body must be a non-empty array of nodes',
+      );
     }
     return this.lineageService.createNodesBatch(nodes);
   }
@@ -109,8 +135,18 @@ export class LineageController {
       nodeType: query.nodeType,
       accountId: query.accountId,
       hgbSection: query.hgbSection,
-      isAudited: query.isAudited === 'true' ? true : query.isAudited === 'false' ? false : undefined,
-      isFinal: query.isFinal === 'true' ? true : query.isFinal === 'false' ? false : undefined,
+      isAudited:
+        query.isAudited === 'true'
+          ? true
+          : query.isAudited === 'false'
+            ? false
+            : undefined,
+      isFinal:
+        query.isFinal === 'true'
+          ? true
+          : query.isFinal === 'false'
+            ? false
+            : undefined,
     };
     return this.lineageService.queryNodes(nodeQuery);
   }
@@ -165,7 +201,9 @@ export class LineageController {
   @Post('traces')
   async createTrace(@Body() dto: CreateLineageTraceDto) {
     if (!dto.sourceNodeId || !dto.targetNodeId || !dto.transformationType) {
-      throw new BadRequestException('sourceNodeId, targetNodeId, and transformationType are required');
+      throw new BadRequestException(
+        'sourceNodeId, targetNodeId, and transformationType are required',
+      );
     }
     return this.lineageService.createTrace(dto);
   }
@@ -176,7 +214,9 @@ export class LineageController {
   @Post('traces/batch')
   async createTracesBatch(@Body() traces: CreateLineageTraceDto[]) {
     if (!Array.isArray(traces) || traces.length === 0) {
-      throw new BadRequestException('Request body must be a non-empty array of traces');
+      throw new BadRequestException(
+        'Request body must be a non-empty array of traces',
+      );
     }
     return this.lineageService.createTracesBatch(traces);
   }
@@ -239,8 +279,15 @@ export class LineageController {
    */
   @Post('documentation')
   async createDocumentation(@Body() dto: CreatePruefpfadDto) {
-    if (!dto.financialStatementId || !dto.entityType || !dto.entityId || !dto.documentationSummary) {
-      throw new BadRequestException('financialStatementId, entityType, entityId, and documentationSummary are required');
+    if (
+      !dto.financialStatementId ||
+      !dto.entityType ||
+      !dto.entityId ||
+      !dto.documentationSummary
+    ) {
+      throw new BadRequestException(
+        'financialStatementId, entityType, entityId, and documentationSummary are required',
+      );
     }
     return this.lineageService.createDocumentation(dto);
   }
@@ -305,7 +352,9 @@ export class LineageController {
     @Body() dto: ReviewDocumentationDto,
   ) {
     if (!dto.reviewedByUserId || !dto.reviewedByName) {
-      throw new BadRequestException('reviewedByUserId and reviewedByName are required');
+      throw new BadRequestException(
+        'reviewedByUserId and reviewedByName are required',
+      );
     }
     return this.lineageService.reviewDocumentation(
       id,
@@ -324,7 +373,9 @@ export class LineageController {
     @Body() dto: VerifyDocumentationDto,
   ) {
     if (!dto.verifiedByUserId || !dto.verifiedByName) {
-      throw new BadRequestException('verifiedByUserId and verifiedByName are required');
+      throw new BadRequestException(
+        'verifiedByUserId and verifiedByName are required',
+      );
     }
     return this.lineageService.verifyDocumentation(
       id,

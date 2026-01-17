@@ -8,9 +8,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ConsolidationObligationService } from './consolidation-obligation.service';
-import {
-  ConsolidationObligationResult,
-} from './consolidation-obligation.service';
+import { ConsolidationObligationResult } from './consolidation-obligation.service';
 import { ConsolidationException } from '../../entities/consolidation-obligation-check.entity';
 
 @Controller('consolidation/obligation')

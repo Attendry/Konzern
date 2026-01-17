@@ -15,7 +15,12 @@ export const multerConfig: MulterOptions = {
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Ungültiger Dateityp. Nur Excel und CSV-Dateien sind erlaubt.'), false);
+      cb(
+        new Error(
+          'Ungültiger Dateityp. Nur Excel und CSV-Dateien sind erlaubt.',
+        ),
+        false,
+      );
     }
   },
 };

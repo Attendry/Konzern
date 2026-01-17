@@ -3,10 +3,10 @@ import { SupabaseService } from '../supabase/supabase.service';
 
 /**
  * Exchange Rate Fetcher Service
- * 
+ *
  * Fetches exchange rates from the ECB (European Central Bank) API
  * and stores them in the database for consolidation purposes.
- * 
+ *
  * ECB provides daily rates for major currencies against EUR.
  * For HGB § 308a compliance, we need:
  * - Spot rates (Stichtagskurs): Balance sheet date rate
@@ -30,7 +30,21 @@ interface ExchangeRateConfig {
 }
 
 const DEFAULT_CONFIG: ExchangeRateConfig = {
-  currencies: ['USD', 'GBP', 'CHF', 'PLN', 'CZK', 'SEK', 'DKK', 'NOK', 'HUF', 'RON', 'BGN', 'JPY', 'CNY'],
+  currencies: [
+    'USD',
+    'GBP',
+    'CHF',
+    'PLN',
+    'CZK',
+    'SEK',
+    'DKK',
+    'NOK',
+    'HUF',
+    'RON',
+    'BGN',
+    'JPY',
+    'CNY',
+  ],
   calculateAverages: true,
   keepHistory: true,
 };
@@ -53,9 +67,9 @@ export class ExchangeRateFetcherService {
     try {
       // ECB provides an XML feed, but there's also a JSON endpoint
       const response = await fetch(
-        'https://api.frankfurter.app/latest?from=EUR'
+        'https://api.frankfurter.app/latest?from=EUR',
       );
-      
+
       if (!response.ok) {
         throw new Error(`ECB API error: ${response.status}`);
       }
@@ -71,7 +85,9 @@ export class ExchangeRateFetcherService {
         });
       }
 
-      this.logger.log(`Fetched ${rates.length} exchange rates from ECB for ${data.date}`);
+      this.logger.log(
+        `Fetched ${rates.length} exchange rates from ECB for ${data.date}`,
+      );
       return rates;
     } catch (error) {
       this.logger.error('Failed to fetch rates from ECB:', error);
@@ -85,9 +101,9 @@ export class ExchangeRateFetcherService {
   async fetchHistoricalRatesFromECB(date: string): Promise<ECBRateData[]> {
     try {
       const response = await fetch(
-        `https://api.frankfurter.app/${date}?from=EUR`
+        `https://api.frankfurter.app/${date}?from=EUR`,
       );
-      
+
       if (!response.ok) {
         throw new Error(`ECB API error: ${response.status}`);
       }
@@ -113,12 +129,15 @@ export class ExchangeRateFetcherService {
   /**
    * Fetch rates for a date range (for calculating averages)
    */
-  async fetchRatesForPeriod(startDate: string, endDate: string): Promise<Map<string, ECBRateData[]>> {
+  async fetchRatesForPeriod(
+    startDate: string,
+    endDate: string,
+  ): Promise<Map<string, ECBRateData[]>> {
     try {
       const response = await fetch(
-        `https://api.frankfurter.app/${startDate}..${endDate}?from=EUR`
+        `https://api.frankfurter.app/${startDate}..${endDate}?from=EUR`,
       );
-      
+
       if (!response.ok) {
         throw new Error(`ECB API error: ${response.status}`);
       }
@@ -127,7 +146,9 @@ export class ExchangeRateFetcherService {
       const ratesByCurrency = new Map<string, ECBRateData[]>();
 
       for (const [date, rates] of Object.entries(data.rates)) {
-        for (const [currency, rate] of Object.entries(rates as Record<string, number>)) {
+        for (const [currency, rate] of Object.entries(
+          rates as Record<string, number>,
+        )) {
           if (!ratesByCurrency.has(currency)) {
             ratesByCurrency.set(currency, []);
           }
@@ -141,7 +162,10 @@ export class ExchangeRateFetcherService {
 
       return ratesByCurrency;
     } catch (error) {
-      this.logger.error(`Failed to fetch rates for period ${startDate} to ${endDate}:`, error);
+      this.logger.error(
+        `Failed to fetch rates for period ${startDate} to ${endDate}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -149,10 +173,14 @@ export class ExchangeRateFetcherService {
   /**
    * Store spot rate in database
    */
-  async storeSpotRate(currency: string, rate: number, date: string, source: string = 'ecb'): Promise<void> {
-    const { error } = await this.supabase
-      .from('exchange_rates')
-      .upsert({
+  async storeSpotRate(
+    currency: string,
+    rate: number,
+    date: string,
+    source: string = 'ecb',
+  ): Promise<void> {
+    const { error } = await this.supabase.from('exchange_rates').upsert(
+      {
         from_currency: currency,
         to_currency: 'EUR',
         rate_date: date,
@@ -162,9 +190,11 @@ export class ExchangeRateFetcherService {
         fiscal_year: new Date(date).getFullYear(),
         fiscal_month: new Date(date).getMonth() + 1,
         updated_at: new Date().toISOString(),
-      }, {
+      },
+      {
         onConflict: 'from_currency,to_currency,rate_date,rate_type',
-      });
+      },
+    );
 
     if (error) {
       this.logger.error(`Failed to store spot rate for ${currency}:`, error);
@@ -198,7 +228,9 @@ export class ExchangeRateFetcherService {
       const currencyRates = ratesByPeriod.get(currency);
 
       if (!currencyRates || currencyRates.length === 0) {
-        this.logger.warn(`No rates found for ${currency} in period ${startDate} to ${endDate}`);
+        this.logger.warn(
+          `No rates found for ${currency} in period ${startDate} to ${endDate}`,
+        );
         return null;
       }
 
@@ -207,9 +239,8 @@ export class ExchangeRateFetcherService {
       const averageRate = sum / currencyRates.length;
 
       // Store average rate
-      const { error } = await this.supabase
-        .from('exchange_rates')
-        .upsert({
+      const { error } = await this.supabase.from('exchange_rates').upsert(
+        {
           from_currency: currency,
           to_currency: 'EUR',
           rate_date: endDate,
@@ -220,19 +251,29 @@ export class ExchangeRateFetcherService {
           fiscal_month: fiscalMonth || null,
           notes: `Average of ${currencyRates.length} daily rates from ${startDate} to ${endDate}`,
           updated_at: new Date().toISOString(),
-        }, {
+        },
+        {
           onConflict: 'from_currency,to_currency,rate_date,rate_type',
-        });
+        },
+      );
 
       if (error) {
-        this.logger.error(`Failed to store average rate for ${currency}:`, error);
+        this.logger.error(
+          `Failed to store average rate for ${currency}:`,
+          error,
+        );
         return null;
       }
 
-      this.logger.log(`Stored ${fiscalMonth ? 'monthly' : 'yearly'} average rate for ${currency}: ${1/averageRate}`);
+      this.logger.log(
+        `Stored ${fiscalMonth ? 'monthly' : 'yearly'} average rate for ${currency}: ${1 / averageRate}`,
+      );
       return 1 / averageRate;
     } catch (error) {
-      this.logger.error(`Failed to calculate average rate for ${currency}:`, error);
+      this.logger.error(
+        `Failed to calculate average rate for ${currency}:`,
+        error,
+      );
       return null;
     }
   }
@@ -261,12 +302,17 @@ export class ExchangeRateFetcherService {
   /**
    * Calculate all average rates for a fiscal year
    */
-  async calculateAllAverageRates(fiscalYear: number): Promise<{ success: number; failed: number }> {
+  async calculateAllAverageRates(
+    fiscalYear: number,
+  ): Promise<{ success: number; failed: number }> {
     let success = 0;
     let failed = 0;
 
     for (const currency of DEFAULT_CONFIG.currencies) {
-      const result = await this.calculateAndStoreAverageRate(currency, fiscalYear);
+      const result = await this.calculateAndStoreAverageRate(
+        currency,
+        fiscalYear,
+      );
       if (result !== null) {
         success++;
       } else {
@@ -274,7 +320,9 @@ export class ExchangeRateFetcherService {
       }
     }
 
-    this.logger.log(`Calculated average rates for ${fiscalYear}: ${success} success, ${failed} failed`);
+    this.logger.log(
+      `Calculated average rates for ${fiscalYear}: ${success} success, ${failed} failed`,
+    );
     return { success, failed };
   }
 
@@ -282,7 +330,9 @@ export class ExchangeRateFetcherService {
    * Fetch and store balance sheet date rates (Stichtagskurs)
    * Call this at period close (monthly, quarterly, yearly)
    */
-  async fetchBalanceSheetRates(date: string): Promise<{ success: number; failed: number }> {
+  async fetchBalanceSheetRates(
+    date: string,
+  ): Promise<{ success: number; failed: number }> {
     const rates = await this.fetchHistoricalRatesFromECB(date);
     let success = 0;
     let failed = 0;
@@ -296,7 +346,9 @@ export class ExchangeRateFetcherService {
       }
     }
 
-    this.logger.log(`Fetched balance sheet rates for ${date}: ${success} success, ${failed} failed`);
+    this.logger.log(
+      `Fetched balance sheet rates for ${date}: ${success} success, ${failed} failed`,
+    );
     return { success, failed };
   }
 
@@ -310,27 +362,30 @@ export class ExchangeRateFetcherService {
       .eq('key', 'exchange_rate_schedule')
       .single();
 
-    return data?.value || {
-      spotRateUpdate: 'daily',
-      averageRateCalculation: 'monthly',
-      balanceSheetRates: ['quarterly', 'yearly'],
-      lastUpdate: null,
-    };
+    return (
+      data?.value || {
+        spotRateUpdate: 'daily',
+        averageRateCalculation: 'monthly',
+        balanceSheetRates: ['quarterly', 'yearly'],
+        lastUpdate: null,
+      }
+    );
   }
 
   /**
    * Save rate schedule configuration
    */
   async saveRateScheduleConfig(config: any): Promise<void> {
-    await this.supabase
-      .from('system_settings')
-      .upsert({
+    await this.supabase.from('system_settings').upsert(
+      {
         key: 'exchange_rate_schedule',
         value: config,
         updated_at: new Date().toISOString(),
-      }, {
+      },
+      {
         onConflict: 'key',
-      });
+      },
+    );
   }
 
   // ===== SCHEDULED TASKS =====
@@ -352,10 +407,13 @@ export class ExchangeRateFetcherService {
   async scheduledMonthlyAverageRateCalculation(): Promise<void> {
     const now = new Date();
     const lastMonth = now.getMonth() === 0 ? 12 : now.getMonth();
-    const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const year =
+      now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
-    this.logger.log(`Running scheduled monthly average rate calculation for ${year}-${lastMonth}...`);
-    
+    this.logger.log(
+      `Running scheduled monthly average rate calculation for ${year}-${lastMonth}...`,
+    );
+
     for (const currency of DEFAULT_CONFIG.currencies) {
       await this.calculateAndStoreAverageRate(currency, year, lastMonth);
     }
@@ -370,7 +428,9 @@ export class ExchangeRateFetcherService {
     const lastQuarterEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0);
     const dateStr = lastQuarterEnd.toISOString().split('T')[0];
 
-    this.logger.log(`Running scheduled quarterly rate snapshot for ${dateStr}...`);
+    this.logger.log(
+      `Running scheduled quarterly rate snapshot for ${dateStr}...`,
+    );
     await this.fetchBalanceSheetRates(dateStr);
   }
 
@@ -380,8 +440,10 @@ export class ExchangeRateFetcherService {
   // @Cron('0 6 5 1 *', { timeZone: 'Europe/Berlin' }) // Jan 5th at 06:00
   async scheduledYearlyAverageRateCalculation(): Promise<void> {
     const lastYear = new Date().getFullYear() - 1;
-    
-    this.logger.log(`Running scheduled yearly average rate calculation for ${lastYear}...`);
+
+    this.logger.log(
+      `Running scheduled yearly average rate calculation for ${lastYear}...`,
+    );
     await this.calculateAllAverageRates(lastYear);
   }
 }

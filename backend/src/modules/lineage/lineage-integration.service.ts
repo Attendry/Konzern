@@ -1,14 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { LineageService } from './lineage.service';
-import { LineageNodeType, CreateLineageNodeDto } from '../../entities/data-lineage-node.entity';
-import { LineageTransformationType, CreateLineageTraceDto } from '../../entities/data-lineage-trace.entity';
-import { AdjustmentType, HgbReference } from '../../entities/consolidation-entry.entity';
+import {
+  LineageNodeType,
+  CreateLineageNodeDto,
+} from '../../entities/data-lineage-node.entity';
+import {
+  LineageTransformationType,
+  CreateLineageTraceDto,
+} from '../../entities/data-lineage-trace.entity';
+import {
+  AdjustmentType,
+  HgbReference,
+} from '../../entities/consolidation-entry.entity';
 
 // Mapping from consolidation adjustment types to lineage node types
 const adjustmentToNodeType: Record<string, LineageNodeType> = {
   [AdjustmentType.CAPITAL_CONSOLIDATION]: LineageNodeType.CAPITAL_CONSOLIDATION,
   [AdjustmentType.DEBT_CONSOLIDATION]: LineageNodeType.DEBT_CONSOLIDATION,
-  [AdjustmentType.INTERCOMPANY_PROFIT]: LineageNodeType.INTERCOMPANY_ELIMINATION,
+  [AdjustmentType.INTERCOMPANY_PROFIT]:
+    LineageNodeType.INTERCOMPANY_ELIMINATION,
   [AdjustmentType.INCOME_EXPENSE]: LineageNodeType.INTERCOMPANY_ELIMINATION,
   [AdjustmentType.CURRENCY_TRANSLATION]: LineageNodeType.CURRENCY_TRANSLATION,
   [AdjustmentType.DEFERRED_TAX]: LineageNodeType.DEFERRED_TAX,
@@ -69,11 +79,12 @@ export class LineageIntegrationService {
     fiscalYear?: number,
   ): Promise<string> {
     // Determine node type from adjustment type
-    const nodeType = adjustmentToNodeType[entry.adjustmentType] || LineageNodeType.AGGREGATION;
-    
+    const nodeType =
+      adjustmentToNodeType[entry.adjustmentType] || LineageNodeType.AGGREGATION;
+
     // Determine HGB section
-    const hgbSection = entry.hgbReference 
-      ? hgbReferenceToSection[entry.hgbReference] 
+    const hgbSection = entry.hgbReference
+      ? hgbReferenceToSection[entry.hgbReference]
       : undefined;
 
     // Create the target node for this consolidation entry
@@ -128,9 +139,10 @@ export class LineageIntegrationService {
           transformationType: this.getTransformationType(entry.adjustmentType),
           transformationDescription: entry.description.substring(0, 200),
           contributionAmount: source.value,
-          contributionPercentage: entry.amount !== 0 
-            ? Math.abs((source.value / entry.amount) * 100)
-            : undefined,
+          contributionPercentage:
+            entry.amount !== 0
+              ? Math.abs((source.value / entry.amount) * 100)
+              : undefined,
           consolidationEntryId: entry.id,
           sequenceOrder: i,
         });
@@ -200,13 +212,15 @@ export class LineageIntegrationService {
 
     // Create traces from source nodes
     if (sourceNodeIds && sourceNodeIds.length > 0) {
-      const traces: CreateLineageTraceDto[] = sourceNodeIds.map((sourceNodeId, i) => ({
-        sourceNodeId,
-        targetNodeId: node.id,
-        transformationType: LineageTransformationType.SUM,
-        transformationDescription: 'Konsolidierte Summe',
-        sequenceOrder: i,
-      }));
+      const traces: CreateLineageTraceDto[] = sourceNodeIds.map(
+        (sourceNodeId, i) => ({
+          sourceNodeId,
+          targetNodeId: node.id,
+          transformationType: LineageTransformationType.SUM,
+          transformationDescription: 'Konsolidierte Summe',
+          sequenceOrder: i,
+        }),
+      );
 
       await this.lineageService.createTracesBatch(traces);
     }
@@ -217,26 +231,28 @@ export class LineageIntegrationService {
   /**
    * Get transformation type from adjustment type
    */
-  private getTransformationType(adjustmentType: AdjustmentType): LineageTransformationType {
+  private getTransformationType(
+    adjustmentType: AdjustmentType,
+  ): LineageTransformationType {
     switch (adjustmentType) {
       case AdjustmentType.ELIMINATION:
       case AdjustmentType.INTERCOMPANY_PROFIT:
       case AdjustmentType.INCOME_EXPENSE:
         return LineageTransformationType.ELIMINATION;
-      
+
       case AdjustmentType.RECLASSIFICATION:
         return LineageTransformationType.MAPPING;
-      
+
       case AdjustmentType.CURRENCY_TRANSLATION:
         return LineageTransformationType.MULTIPLY;
-      
+
       case AdjustmentType.CAPITAL_CONSOLIDATION:
       case AdjustmentType.DEBT_CONSOLIDATION:
         return LineageTransformationType.OFFSET;
-      
+
       case AdjustmentType.MINORITY_INTEREST:
         return LineageTransformationType.PERCENTAGE;
-      
+
       default:
         return LineageTransformationType.SUM;
     }
@@ -252,7 +268,11 @@ export class LineageIntegrationService {
     const nodeIds: string[] = [];
 
     for (const entry of entries) {
-      const nodeId = await this.trackConsolidationEntry(entry, undefined, fiscalYear);
+      const nodeId = await this.trackConsolidationEntry(
+        entry,
+        undefined,
+        fiscalYear,
+      );
       nodeIds.push(nodeId);
     }
 

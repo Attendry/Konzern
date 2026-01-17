@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
-import { 
-  KonzernanhangDocumentService, 
-  KonzernanhangDocument, 
-  KonzernanhangSection 
+import {
+  KonzernanhangDocumentService,
+  KonzernanhangDocument,
+  KonzernanhangSection,
 } from './konzernanhang-document.service';
 import * as crypto from 'crypto';
 
@@ -79,7 +79,7 @@ export class KonzernanhangExportService {
 
     // Generate export content
     let result: ExportResult;
-    
+
     switch (format) {
       case ExportFormat.JSON:
         result = this.exportAsJson(document, sections);
@@ -116,7 +116,7 @@ export class KonzernanhangExportService {
    * Export as JSON
    */
   private exportAsJson(
-    document: KonzernanhangDocument, 
+    document: KonzernanhangDocument,
     sections: KonzernanhangSection[],
   ): ExportResult {
     const exportData = {
@@ -167,15 +167,17 @@ export class KonzernanhangExportService {
    * Export as plain text
    */
   private exportAsText(
-    document: KonzernanhangDocument, 
+    document: KonzernanhangDocument,
     sections: KonzernanhangSection[],
   ): ExportResult {
     let text = '';
-    
+
     // Header
-    text += '═══════════════════════════════════════════════════════════════════\n';
+    text +=
+      '═══════════════════════════════════════════════════════════════════\n';
     text += `                        KONZERNANHANG\n`;
-    text += '═══════════════════════════════════════════════════════════════════\n\n';
+    text +=
+      '═══════════════════════════════════════════════════════════════════\n\n';
     text += `Geschäftsjahr: ${document.fiscalYear}\n`;
     text += `Berichtszeitraum: ${this.formatDate(document.periodStart)} bis ${this.formatDate(document.periodEnd)}\n`;
     text += `Version: ${document.version}\n`;
@@ -187,12 +189,14 @@ export class KonzernanhangExportService {
     if (document.approvedAt) {
       text += `Freigegeben: ${this.formatDateTime(document.approvedAt)} durch ${document.approvedByName}\n`;
     }
-    text += '\n═══════════════════════════════════════════════════════════════════\n\n';
+    text +=
+      '\n═══════════════════════════════════════════════════════════════════\n\n';
 
     // Sections
     for (const section of sections) {
       text += `${section.sectionNumber}. ${section.sectionTitle.toUpperCase()}\n`;
-      text += '───────────────────────────────────────────────────────────────────\n';
+      text +=
+        '───────────────────────────────────────────────────────────────────\n';
       if (section.hgbSection) {
         text += `[${section.hgbSection}]\n\n`;
       }
@@ -203,13 +207,16 @@ export class KonzernanhangExportService {
     }
 
     // Footer
-    text += '═══════════════════════════════════════════════════════════════════\n';
+    text +=
+      '═══════════════════════════════════════════════════════════════════\n';
     text += 'HGB-REFERENZEN\n';
-    text += '───────────────────────────────────────────────────────────────────\n';
+    text +=
+      '───────────────────────────────────────────────────────────────────\n';
     for (const ref of this.getHgbReferences()) {
       text += `• ${ref}\n`;
     }
-    text += '\n═══════════════════════════════════════════════════════════════════\n';
+    text +=
+      '\n═══════════════════════════════════════════════════════════════════\n';
     text += `Exportiert am: ${this.formatDateTime(new Date())}\n`;
 
     const hash = this.computeHash(text);
@@ -228,7 +235,7 @@ export class KonzernanhangExportService {
    * Export as Markdown
    */
   private exportAsMarkdown(
-    document: KonzernanhangDocument, 
+    document: KonzernanhangDocument,
     sections: KonzernanhangSection[],
   ): ExportResult {
     let md = '';
@@ -293,7 +300,7 @@ export class KonzernanhangExportService {
    * Export as HTML
    */
   private exportAsHtml(
-    document: KonzernanhangDocument, 
+    document: KonzernanhangDocument,
     sections: KonzernanhangSection[],
   ): ExportResult {
     let html = `<!DOCTYPE html>
@@ -445,7 +452,9 @@ export class KonzernanhangExportService {
   <div class="section">
     <h2>HGB-Referenzen</h2>
     <ul class="hgb-list">
-      ${this.getHgbReferences().map(ref => `<li>${ref}</li>`).join('\n      ')}
+      ${this.getHgbReferences()
+        .map((ref) => `<li>${ref}</li>`)
+        .join('\n      ')}
     </ul>
   </div>
 
@@ -480,21 +489,19 @@ export class KonzernanhangExportService {
       recipient?: string;
     },
   ): Promise<void> {
-    const { error } = await this.supabase
-      .from('konzernanhang_exports')
-      .insert({
-        document_id: documentId,
-        export_format: result.format,
-        file_name: result.fileName,
-        file_size: result.fileSize,
-        content_hash: result.contentHash,
-        exported_by_user_id: options?.exportedByUserId,
-        exported_by_name: options?.exportedByName,
-        exported_at: SupabaseMapper.getCurrentTimestamp(),
-        export_purpose: options?.exportPurpose,
-        recipient: options?.recipient,
-        created_at: SupabaseMapper.getCurrentTimestamp(),
-      });
+    const { error } = await this.supabase.from('konzernanhang_exports').insert({
+      document_id: documentId,
+      export_format: result.format,
+      file_name: result.fileName,
+      file_size: result.fileSize,
+      content_hash: result.contentHash,
+      exported_by_user_id: options?.exportedByUserId,
+      exported_by_name: options?.exportedByName,
+      exported_at: SupabaseMapper.getCurrentTimestamp(),
+      export_purpose: options?.exportPurpose,
+      recipient: options?.recipient,
+      created_at: SupabaseMapper.getCurrentTimestamp(),
+    });
 
     if (error) {
       console.error('Error recording export:', error);
@@ -600,7 +607,12 @@ export class KonzernanhangExportService {
     return text
       .toLowerCase()
       .replace(/[äöüß]/g, (match) => {
-        const map: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
+        const map: Record<string, string> = {
+          ä: 'ae',
+          ö: 'oe',
+          ü: 'ue',
+          ß: 'ss',
+        };
         return map[match] || match;
       })
       .replace(/[^\w\s-]/g, '')
@@ -614,7 +626,8 @@ export class KonzernanhangExportService {
       let table = '| ' + headers.join(' | ') + ' |\n';
       table += '| ' + headers.map(() => '---').join(' | ') + ' |\n';
       for (const row of data) {
-        table += '| ' + headers.map(h => String(row[h] ?? '')).join(' | ') + ' |\n';
+        table +=
+          '| ' + headers.map((h) => String(row[h] ?? '')).join(' | ') + ' |\n';
       }
       return table;
     }

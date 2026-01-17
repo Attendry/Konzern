@@ -20,7 +20,13 @@ import {
   getConfidenceLevel,
 } from '../types/agent.types';
 
-export type ICCauseType = 'timing' | 'fx' | 'rounding' | 'missing_entry' | 'error' | 'unknown';
+export type ICCauseType =
+  | 'timing'
+  | 'fx'
+  | 'rounding'
+  | 'missing_entry'
+  | 'error'
+  | 'unknown';
 
 interface ICAnalysisData {
   reconciliation: any;
@@ -49,7 +55,7 @@ export class ICAnalysisTool implements AgentTool {
 
   name = 'analyze_ic_difference';
   description = 'Analysiert IC-Differenzen und schlägt Lösungen vor';
-  
+
   parameters: ToolParameter[] = [
     {
       name: 'reconciliation_id',
@@ -104,30 +110,35 @@ export class ICAnalysisTool implements AgentTool {
       const quality = this.buildQualityIndicators(data, analysis);
 
       // 5. Get provenance
-      const provenanceInfo = await this.provenance.buildICReconciliationProvenance(
-        reconciliationId,
-      );
+      const provenanceInfo =
+        await this.provenance.buildICReconciliationProvenance(reconciliationId);
 
       // 6. Add AI provenance
-      provenanceInfo.push(this.provenance.createAIProvenance(
-        'Gemini',
-        'AI-gestützte Ursachenanalyse',
-      ));
+      provenanceInfo.push(
+        this.provenance.createAIProvenance(
+          'Gemini',
+          'AI-gestützte Ursachenanalyse',
+        ),
+      );
 
       // 7. Format message
       let message = this.formatAnalysisMessage(data, analysis);
 
       // 8. Add legal context if available
       try {
-        const legalContext = await this.hgbLegal.getLegalContext('debt_consolidation', {
-          includeRelated: true,
-          includeIdw: true,
-        });
-        
+        const legalContext = await this.hgbLegal.getLegalContext(
+          'debt_consolidation',
+          {
+            includeRelated: true,
+            includeIdw: true,
+          },
+        );
+
         if (legalContext) {
-          const legalInfo = this.hgbLegal.formatLegalContextForDisplay(legalContext);
+          const legalInfo =
+            this.hgbLegal.formatLegalContextForDisplay(legalContext);
           message += '\n\n---\n\n**Rechtlicher Kontext:**\n\n' + legalInfo;
-          
+
           // Add legal provenance
           provenanceInfo.push({
             type: 'hgb_paragraph',
@@ -157,20 +168,20 @@ export class ICAnalysisTool implements AgentTool {
         provenance: provenanceInfo,
         overrideOptions: this.getOverrideOptions(),
         disclaimer: DISCLAIMERS.general,
-        suggestedAction: context.mode.type === 'action' 
-          ? {
-              type: 'create_correction',
-              label: 'Korrekturbuchung erstellen',
-              payload: { reconciliationId, cause: analysis.likelyCause },
-              requiresConfirmation: true,
-            }
-          : {
-              type: 'navigate',
-              label: 'Details anzeigen',
-              payload: { route: `/ic-reconciliation/${reconciliationId}` },
-            },
+        suggestedAction:
+          context.mode.type === 'action'
+            ? {
+                type: 'create_correction',
+                label: 'Korrekturbuchung erstellen',
+                payload: { reconciliationId, cause: analysis.likelyCause },
+                requiresConfirmation: true,
+              }
+            : {
+                type: 'navigate',
+                label: 'Details anzeigen',
+                payload: { route: `/ic-reconciliation/${reconciliationId}` },
+              },
       };
-
     } catch (error: any) {
       this.logger.error(`IC analysis failed: ${error.message}`);
       return this.createErrorResult(`Analyse fehlgeschlagen: ${error.message}`);
@@ -192,7 +203,10 @@ export class ICAnalysisTool implements AgentTool {
 
     for (let i = 0; i < ids.length; i++) {
       try {
-        const result = await this.execute({ reconciliation_id: ids[i] }, context);
+        const result = await this.execute(
+          { reconciliation_id: ids[i] },
+          context,
+        );
         results.push(result);
         resultIndex[i + 1] = ids[i];
 
@@ -225,16 +239,20 @@ export class ICAnalysisTool implements AgentTool {
   /**
    * Fetch IC reconciliation data
    */
-  private async fetchICData(reconciliationId: string): Promise<ICAnalysisData | null> {
+  private async fetchICData(
+    reconciliationId: string,
+  ): Promise<ICAnalysisData | null> {
     const client = this.supabase.getClient();
 
     const { data: recon, error } = await client
       .from('ic_reconciliations')
-      .select(`
+      .select(
+        `
         *,
         company_a:companies!ic_reconciliations_company_a_id_fkey(*),
         company_b:companies!ic_reconciliations_company_b_id_fkey(*)
-      `)
+      `,
+      )
       .eq('id', reconciliationId)
       .single();
 
@@ -246,19 +264,29 @@ export class ICAnalysisTool implements AgentTool {
     const { data: historical } = await client
       .from('ic_reconciliations')
       .select('status, difference_reason')
-      .or(`and(company_a_id.eq.${recon.company_a_id},company_b_id.eq.${recon.company_b_id}),and(company_a_id.eq.${recon.company_b_id},company_b_id.eq.${recon.company_a_id})`)
+      .or(
+        `and(company_a_id.eq.${recon.company_a_id},company_b_id.eq.${recon.company_b_id}),and(company_a_id.eq.${recon.company_b_id},company_b_id.eq.${recon.company_a_id})`,
+      )
       .neq('id', reconciliationId);
 
     const historicalCases = historical?.length || 0;
-    const timingCases = historical?.filter(h => h.difference_reason === 'timing').length || 0;
-    const resolvedCases = historical?.filter(h => h.status === 'cleared' || h.status === 'explained' || h.status === 'accepted').length || 0;
+    const timingCases =
+      historical?.filter((h) => h.difference_reason === 'timing').length || 0;
+    const resolvedCases =
+      historical?.filter(
+        (h) =>
+          h.status === 'cleared' ||
+          h.status === 'explained' ||
+          h.status === 'accepted',
+      ).length || 0;
 
     return {
       reconciliation: recon,
       companyA: recon.company_a,
       companyB: recon.company_b,
       historicalCases,
-      historicalTimingPercent: historicalCases > 0 ? (timingCases / historicalCases) * 100 : 0,
+      historicalTimingPercent:
+        historicalCases > 0 ? (timingCases / historicalCases) * 100 : 0,
       historicalCorrect: resolvedCases,
     };
   }
@@ -266,7 +294,9 @@ export class ICAnalysisTool implements AgentTool {
   /**
    * Analyze the reconciliation using AI and rules
    */
-  private async analyzeReconciliation(data: ICAnalysisData): Promise<ICAnalysisResult> {
+  private async analyzeReconciliation(
+    data: ICAnalysisData,
+  ): Promise<ICAnalysisResult> {
     const recon = data.reconciliation;
     const diffAmount = Math.abs(recon.difference_amount || 0);
     const amountA = recon.amount_company_a || 0;
@@ -294,7 +324,9 @@ export class ICAnalysisTool implements AgentTool {
     else if (recon.booking_date_a !== recon.booking_date_b) {
       const dateA = new Date(recon.booking_date_a);
       const dateB = new Date(recon.booking_date_b);
-      const daysDiff = Math.abs((dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.abs(
+        (dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
       if (daysDiff <= 5) {
         likelyCause = 'timing';
@@ -314,7 +346,7 @@ export class ICAnalysisTool implements AgentTool {
         });
         alternatives.push({
           interpretation: 'Währungsdifferenz',
-          probability: 0.10,
+          probability: 0.1,
           checkQuestion: 'Unterschiedliche Kurse?',
         });
       }
@@ -322,7 +354,7 @@ export class ICAnalysisTool implements AgentTool {
     // Check for currency differences
     else if (recon.currency_a !== recon.currency_b) {
       likelyCause = 'fx';
-      confidence = 0.90;
+      confidence = 0.9;
     }
     // Missing entry check
     else if (amountA === 0 || amountB === 0) {
@@ -343,10 +375,14 @@ export class ICAnalysisTool implements AgentTool {
 
     if (confidence < 0.8) {
       try {
-        const aiAnalysis = await this.getAIAnalysis(data, likelyCause, confidence);
+        const aiAnalysis = await this.getAIAnalysis(
+          data,
+          likelyCause,
+          confidence,
+        );
         explanation = aiAnalysis.explanation;
         suggestedAction = aiAnalysis.suggestedAction;
-        
+
         // AI might adjust our assessment
         if (aiAnalysis.adjustedCause) {
           likelyCause = aiAnalysis.adjustedCause;
@@ -412,16 +448,26 @@ KONFIDENZ: [0-100]`;
     const response = await this.gemini.complete(prompt);
 
     // Parse response
-    const explanationMatch = response.match(/ERKLÄRUNG:\s*(.+?)(?=\n|AKTION:)/s);
+    const explanationMatch = response.match(
+      /ERKLÄRUNG:\s*(.+?)(?=\n|AKTION:)/s,
+    );
     const actionMatch = response.match(/AKTION:\s*(.+?)(?=\n|URSACHE:)/s);
-    const causeMatch = response.match(/URSACHE:\s*(timing|fx|rounding|missing_entry|error|unknown)/i);
+    const causeMatch = response.match(
+      /URSACHE:\s*(timing|fx|rounding|missing_entry|error|unknown)/i,
+    );
     const confidenceMatch = response.match(/KONFIDENZ:\s*(\d+)/);
 
     return {
-      explanation: explanationMatch?.[1]?.trim() || this.getDefaultExplanation(initialCause, data),
-      suggestedAction: actionMatch?.[1]?.trim() || this.getDefaultSuggestedAction(initialCause),
+      explanation:
+        explanationMatch?.[1]?.trim() ||
+        this.getDefaultExplanation(initialCause, data),
+      suggestedAction:
+        actionMatch?.[1]?.trim() ||
+        this.getDefaultSuggestedAction(initialCause),
       adjustedCause: causeMatch?.[1]?.toLowerCase() as ICCauseType,
-      adjustedConfidence: confidenceMatch ? parseInt(confidenceMatch[1]) / 100 : initialConfidence,
+      adjustedConfidence: confidenceMatch
+        ? parseInt(confidenceMatch[1]) / 100
+        : initialConfidence,
     };
   }
 
@@ -438,9 +484,10 @@ KONFIDENZ: [0-100]`;
     // Step 1: Data observation
     steps.push({
       observation: `Buchungsdatum Gesellschaft A: ${recon.booking_date_a || 'nicht angegeben'}, Gesellschaft B: ${recon.booking_date_b || 'nicht angegeben'}`,
-      inference: recon.booking_date_a !== recon.booking_date_b
-        ? `Differenz von ${this.calculateDaysDiff(recon.booking_date_a, recon.booking_date_b)} Tagen`
-        : 'Gleiche Buchungsdaten',
+      inference:
+        recon.booking_date_a !== recon.booking_date_b
+          ? `Differenz von ${this.calculateDaysDiff(recon.booking_date_a, recon.booking_date_b)} Tagen`
+          : 'Gleiche Buchungsdaten',
       confidence: 0.95,
       dataPoints: [recon.id],
     });
@@ -490,7 +537,7 @@ KONFIDENZ: [0-100]`;
     if (!recon.reference_a) missingData.push('Referenz A');
     if (!recon.reference_b) missingData.push('Referenz B');
 
-    const completeness = 1 - (missingData.length / 4);
+    const completeness = 1 - missingData.length / 4;
 
     return this.reasoning.buildQualityIndicators(
       {
@@ -503,7 +550,7 @@ KONFIDENZ: [0-100]`;
         patternMatch: data.historicalCases > 5 ? 0.85 : 0.5,
         ruleMatch: analysis.confidence,
       },
-      [],   // No deviations
+      [], // No deviations
       data.historicalCases > 0
         ? {
             similarCases: data.historicalCases,
@@ -522,7 +569,7 @@ KONFIDENZ: [0-100]`;
   ): string {
     const recon = data.reconciliation;
     const confidenceLabel = this.getConfidenceLabel(analysis.confidence);
-    
+
     return `**IC-Differenz: ${Math.abs(recon.difference_amount).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}**
 
 **Gesellschaften:** ${data.companyA?.name} - ${data.companyB?.name}
@@ -541,14 +588,14 @@ ${analysis.explanation}
   private generateBatchSummary(results: ToolResult[]): string {
     const total = results.length;
     const byCause: Record<string, number> = {};
-    let totalAmount = 0;
+    const totalAmount = 0;
     let criticalCount = 0;
 
     for (const r of results) {
       if (r.success && r.data) {
         const cause = r.data.likelyCause || 'unknown';
         byCause[cause] = (byCause[cause] || 0) + 1;
-        
+
         // Would need actual amount from data
         if (r.data.confidence && r.data.confidence < 0.65) {
           criticalCount++;
@@ -623,7 +670,10 @@ ${analysis.explanation}
     return labels[cause] || cause;
   }
 
-  private getDefaultExplanation(cause: ICCauseType, data: ICAnalysisData): string {
+  private getDefaultExplanation(
+    cause: ICCauseType,
+    data: ICAnalysisData,
+  ): string {
     const explanations: Record<ICCauseType, string> = {
       timing: `Die Buchungen wurden zu unterschiedlichen Zeitpunkten erfasst. Dies ist typisch für Periodenabgrenzungen am Jahresende.`,
       fx: `Die Differenz resultiert aus unterschiedlichen Wechselkursen bei der Umrechnung.`,
@@ -650,9 +700,12 @@ ${analysis.explanation}
   private getConfidenceLabel(confidence: number): string {
     const level = getConfidenceLevel(confidence);
     switch (level) {
-      case 'high': return 'HOCH';
-      case 'medium': return 'MITTEL';
-      case 'low': return 'NIEDRIG';
+      case 'high':
+        return 'HOCH';
+      case 'medium':
+        return 'MITTEL';
+      case 'low':
+        return 'NIEDRIG';
     }
   }
 }

@@ -86,9 +86,10 @@ export class ReportingService {
     includeComparison: boolean = false,
   ): Promise<ConsolidationReport> {
     // 1. Hole konsolidierte Bilanz
-    const balanceSheet = await this.balanceSheetService.createConsolidatedBalanceSheet(
-      financialStatementId,
-    );
+    const balanceSheet =
+      await this.balanceSheetService.createConsolidatedBalanceSheet(
+        financialStatementId,
+      );
 
     // 2. Hole Financial Statement
     const { data: financialStatement } = await this.supabase
@@ -104,7 +105,8 @@ export class ReportingService {
     }
 
     // 3. Erstelle Konsolidierungsübersicht
-    const overview = await this.generateConsolidationOverview(financialStatementId);
+    const overview =
+      await this.generateConsolidationOverview(financialStatementId);
 
     // 4. Vergleich mit Vorjahr (optional)
     let comparison = undefined;
@@ -165,16 +167,19 @@ export class ReportingService {
 
     if (financialStatement) {
       try {
-        capitalResult = await this.capitalConsolidationService.consolidateCapital(
-          financialStatementId,
-          financialStatement.company_id,
-        );
+        capitalResult =
+          await this.capitalConsolidationService.consolidateCapital(
+            financialStatementId,
+            financialStatement.company_id,
+          );
 
         // Hole alle konsolidierten Unternehmen für Schuldenkonsolidierung
         const { data: companies } = await this.supabase
           .from('companies')
           .select('id')
-          .or(`id.eq.${financialStatement.company_id},parent_company_id.eq.${financialStatement.company_id}`)
+          .or(
+            `id.eq.${financialStatement.company_id},parent_company_id.eq.${financialStatement.company_id}`,
+          )
           .eq('is_consolidated', true);
 
         const companyIds = (companies || []).map((c: any) => c.id);
@@ -188,8 +193,10 @@ export class ReportingService {
     }
 
     // Minderheitsanteile und Goodwill aus Kapitalkonsolidierung
-    const minorityBreakdown: ConsolidationOverview['minorityInterests']['breakdown'] = [];
-    const goodwillBreakdown: ConsolidationOverview['goodwill']['breakdown'] = [];
+    const minorityBreakdown: ConsolidationOverview['minorityInterests']['breakdown'] =
+      [];
+    const goodwillBreakdown: ConsolidationOverview['goodwill']['breakdown'] =
+      [];
 
     if (capitalResult) {
       // Vereinfacht: Minderheitsanteile und Goodwill aus Summary
@@ -246,7 +253,8 @@ export class ReportingService {
             (sum, e) => sum + Math.abs(parseFloat(e.amount) || 0),
             0,
           ),
-          participationsProcessed: capitalResult?.summary.participationsProcessed || 0,
+          participationsProcessed:
+            capitalResult?.summary.participationsProcessed || 0,
         },
       },
       minorityInterests: {
@@ -303,17 +311,19 @@ export class ReportingService {
     // Hole konsolidierte Bilanz des Vorjahrs
     let previousBalanceSheet = null;
     try {
-      previousBalanceSheet = await this.balanceSheetService.createConsolidatedBalanceSheet(
-        previousFs.id,
-      );
+      previousBalanceSheet =
+        await this.balanceSheetService.createConsolidatedBalanceSheet(
+          previousFs.id,
+        );
     } catch (error) {
       // Vorjahresbilanz nicht verfügbar
       return { changes: [] };
     }
 
-    const currentBalanceSheet = await this.balanceSheetService.createConsolidatedBalanceSheet(
-      financialStatementId,
-    );
+    const currentBalanceSheet =
+      await this.balanceSheetService.createConsolidatedBalanceSheet(
+        financialStatementId,
+      );
 
     // Berechne Änderungen
     const changes: Array<{
@@ -438,13 +448,16 @@ export class ReportingService {
           await this.supabase
             .from('financial_statements')
             .select('id')
-            .eq('fiscal_year', (
-              await this.supabase
-                .from('financial_statements')
-                .select('fiscal_year')
-                .eq('id', financialStatementId)
-                .single()
-            ).data?.fiscal_year)
+            .eq(
+              'fiscal_year',
+              (
+                await this.supabase
+                  .from('financial_statements')
+                  .select('fiscal_year')
+                  .eq('id', financialStatementId)
+                  .single()
+              ).data?.fiscal_year,
+            )
         ).data?.map((fs: any) => fs.id) || [],
       );
 
@@ -462,7 +475,8 @@ export class ReportingService {
 
       return {
         companyId: balance.financial_statements?.company_id,
-        companyName: balance.financial_statements?.companies?.name || 'Unbekannt',
+        companyName:
+          balance.financial_statements?.companies?.name || 'Unbekannt',
         balance: parseFloat(balance.balance) || 0,
         adjustments: adjustmentAmount,
         finalBalance: (parseFloat(balance.balance) || 0) + adjustmentAmount,

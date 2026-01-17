@@ -8,7 +8,15 @@ import { SupabaseModule } from '../supabase/supabase.module';
 @Module({
   imports: [SupabaseModule],
   controllers: [CompanyController],
-  providers: [CompanyService, DependencyIdentificationService, ParticipationService],
-  exports: [CompanyService, DependencyIdentificationService, ParticipationService],
+  providers: [
+    CompanyService,
+    DependencyIdentificationService,
+    ParticipationService,
+  ],
+  exports: [
+    CompanyService,
+    DependencyIdentificationService,
+    ParticipationService,
+  ],
 })
 export class CompanyModule {}

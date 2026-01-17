@@ -9,7 +9,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { AuthService, LoginCredentials, RegisterCredentials, UserProfile } from './auth.service';
+import {
+  AuthService,
+  LoginCredentials,
+  RegisterCredentials,
+  UserProfile,
+} from './auth.service';
 import { Public, Roles } from './supabase-auth.guard';
 import { Request } from 'express';
 
@@ -26,7 +31,8 @@ export class AuthController {
     const user = await this.authService.register(credentials);
     return {
       success: true,
-      message: 'Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail-Adresse.',
+      message:
+        'Registrierung erfolgreich. Bitte bestätigen Sie Ihre E-Mail-Adresse.',
       user,
     };
   }
@@ -87,10 +93,7 @@ export class AuthController {
    * Update current user profile
    */
   @Put('me')
-  async updateMe(
-    @Req() req: Request,
-    @Body() updates: Partial<UserProfile>,
-  ) {
+  async updateMe(@Req() req: Request, @Body() updates: Partial<UserProfile>) {
     const profile = await this.authService.updateProfile(req.user!.id, updates);
     return {
       success: true,

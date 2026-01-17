@@ -16,13 +16,16 @@
     "vercel-build": "git config user.name 'Attendry' || true && git config user.email 'attendry@example.com' || true && cd frontend && npm ci && npm run build"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Attendry/Konzern.git"
   },
   "author": "Attendry <attendry@example.com>",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@nestjs/platform-express": "^11.1.12"
+  }
 }

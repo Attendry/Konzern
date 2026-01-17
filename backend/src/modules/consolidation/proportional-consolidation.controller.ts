@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 import { ProportionalConsolidationService } from './proportional-consolidation.service';
 
 @Controller('consolidation/proportional')

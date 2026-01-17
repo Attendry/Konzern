@@ -38,7 +38,9 @@ export class DependencyIdentificationService {
       .is('parent_company_id', null);
 
     if (error) {
-      throw new Error(`Fehler beim Abrufen der Mutterunternehmen: ${error.message}`);
+      throw new Error(
+        `Fehler beim Abrufen der Mutterunternehmen: ${error.message}`,
+      );
     }
 
     const parents: CompanyHierarchy[] = [];
@@ -85,7 +87,9 @@ export class DependencyIdentificationService {
     const { data: companies, error } = await query;
 
     if (error) {
-      throw new Error(`Fehler beim Abrufen der Tochterunternehmen: ${error.message}`);
+      throw new Error(
+        `Fehler beim Abrufen der Tochterunternehmen: ${error.message}`,
+      );
     }
 
     return (companies || []).map((company) => ({

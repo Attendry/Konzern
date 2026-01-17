@@ -14,7 +14,8 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 // Decorator to require specific roles
 export const ROLES_KEY = 'roles';
-export const Roles = (...roles: UserProfile['role'][]) => SetMetadata(ROLES_KEY, roles);
+export const Roles = (...roles: UserProfile['role'][]) =>
+  SetMetadata(ROLES_KEY, roles);
 
 // Decorator to get current user in controller
 export const CurrentUser = () => {
@@ -50,15 +51,14 @@ export class SupabaseAuthGuard implements CanActivate {
 
     try {
       const user = await this.authService.validateToken(token);
-      
+
       // Attach user to request for use in controllers
       request.user = user;
 
       // Check for required roles
-      const requiredRoles = this.reflector.getAllAndOverride<UserProfile['role'][]>(ROLES_KEY, [
-        context.getHandler(),
-        context.getClass(),
-      ]);
+      const requiredRoles = this.reflector.getAllAndOverride<
+        UserProfile['role'][]
+      >(ROLES_KEY, [context.getHandler(), context.getClass()]);
 
       if (requiredRoles && requiredRoles.length > 0) {
         const hasRole = await this.authService.hasRole(user.id, requiredRoles);

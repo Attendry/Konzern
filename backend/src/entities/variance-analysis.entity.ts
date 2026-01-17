@@ -45,7 +45,11 @@ export class VarianceAnalysis {
   @JoinColumn({ name: 'financial_statement_id' })
   financialStatement: FinancialStatement;
 
-  @Column({ type: 'uuid', name: 'prior_financial_statement_id', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: 'prior_financial_statement_id',
+    nullable: true,
+  })
   priorFinancialStatementId: string | null;
 
   @ManyToOne(() => FinancialStatement)
@@ -72,44 +76,100 @@ export class VarianceAnalysis {
   analysisLevel: string; // 'total', 'company', 'account', 'line_item'
 
   // Identification
-  @Column({ type: 'varchar', length: 50, name: 'account_number', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'account_number',
+    nullable: true,
+  })
   accountNumber: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'account_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'account_name',
+    nullable: true,
+  })
   accountName: string | null;
 
-  @Column({ type: 'varchar', length: 50, name: 'line_item_code', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'line_item_code',
+    nullable: true,
+  })
   lineItemCode: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'line_item_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'line_item_name',
+    nullable: true,
+  })
   lineItemName: string | null;
 
   // Current Period Values
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'current_period_value', default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'current_period_value',
+    default: 0,
+  })
   currentPeriodValue: number;
 
   @Column({ type: 'int', name: 'current_period_year' })
   currentPeriodYear: number;
 
   // Prior Period Values
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'prior_period_value', default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'prior_period_value',
+    default: 0,
+  })
   priorPeriodValue: number;
 
   @Column({ type: 'int', name: 'prior_period_year', nullable: true })
   priorPeriodYear: number | null;
 
   // Variance Calculations
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'absolute_variance', default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'absolute_variance',
+    default: 0,
+  })
   absoluteVariance: number;
 
-  @Column({ type: 'decimal', precision: 8, scale: 4, name: 'percentage_variance', default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 8,
+    scale: 4,
+    name: 'percentage_variance',
+    default: 0,
+  })
   percentageVariance: number;
 
   // Thresholds
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'threshold_absolute', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'threshold_absolute',
+    nullable: true,
+  })
   thresholdAbsolute: number | null;
 
-  @Column({ type: 'decimal', precision: 8, scale: 4, name: 'threshold_percentage', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 8,
+    scale: 4,
+    name: 'threshold_percentage',
+    nullable: true,
+  })
   thresholdPercentage: number | null;
 
   // Significance
@@ -128,7 +188,12 @@ export class VarianceAnalysis {
   @Column({ type: 'text', nullable: true })
   explanation: string | null;
 
-  @Column({ type: 'varchar', length: 100, name: 'explanation_category', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'explanation_category',
+    nullable: true,
+  })
   explanationCategory: string | null;
 
   @Column({ type: 'uuid', name: 'explained_by_user_id', nullable: true })
@@ -147,9 +212,17 @@ export class VarianceAnalysis {
   @Column({ type: 'text', name: 'review_comment', nullable: true })
   reviewComment: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

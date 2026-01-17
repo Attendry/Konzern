@@ -17,7 +17,7 @@ export interface HGBParagraph {
 @Injectable()
 export class HGBKnowledgeService {
   private readonly logger = new Logger(HGBKnowledgeService.name);
-  
+
   // In-memory cache for frequently accessed paragraphs
   private cache: Map<string, HGBParagraph> = new Map();
 
@@ -58,7 +58,6 @@ export class HGBKnowledgeService {
       // Cache the result
       this.cache.set(paragraph, result);
       return result;
-
     } catch (error: any) {
       this.logger.warn(`Failed to get HGB paragraph: ${error.message}`);
       return this.getLocalParagraph(paragraph);
@@ -81,7 +80,7 @@ export class HGBKnowledgeService {
         return [];
       }
 
-      return data.map(row => ({
+      return data.map((row) => ({
         id: row.id,
         paragraph: row.paragraph,
         title: row.title,
@@ -90,7 +89,6 @@ export class HGBKnowledgeService {
         subcategory: row.subcategory,
         relatedParagraphs: row.related_paragraphs,
       }));
-
     } catch (error: any) {
       this.logger.warn(`Failed to search HGB: ${error.message}`);
       return [];
@@ -113,7 +111,7 @@ export class HGBKnowledgeService {
         return [];
       }
 
-      return data.map(row => ({
+      return data.map((row) => ({
         id: row.id,
         paragraph: row.paragraph,
         title: row.title,
@@ -122,7 +120,6 @@ export class HGBKnowledgeService {
         subcategory: row.subcategory,
         relatedParagraphs: row.related_paragraphs,
       }));
-
     } catch (error: any) {
       this.logger.warn(`Failed to get category: ${error.message}`);
       return [];
@@ -154,13 +151,13 @@ export class HGBKnowledgeService {
    */
   getRelevantParagraph(consolidationType: string): string {
     const mapping: Record<string, string> = {
-      'capital_consolidation': '§ 301 HGB',
-      'debt_consolidation': '§ 303 HGB',
-      'expense_income_elimination': '§ 305 HGB',
-      'intermediate_result': '§ 304 HGB',
-      'goodwill': '§ 309 HGB',
-      'consolidation_obligation': '§ 290 HGB',
-      'consolidation_scope': '§ 300 HGB',
+      capital_consolidation: '§ 301 HGB',
+      debt_consolidation: '§ 303 HGB',
+      expense_income_elimination: '§ 305 HGB',
+      intermediate_result: '§ 304 HGB',
+      goodwill: '§ 309 HGB',
+      consolidation_obligation: '§ 290 HGB',
+      consolidation_scope: '§ 300 HGB',
     };
 
     return mapping[consolidationType] || '§ 290 HGB';
@@ -176,9 +173,8 @@ export class HGBKnowledgeService {
     }
 
     // Return first 200 characters of content
-    const summary = p.content.length > 200
-      ? p.content.substring(0, 200) + '...'
-      : p.content;
+    const summary =
+      p.content.length > 200 ? p.content.substring(0, 200) + '...' : p.content;
 
     return `${p.paragraph} - ${p.title}: ${summary}`;
   }
@@ -192,7 +188,8 @@ export class HGBKnowledgeService {
         id: 'local-290',
         paragraph: '§ 290 HGB',
         title: 'Pflicht zur Aufstellung',
-        content: 'Die gesetzlichen Vertreter einer Kapitalgesellschaft (Mutterunternehmen) mit Sitz im Inland haben in den ersten fünf Monaten des Konzerngeschäftsjahrs für das vergangene Konzerngeschäftsjahr einen Konzernabschluss und einen Konzernlagebericht aufzustellen, wenn diese auf ein anderes Unternehmen (Tochterunternehmen) unmittelbar oder mittelbar einen beherrschenden Einfluss ausüben kann.',
+        content:
+          'Die gesetzlichen Vertreter einer Kapitalgesellschaft (Mutterunternehmen) mit Sitz im Inland haben in den ersten fünf Monaten des Konzerngeschäftsjahrs für das vergangene Konzerngeschäftsjahr einen Konzernabschluss und einen Konzernlagebericht aufzustellen, wenn diese auf ein anderes Unternehmen (Tochterunternehmen) unmittelbar oder mittelbar einen beherrschenden Einfluss ausüben kann.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 291 HGB', '§ 292 HGB', '§ 293 HGB'],
       },
@@ -200,7 +197,8 @@ export class HGBKnowledgeService {
         id: 'local-300',
         paragraph: '§ 300 HGB',
         title: 'Konsolidierungsgrundsätze, Vollständigkeitsgebot',
-        content: 'In den Konzernabschluss sind das Mutterunternehmen und alle Tochterunternehmen ohne Rücksicht auf den Sitz der Tochterunternehmen einzubeziehen, sofern die Einbeziehung nicht nach § 296 unterbleibt.',
+        content:
+          'In den Konzernabschluss sind das Mutterunternehmen und alle Tochterunternehmen ohne Rücksicht auf den Sitz der Tochterunternehmen einzubeziehen, sofern die Einbeziehung nicht nach § 296 unterbleibt.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 296 HGB', '§ 301 HGB'],
       },
@@ -208,7 +206,8 @@ export class HGBKnowledgeService {
         id: 'local-301',
         paragraph: '§ 301 HGB',
         title: 'Kapitalkonsolidierung',
-        content: 'Der Wertansatz der dem Mutterunternehmen gehörenden Anteile an einem in den Konzernabschluss einbezogenen Tochterunternehmen wird mit dem auf diese Anteile entfallenden Betrag des Eigenkapitals des Tochterunternehmens verrechnet.',
+        content:
+          'Der Wertansatz der dem Mutterunternehmen gehörenden Anteile an einem in den Konzernabschluss einbezogenen Tochterunternehmen wird mit dem auf diese Anteile entfallenden Betrag des Eigenkapitals des Tochterunternehmens verrechnet.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 300 HGB', '§ 302 HGB', '§ 309 HGB'],
       },
@@ -216,7 +215,8 @@ export class HGBKnowledgeService {
         id: 'local-303',
         paragraph: '§ 303 HGB',
         title: 'Schuldenkonsolidierung',
-        content: 'Ausleihungen und andere Forderungen, Rückstellungen und Verbindlichkeiten zwischen den in den Konzernabschluss einbezogenen Unternehmen sowie entsprechende Rechnungsabgrenzungsposten sind wegzulassen.',
+        content:
+          'Ausleihungen und andere Forderungen, Rückstellungen und Verbindlichkeiten zwischen den in den Konzernabschluss einbezogenen Unternehmen sowie entsprechende Rechnungsabgrenzungsposten sind wegzulassen.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 304 HGB', '§ 305 HGB'],
       },
@@ -224,7 +224,8 @@ export class HGBKnowledgeService {
         id: 'local-304',
         paragraph: '§ 304 HGB',
         title: 'Behandlung der Zwischenergebnisse',
-        content: 'In den Konzernabschluss zu übernehmende Vermögensgegenstände, die ganz oder teilweise auf Lieferungen oder Leistungen zwischen in den Konzernabschluss einbezogenen Unternehmen beruhen, sind mit einem Betrag anzusetzen, zu dem sie in der auf den Stichtag des Konzernabschlusses aufgestellten Jahresbilanz dieses Unternehmens angesetzt werden könnten.',
+        content:
+          'In den Konzernabschluss zu übernehmende Vermögensgegenstände, die ganz oder teilweise auf Lieferungen oder Leistungen zwischen in den Konzernabschluss einbezogenen Unternehmen beruhen, sind mit einem Betrag anzusetzen, zu dem sie in der auf den Stichtag des Konzernabschlusses aufgestellten Jahresbilanz dieses Unternehmens angesetzt werden könnten.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 303 HGB', '§ 305 HGB'],
       },
@@ -232,7 +233,8 @@ export class HGBKnowledgeService {
         id: 'local-305',
         paragraph: '§ 305 HGB',
         title: 'Aufwands- und Ertragskonsolidierung',
-        content: 'In der Konzern-Gewinn- und Verlustrechnung sind bei den Umsatzerlösen die Erlöse aus Lieferungen und Leistungen zwischen den in den Konzernabschluss einbezogenen Unternehmen mit den auf sie entfallenden Aufwendungen zu verrechnen.',
+        content:
+          'In der Konzern-Gewinn- und Verlustrechnung sind bei den Umsatzerlösen die Erlöse aus Lieferungen und Leistungen zwischen den in den Konzernabschluss einbezogenen Unternehmen mit den auf sie entfallenden Aufwendungen zu verrechnen.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 303 HGB', '§ 304 HGB'],
       },
@@ -240,7 +242,8 @@ export class HGBKnowledgeService {
         id: 'local-309',
         paragraph: '§ 309 HGB',
         title: 'Behandlung des Unterschiedsbetrags',
-        content: 'Ein nach § 301 Abs. 3 auf der Aktivseite auszuweisender Unterschiedsbetrag ist in jedem folgenden Geschäftsjahr zu mindestens einem Viertel durch Abschreibungen zu tilgen. Die Abschreibungsdauer darf 5 Jahre nur überschreiten, wenn ein längerer Zeitraum, der 10 Jahre nicht überschreiten darf, dem voraussichtlichen Nutzungszeitraum entspricht.',
+        content:
+          'Ein nach § 301 Abs. 3 auf der Aktivseite auszuweisender Unterschiedsbetrag ist in jedem folgenden Geschäftsjahr zu mindestens einem Viertel durch Abschreibungen zu tilgen. Die Abschreibungsdauer darf 5 Jahre nur überschreiten, wenn ein längerer Zeitraum, der 10 Jahre nicht überschreiten darf, dem voraussichtlichen Nutzungszeitraum entspricht.',
         category: 'Konsolidierung',
         relatedParagraphs: ['§ 301 HGB'],
       },

@@ -108,7 +108,8 @@ export interface ConsolidationData {
 export class PlausibilityService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService: AuditLogService,
   ) {}
 
@@ -117,7 +118,9 @@ export class PlausibilityService {
   /**
    * Get all active plausibility rules
    */
-  async getActiveRules(category?: PlausibilityRuleCategory): Promise<PlausibilityRule[]> {
+  async getActiveRules(
+    category?: PlausibilityRuleCategory,
+  ): Promise<PlausibilityRule[]> {
     const supabase = this.supabaseService.getClient();
 
     let query = supabase
@@ -162,7 +165,10 @@ export class PlausibilityService {
   /**
    * Create a new plausibility rule
    */
-  async createRule(rule: Partial<PlausibilityRule>, userId?: string): Promise<PlausibilityRule> {
+  async createRule(
+    rule: Partial<PlausibilityRule>,
+    userId?: string,
+  ): Promise<PlausibilityRule> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -197,7 +203,11 @@ export class PlausibilityService {
   /**
    * Update a plausibility rule
    */
-  async updateRule(ruleId: string, updates: Partial<PlausibilityRule>, userId?: string): Promise<PlausibilityRule> {
+  async updateRule(
+    ruleId: string,
+    updates: Partial<PlausibilityRule>,
+    userId?: string,
+  ): Promise<PlausibilityRule> {
     const supabase = this.supabaseService.getClient();
 
     const { data: existing } = await supabase
@@ -303,12 +313,16 @@ export class PlausibilityService {
 
       // Filter by categories if specified
       if (categories && categories.length > 0) {
-        rules = rules.filter(rule => categories.includes(rule.category as PlausibilityRuleCategory));
+        rules = rules.filter((rule) =>
+          categories.includes(rule.category as PlausibilityRuleCategory),
+        );
       }
 
       // Get financial statement data
-      const balanceSheetData = await this.getBalanceSheetData(financialStatementId);
-      const consolidationData = await this.getConsolidationData(financialStatementId);
+      const balanceSheetData =
+        await this.getBalanceSheetData(financialStatementId);
+      const consolidationData =
+        await this.getConsolidationData(financialStatementId);
 
       // Execute each rule
       const results = {
@@ -416,7 +430,7 @@ export class PlausibilityService {
     let differencePercentage: number | null = null;
     let message: string | null = null;
     let details: string | null = null;
-    let affectedAccounts: string[] | null = null;
+    const affectedAccounts: string[] | null = null;
 
     try {
       const ruleExpression = JSON.parse(rule.ruleExpression);
@@ -427,11 +441,12 @@ export class PlausibilityService {
           expectedValue = balanceSheetData.totalAssets;
           actualValue = balanceSheetData.totalLiabilitiesAndEquity;
           differenceValue = Math.abs(expectedValue - actualValue);
-          
+
           if (differenceValue > (rule.toleranceAmount || 0.01)) {
-            status = rule.severity === PlausibilityRuleSeverity.ERROR 
-              ? PlausibilityCheckStatus.FAILED 
-              : PlausibilityCheckStatus.WARNING;
+            status =
+              rule.severity === PlausibilityRuleSeverity.ERROR
+                ? PlausibilityCheckStatus.FAILED
+                : PlausibilityCheckStatus.WARNING;
             message = `Bilanzgleichung nicht erfüllt: Aktiva (${expectedValue.toLocaleString('de-DE')} EUR) ≠ Passiva (${actualValue.toLocaleString('de-DE')} EUR)`;
             details = `Differenz: ${differenceValue.toLocaleString('de-DE')} EUR`;
           } else {
@@ -444,7 +459,7 @@ export class PlausibilityService {
           expectedValue = consolidationData.intercompanyReceivables;
           actualValue = consolidationData.intercompanyPayables;
           differenceValue = Math.abs(expectedValue - actualValue);
-          
+
           const icTolerance = rule.thresholdAbsolute || 0.01;
           if (differenceValue > icTolerance) {
             status = PlausibilityCheckStatus.WARNING;
@@ -460,7 +475,7 @@ export class PlausibilityService {
           actualValue = consolidationData.unreconciledIcBalance;
           expectedValue = 0;
           differenceValue = actualValue;
-          
+
           const debtTolerance = rule.thresholdAbsolute || 0.01;
           if (Math.abs(actualValue) > debtTolerance) {
             status = PlausibilityCheckStatus.WARNING;
@@ -476,7 +491,7 @@ export class PlausibilityService {
           expectedValue = consolidationData.intercompanyRevenue;
           actualValue = consolidationData.intercompanyExpenses;
           differenceValue = Math.abs(expectedValue - actualValue);
-          
+
           const ieTolerance = rule.thresholdAbsolute || 0.01;
           if (differenceValue > ieTolerance) {
             status = PlausibilityCheckStatus.WARNING;
@@ -492,7 +507,7 @@ export class PlausibilityService {
           actualValue = balanceSheetData.minorityInterests;
           expectedValue = consolidationData.minorityInterestAmount;
           differenceValue = Math.abs((actualValue || 0) - (expectedValue || 0));
-          
+
           if (differenceValue > (rule.toleranceAmount || 0.01)) {
             status = PlausibilityCheckStatus.WARNING;
             message = `Minderheitenanteile-Differenz: Bilanz (${(actualValue || 0).toLocaleString('de-DE')} EUR) vs. Berechnung (${(expectedValue || 0).toLocaleString('de-DE')} EUR)`;
@@ -531,7 +546,8 @@ export class PlausibilityService {
 
     // Calculate percentage difference if both values exist
     if (expectedValue !== null && actualValue !== null && expectedValue !== 0) {
-      differencePercentage = ((actualValue - expectedValue) / Math.abs(expectedValue)) * 100;
+      differencePercentage =
+        ((actualValue - expectedValue) / Math.abs(expectedValue)) * 100;
     }
 
     // Save the check result
@@ -573,10 +589,12 @@ export class PlausibilityService {
 
     let query = supabase
       .from('plausibility_checks')
-      .select(`
+      .select(
+        `
         *,
         rule:plausibility_rules(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId)
       .order('executed_at', { ascending: false });
 
@@ -596,7 +614,9 @@ export class PlausibilityService {
   /**
    * Get check summary for a financial statement
    */
-  async getCheckSummary(financialStatementId: string): Promise<PlausibilityCheckSummary> {
+  async getCheckSummary(
+    financialStatementId: string,
+  ): Promise<PlausibilityCheckSummary> {
     const checks = await this.getCheckResults(financialStatementId);
 
     const summary: PlausibilityCheckSummary = {
@@ -611,8 +631,14 @@ export class PlausibilityService {
       bySeverity: [],
     };
 
-    const categoryMap = new Map<string, { total: number; passed: number; failed: number; warnings: number }>();
-    const severityMap = new Map<string, { total: number; passed: number; failed: number }>();
+    const categoryMap = new Map<
+      string,
+      { total: number; passed: number; failed: number; warnings: number }
+    >();
+    const severityMap = new Map<
+      string,
+      { total: number; passed: number; failed: number }
+    >();
 
     for (const check of checks) {
       switch (check.status) {
@@ -640,15 +666,25 @@ export class PlausibilityService {
       const rule = check.rule as any;
       if (rule) {
         const category = rule.category;
-        const catStats = categoryMap.get(category) || { total: 0, passed: 0, failed: 0, warnings: 0 };
+        const catStats = categoryMap.get(category) || {
+          total: 0,
+          passed: 0,
+          failed: 0,
+          warnings: 0,
+        };
         catStats.total++;
         if (check.status === PlausibilityCheckStatus.PASSED) catStats.passed++;
         if (check.status === PlausibilityCheckStatus.FAILED) catStats.failed++;
-        if (check.status === PlausibilityCheckStatus.WARNING) catStats.warnings++;
+        if (check.status === PlausibilityCheckStatus.WARNING)
+          catStats.warnings++;
         categoryMap.set(category, catStats);
 
         const severity = rule.severity;
-        const sevStats = severityMap.get(severity) || { total: 0, passed: 0, failed: 0 };
+        const sevStats = severityMap.get(severity) || {
+          total: 0,
+          passed: 0,
+          failed: 0,
+        };
         sevStats.total++;
         if (check.status === PlausibilityCheckStatus.PASSED) sevStats.passed++;
         if (check.status === PlausibilityCheckStatus.FAILED) sevStats.failed++;
@@ -656,15 +692,19 @@ export class PlausibilityService {
       }
     }
 
-    summary.byCategory = Array.from(categoryMap.entries()).map(([category, stats]) => ({
-      category: category as PlausibilityRuleCategory,
-      ...stats,
-    }));
+    summary.byCategory = Array.from(categoryMap.entries()).map(
+      ([category, stats]) => ({
+        category: category as PlausibilityRuleCategory,
+        ...stats,
+      }),
+    );
 
-    summary.bySeverity = Array.from(severityMap.entries()).map(([severity, stats]) => ({
-      severity: severity as PlausibilityRuleSeverity,
-      ...stats,
-    }));
+    summary.bySeverity = Array.from(severityMap.entries()).map(
+      ([severity, stats]) => ({
+        severity: severity as PlausibilityRuleSeverity,
+        ...stats,
+      }),
+    );
 
     return summary;
   }
@@ -730,7 +770,9 @@ export class PlausibilityService {
   /**
    * Get check runs for a financial statement
    */
-  async getCheckRuns(financialStatementId: string): Promise<PlausibilityCheckRun[]> {
+  async getCheckRuns(
+    financialStatementId: string,
+  ): Promise<PlausibilityCheckRun[]> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -751,16 +793,20 @@ export class PlausibilityService {
   /**
    * Get balance sheet data for checks
    */
-  private async getBalanceSheetData(financialStatementId: string): Promise<BalanceSheetData> {
+  private async getBalanceSheetData(
+    financialStatementId: string,
+  ): Promise<BalanceSheetData> {
     const supabase = this.supabaseService.getClient();
 
     // Get account balances
     const { data: balances } = await supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId);
 
     let totalAssets = 0;
@@ -789,7 +835,10 @@ export class PlausibilityService {
         } else if (account.account_type === 'equity') {
           totalEquity += amount;
           // Check for minority interests
-          if (account.account_number?.startsWith('32') || account.name?.toLowerCase().includes('minderheit')) {
+          if (
+            account.account_number?.startsWith('32') ||
+            account.name?.toLowerCase().includes('minderheit')
+          ) {
             minorityInterests += amount;
           }
         }
@@ -809,7 +858,9 @@ export class PlausibilityService {
   /**
    * Get consolidation data for checks
    */
-  private async getConsolidationData(financialStatementId: string): Promise<ConsolidationData> {
+  private async getConsolidationData(
+    financialStatementId: string,
+  ): Promise<ConsolidationData> {
     const supabase = this.supabaseService.getClient();
 
     // Get IC transactions
@@ -825,7 +876,7 @@ export class PlausibilityService {
 
     for (const tx of icTransactions || []) {
       const amount = Number(tx.amount) || 0;
-      
+
       switch (tx.transaction_type) {
         case 'receivable':
           intercompanyReceivables += amount;
@@ -878,13 +929,17 @@ export class PlausibilityService {
     let minorityInterestAmount = 0;
 
     for (const entry of entries || []) {
-      if (entry.description?.toLowerCase().includes('geschäftswert') || 
-          entry.description?.toLowerCase().includes('goodwill') ||
-          entry.description?.toLowerCase().includes('firmenwert')) {
+      if (
+        entry.description?.toLowerCase().includes('geschäftswert') ||
+        entry.description?.toLowerCase().includes('goodwill') ||
+        entry.description?.toLowerCase().includes('firmenwert')
+      ) {
         goodwillAmount += Number(entry.amount) || 0;
       }
-      if (entry.entry_type === 'minority_interest' || 
-          entry.description?.toLowerCase().includes('minderheit')) {
+      if (
+        entry.entry_type === 'minority_interest' ||
+        entry.description?.toLowerCase().includes('minderheit')
+      ) {
         minorityInterestAmount += Number(entry.amount) || 0;
       }
     }

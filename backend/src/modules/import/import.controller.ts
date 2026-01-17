@@ -35,10 +35,7 @@ export class ImportController {
 
   @Post('excel')
   @UseInterceptors(FileInterceptor('file', multerConfig))
-  async importExcel(
-    @UploadedFile() file: MulterFile,
-    @Req() req: Request,
-  ) {
+  async importExcel(@UploadedFile() file: MulterFile, @Req() req: Request) {
     console.log('Excel Import Request:', {
       hasFile: !!file,
       fileName: file?.originalname,
@@ -78,7 +75,9 @@ export class ImportController {
 
     if (fileType !== 'excel') {
       console.error('Import error: Wrong file type', fileType);
-      throw new BadRequestException(`Falscher Dateityp für Excel-Import. Erhalten: ${fileType}, erwartet: excel`);
+      throw new BadRequestException(
+        `Falscher Dateityp für Excel-Import. Erhalten: ${fileType}, erwartet: excel`,
+      );
     }
 
     const importDataDto: ImportDataDto = {
@@ -92,10 +91,7 @@ export class ImportController {
 
   @Post('csv')
   @UseInterceptors(FileInterceptor('file', multerConfig))
-  async importCsv(
-    @UploadedFile() file: MulterFile,
-    @Req() req: Request,
-  ) {
+  async importCsv(@UploadedFile() file: MulterFile, @Req() req: Request) {
     console.log('CSV Import Request:', {
       hasFile: !!file,
       fileName: file?.originalname,
@@ -189,7 +185,9 @@ export class ImportController {
       throw new BadRequestException('Datei ist leer');
     }
 
-    const fiscalYear = parseInt(req.body?.fiscalYear || new Date().getFullYear().toString());
+    const fiscalYear = parseInt(
+      req.body?.fiscalYear || new Date().getFullYear().toString(),
+    );
     const periodStart = req.body?.periodStart;
     const periodEnd = req.body?.periodEnd;
 
@@ -201,32 +199,47 @@ export class ImportController {
   }
 
   @Get('template')
-  async getTemplate(@Res() res: Response, @Query('v') version?: string, @Query('t') timestamp?: string) {
+  async getTemplate(
+    @Res() res: Response,
+    @Query('v') version?: string,
+    @Query('t') timestamp?: string,
+  ) {
     try {
-      console.log(`Template download requested (version: ${version || 'unknown'}, timestamp: ${timestamp || 'none'})`);
-      
+      console.log(
+        `Template download requested (version: ${version || 'unknown'}, timestamp: ${timestamp || 'none'})`,
+      );
+
       // Timeout für Template-Laden (10 Sekunden)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Template loading timeout after 10 seconds')), 10000);
+        setTimeout(
+          () => reject(new Error('Template loading timeout after 10 seconds')),
+          10000,
+        );
       });
 
       const templatePromise = this.importService.getImportTemplate();
-      const template = await Promise.race([templatePromise, timeoutPromise]) as Buffer;
-      
+      const template = (await Promise.race([
+        templatePromise,
+        timeoutPromise,
+      ])) as Buffer;
+
       console.log('Template loaded, size:', template.length);
-      
+
       // Aggressive cache-busting headers to prevent any caching
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate, max-age=0',
+      );
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       res.setHeader('Last-Modified', new Date().toUTCString());
       res.setHeader('ETag', `"${Date.now()}-${template.length}"`);
-      
+
       // Add version to filename if provided
-      const filename = version 
+      const filename = version
         ? `Konsolidierung_Muster_v${version}.xlsx`
         : `Konsolidierung_Muster_v3.0.xlsx`;
-      
+
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -239,12 +252,13 @@ export class ImportController {
     } catch (error: any) {
       console.error('Error loading template:', error);
       if (error.message?.includes('timeout')) {
-        res.status(504).json({ 
-          error: 'Template konnte nicht geladen werden - Timeout. Bitte versuchen Sie es erneut.' 
+        res.status(504).json({
+          error:
+            'Template konnte nicht geladen werden - Timeout. Bitte versuchen Sie es erneut.',
         });
       } else {
-        res.status(500).json({ 
-          error: error.message || 'Fehler beim Laden der Vorlage' 
+        res.status(500).json({
+          error: error.message || 'Fehler beim Laden der Vorlage',
         });
       }
     }

@@ -39,7 +39,8 @@ export interface WahlrechtSummary {
 export class PolicyService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService: AuditLogService,
   ) {}
 
@@ -85,7 +86,9 @@ export class PolicyService {
   /**
    * Get active policies for a given date
    */
-  async getActivePolicies(asOfDate: Date = new Date()): Promise<AccountingPolicy[]> {
+  async getActivePolicies(
+    asOfDate: Date = new Date(),
+  ): Promise<AccountingPolicy[]> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -93,7 +96,9 @@ export class PolicyService {
       .select('*')
       .eq('status', PolicyStatus.ACTIVE)
       .lte('effective_date', asOfDate.toISOString())
-      .or(`expiration_date.is.null,expiration_date.gte.${asOfDate.toISOString()}`)
+      .or(
+        `expiration_date.is.null,expiration_date.gte.${asOfDate.toISOString()}`,
+      )
       .order('category', { ascending: true });
 
     if (error) {
@@ -180,12 +185,22 @@ export class PolicyService {
     }
 
     // Check if HGB mandatory policy is being modified inappropriately
-    if (existing.isHgbMandatory && updates.policyText && !updates.hgbReference) {
-      throw new Error('Cannot modify HGB mandatory policy text without proper justification');
+    if (
+      existing.isHgbMandatory &&
+      updates.policyText &&
+      !updates.hgbReference
+    ) {
+      throw new Error(
+        'Cannot modify HGB mandatory policy text without proper justification',
+      );
     }
 
     // Create version history if policy text changed
-    if (createVersion && updates.policyText && updates.policyText !== existing.policyText) {
+    if (
+      createVersion &&
+      updates.policyText &&
+      updates.policyText !== existing.policyText
+    ) {
       await supabase.from('policy_versions').insert({
         policy_id: policyId,
         version: existing.version,
@@ -228,7 +243,10 @@ export class PolicyService {
   /**
    * Activate a policy
    */
-  async activatePolicy(policyId: string, userId: string): Promise<AccountingPolicy> {
+  async activatePolicy(
+    policyId: string,
+    userId: string,
+  ): Promise<AccountingPolicy> {
     const policy = await this.getPolicy(policyId);
     if (!policy) {
       throw new Error('Policy not found');
@@ -329,10 +347,12 @@ export class PolicyService {
       categoryMap.set(policy.category, count + 1);
     }
 
-    summary.byCategory = Array.from(categoryMap.entries()).map(([category, count]) => ({
-      category,
-      count,
-    }));
+    summary.byCategory = Array.from(categoryMap.entries()).map(
+      ([category, count]) => ({
+        category,
+        count,
+      }),
+    );
 
     return summary;
   }
@@ -387,7 +407,9 @@ export class PolicyService {
   /**
    * Create a new Wahlrecht
    */
-  async createWahlrecht(wahlrecht: Partial<HgbWahlrecht>): Promise<HgbWahlrecht> {
+  async createWahlrecht(
+    wahlrecht: Partial<HgbWahlrecht>,
+  ): Promise<HgbWahlrecht> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -414,10 +436,12 @@ export class PolicyService {
 
     let query = supabase
       .from('wahlrechte_selections')
-      .select(`
+      .select(
+        `
         *,
         wahlrecht:hgb_wahlrechte(*)
-      `)
+      `,
+      )
       .order('effective_from', { ascending: false });
 
     if (companyId) {
@@ -456,12 +480,17 @@ export class PolicyService {
     // Check if once_chosen_binding and there's an existing selection
     if (wahlrecht.onceChosenBinding && selection.companyId) {
       const existing = await this.getWahlrechtSelections(selection.companyId);
-      const existingForWahlrecht = existing.find(s => s.wahlrechtId === wahlrechtId);
+      const existingForWahlrecht = existing.find(
+        (s) => s.wahlrechtId === wahlrechtId,
+      );
 
-      if (existingForWahlrecht && existingForWahlrecht.selectedOption !== selection.selectedOption) {
+      if (
+        existingForWahlrecht &&
+        existingForWahlrecht.selectedOption !== selection.selectedOption
+      ) {
         throw new Error(
           `Wahlrecht "${wahlrecht.name}" ist stetigkeitsgebunden. ` +
-          `Gewählte Option "${existingForWahlrecht.selectedOption}" kann nicht geändert werden.`,
+            `Gewählte Option "${existingForWahlrecht.selectedOption}" kann nicht geändert werden.`,
         );
       }
     }
@@ -508,7 +537,9 @@ export class PolicyService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to approve Wahlrecht selection: ${error.message}`);
+      throw new Error(
+        `Failed to approve Wahlrecht selection: ${error.message}`,
+      );
     }
 
     return data;
@@ -523,8 +554,8 @@ export class PolicyService {
       this.getWahlrechtSelections(),
     ]);
 
-    const bindingCount = selections.filter(s => {
-      const wahlrecht = wahlrechte.find(w => w.id === s.wahlrechtId);
+    const bindingCount = selections.filter((s) => {
+      const wahlrecht = wahlrechte.find((w) => w.id === s.wahlrechtId);
       return wahlrecht?.onceChosenBinding;
     }).length;
 

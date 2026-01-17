@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Req } from '@nestjs/common';
 import { Request } from 'express';
 import {
   ManagementReportService,
@@ -50,8 +42,11 @@ export class ManagementReportController {
    * Get report by financial statement
    */
   @Get('financial-statement/:financialStatementId')
-  async getByFinancialStatement(@Param('financialStatementId') financialStatementId: string) {
-    const report = await this.reportService.getByFinancialStatement(financialStatementId);
+  async getByFinancialStatement(
+    @Param('financialStatementId') financialStatementId: string,
+  ) {
+    const report =
+      await this.reportService.getByFinancialStatement(financialStatementId);
     return { success: true, report };
   }
 
@@ -77,7 +72,10 @@ export class ManagementReportController {
     @Param('id') id: string,
     @Body('financialStatementId') financialStatementId: string,
   ) {
-    const keyFigures = await this.reportService.generateKeyFigures(id, financialStatementId);
+    const keyFigures = await this.reportService.generateKeyFigures(
+      id,
+      financialStatementId,
+    );
     return { success: true, keyFigures };
   }
 
@@ -104,7 +102,10 @@ export class ManagementReportController {
    */
   @Post(':id/approve')
   async approve(@Param('id') id: string, @Req() req: Request) {
-    const report = await this.reportService.approve(id, req.user?.id || 'system');
+    const report = await this.reportService.approve(
+      id,
+      req.user?.id || 'system',
+    );
     return { success: true, report };
   }
 

@@ -1,7 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
-export type ReportStatus = 'draft' | 'in_review' | 'approved' | 'published' | 'archived';
+export type ReportStatus =
+  | 'draft'
+  | 'in_review'
+  | 'approved'
+  | 'published'
+  | 'archived';
 
 export interface ReportSection {
   title: string;
@@ -64,7 +73,9 @@ export class ManagementReportService {
       .single();
 
     if (existing) {
-      throw new BadRequestException('Konzernlagebericht für diesen Jahresabschluss existiert bereits');
+      throw new BadRequestException(
+        'Konzernlagebericht für diesen Jahresabschluss existiert bereits',
+      );
     }
 
     const { data, error } = await this.supabase
@@ -79,7 +90,9 @@ export class ManagementReportService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Konzernlagebericht konnte nicht erstellt werden: ${error.message}`);
+      throw new BadRequestException(
+        `Konzernlagebericht konnte nicht erstellt werden: ${error.message}`,
+      );
     }
 
     // Generate initial key figures
@@ -99,7 +112,9 @@ export class ManagementReportService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException(`Konzernlagebericht mit ID ${id} nicht gefunden`);
+      throw new NotFoundException(
+        `Konzernlagebericht mit ID ${id} nicht gefunden`,
+      );
     }
 
     return this.mapToReport(data);
@@ -108,7 +123,9 @@ export class ManagementReportService {
   /**
    * Get report by financial statement
    */
-  async getByFinancialStatement(financialStatementId: string): Promise<ManagementReport | null> {
+  async getByFinancialStatement(
+    financialStatementId: string,
+  ): Promise<ManagementReport | null> {
     const { data, error } = await this.supabase
       .from('management_reports')
       .select('*')
@@ -132,7 +149,9 @@ export class ManagementReportService {
       .order('fiscal_year', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Konzernlageberichte: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Konzernlageberichte: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapToReport);
@@ -141,11 +160,16 @@ export class ManagementReportService {
   /**
    * Update a section
    */
-  async updateSection(reportId: string, dto: UpdateSectionDto): Promise<ManagementReport> {
+  async updateSection(
+    reportId: string,
+    dto: UpdateSectionDto,
+  ): Promise<ManagementReport> {
     const report = await this.getById(reportId);
 
     if (report.status === 'published') {
-      throw new BadRequestException('Veröffentlichte Berichte können nicht bearbeitet werden');
+      throw new BadRequestException(
+        'Veröffentlichte Berichte können nicht bearbeitet werden',
+      );
     }
 
     const sections = { ...report.sections };
@@ -169,7 +193,9 @@ export class ManagementReportService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Abschnitt konnte nicht aktualisiert werden: ${error.message}`);
+      throw new BadRequestException(
+        `Abschnitt konnte nicht aktualisiert werden: ${error.message}`,
+      );
     }
 
     return this.mapToReport(data);
@@ -178,7 +204,10 @@ export class ManagementReportService {
   /**
    * Generate key figures from financial data
    */
-  async generateKeyFigures(reportId: string, financialStatementId: string): Promise<Record<string, any>> {
+  async generateKeyFigures(
+    reportId: string,
+    financialStatementId: string,
+  ): Promise<Record<string, any>> {
     // Get financial data
     const { data: balances } = await this.supabase
       .from('account_balances')
@@ -224,8 +253,10 @@ export class ManagementReportService {
     // Calculate ratios
     const netIncome = totalRevenue - totalExpenses;
     const equityRatio = totalAssets > 0 ? (totalEquity / totalAssets) * 100 : 0;
-    const profitMargin = totalRevenue > 0 ? (netIncome / totalRevenue) * 100 : 0;
-    const returnOnEquity = totalEquity > 0 ? (netIncome / totalEquity) * 100 : 0;
+    const profitMargin =
+      totalRevenue > 0 ? (netIncome / totalRevenue) * 100 : 0;
+    const returnOnEquity =
+      totalEquity > 0 ? (netIncome / totalEquity) * 100 : 0;
 
     // Consolidation summary
     const consolidationEntriesCount = entries?.length || 0;
@@ -274,7 +305,9 @@ export class ManagementReportService {
   /**
    * Generate content suggestions for sections
    */
-  async generateContentSuggestions(reportId: string): Promise<Record<string, string>> {
+  async generateContentSuggestions(
+    reportId: string,
+  ): Promise<Record<string, string>> {
     const report = await this.getById(reportId);
     const keyFigures = report.keyFigures;
 
@@ -285,7 +318,8 @@ export class ManagementReportService {
 
     // Financial performance suggestion
     const netIncome = keyFigures.incomeStatement?.netIncome || 0;
-    const incomeText = netIncome >= 0 ? 'einen Jahresüberschuss' : 'einen Jahresfehlbetrag';
+    const incomeText =
+      netIncome >= 0 ? 'einen Jahresüberschuss' : 'einen Jahresfehlbetrag';
     suggestions.financial_performance = `Der Konzern erwirtschaftete ${incomeText} von ${this.formatCurrency(Math.abs(netIncome))}. Die Umsatzrendite beträgt ${keyFigures.ratios?.profitMargin || 0}%.`;
 
     // Financial position suggestion
@@ -319,7 +353,9 @@ export class ManagementReportService {
     const report = await this.getById(reportId);
 
     if (report.status !== 'draft') {
-      throw new BadRequestException('Nur Entwürfe können zur Prüfung eingereicht werden');
+      throw new BadRequestException(
+        'Nur Entwürfe können zur Prüfung eingereicht werden',
+      );
     }
 
     return this.updateStatus(reportId, 'in_review');
@@ -328,11 +364,16 @@ export class ManagementReportService {
   /**
    * Approve report
    */
-  async approve(reportId: string, approvedByUserId: string): Promise<ManagementReport> {
+  async approve(
+    reportId: string,
+    approvedByUserId: string,
+  ): Promise<ManagementReport> {
     const report = await this.getById(reportId);
 
     if (report.status !== 'in_review') {
-      throw new BadRequestException('Nur Berichte in Prüfung können freigegeben werden');
+      throw new BadRequestException(
+        'Nur Berichte in Prüfung können freigegeben werden',
+      );
     }
 
     const { data, error } = await this.supabase
@@ -348,7 +389,9 @@ export class ManagementReportService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Bericht konnte nicht freigegeben werden: ${error.message}`);
+      throw new BadRequestException(
+        `Bericht konnte nicht freigegeben werden: ${error.message}`,
+      );
     }
 
     return this.mapToReport(data);
@@ -361,7 +404,9 @@ export class ManagementReportService {
     const report = await this.getById(reportId);
 
     if (report.status !== 'approved') {
-      throw new BadRequestException('Nur freigegebene Berichte können veröffentlicht werden');
+      throw new BadRequestException(
+        'Nur freigegebene Berichte können veröffentlicht werden',
+      );
     }
 
     const { data, error } = await this.supabase
@@ -376,7 +421,9 @@ export class ManagementReportService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Bericht konnte nicht veröffentlicht werden: ${error.message}`);
+      throw new BadRequestException(
+        `Bericht konnte nicht veröffentlicht werden: ${error.message}`,
+      );
     }
 
     return this.mapToReport(data);
@@ -393,7 +440,9 @@ export class ManagementReportService {
       .order('version_number', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Versionen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Versionen: ${error.message}`,
+      );
     }
 
     return data || [];
@@ -424,7 +473,10 @@ export class ManagementReportService {
 
   // ==================== HELPERS ====================
 
-  private async updateStatus(reportId: string, status: ReportStatus): Promise<ManagementReport> {
+  private async updateStatus(
+    reportId: string,
+    status: ReportStatus,
+  ): Promise<ManagementReport> {
     const { data, error } = await this.supabase
       .from('management_reports')
       .update({
@@ -436,7 +488,9 @@ export class ManagementReportService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Status konnte nicht aktualisiert werden: ${error.message}`);
+      throw new BadRequestException(
+        `Status konnte nicht aktualisiert werden: ${error.message}`,
+      );
     }
 
     return this.mapToReport(data);

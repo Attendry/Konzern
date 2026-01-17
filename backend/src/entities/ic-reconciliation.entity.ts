@@ -11,18 +11,18 @@ import { FinancialStatement } from './financial-statement.entity';
 
 // Status of IC reconciliation
 export enum ICReconciliationStatus {
-  OPEN = 'open',           // Difference not resolved
+  OPEN = 'open', // Difference not resolved
   EXPLAINED = 'explained', // Difference explained/documented
-  CLEARED = 'cleared',     // Cleared with adjustment entry
-  ACCEPTED = 'accepted',   // Accepted as immaterial
+  CLEARED = 'cleared', // Cleared with adjustment entry
+  ACCEPTED = 'accepted', // Accepted as immaterial
 }
 
 // Reason for IC difference
 export enum ICDifferenceReason {
-  TIMING = 'timing',                     // Transaction in transit
-  CURRENCY = 'currency',                 // Exchange rate differences
-  BOOKING_ERROR = 'booking_error',       // Booking error by one party
-  MISSING_ENTRY = 'missing_entry',       // Entry missing on one side
+  TIMING = 'timing', // Transaction in transit
+  CURRENCY = 'currency', // Exchange rate differences
+  BOOKING_ERROR = 'booking_error', // Booking error by one party
+  MISSING_ENTRY = 'missing_entry', // Entry missing on one side
   DIFFERENT_VALUATION = 'different_valuation', // Different valuation methods
   INTERCOMPANY_PROFIT = 'intercompany_profit', // Unrealized IC profit
   OTHER = 'other',
@@ -73,15 +73,30 @@ export class ICReconciliation {
   accountB: Account;
 
   // Balance at Company A (e.g., receivable)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'amount_company_a' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'amount_company_a',
+  })
   amountCompanyA: number;
 
   // Balance at Company B (e.g., payable)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'amount_company_b' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'amount_company_b',
+  })
   amountCompanyB: number;
 
   // Calculated difference
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'difference_amount' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'difference_amount',
+  })
   differenceAmount: number;
 
   @Column({
@@ -115,9 +130,17 @@ export class ICReconciliation {
   @Column({ type: 'timestamp', nullable: true, name: 'resolved_at' })
   resolvedAt: Date | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

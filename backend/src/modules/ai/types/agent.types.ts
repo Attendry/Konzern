@@ -8,9 +8,9 @@
 // ==========================================
 
 export const CONFIDENCE_THRESHOLDS = {
-  high: 0.85,    // Hoch - Empfehlung kann verwendet werden
-  medium: 0.65,  // Mittel - Manuelle Prüfung empfohlen
-  low: 0.50,     // Niedrig - Nicht verlässlich
+  high: 0.85, // Hoch - Empfehlung kann verwendet werden
+  medium: 0.65, // Mittel - Manuelle Prüfung empfohlen
+  low: 0.5, // Niedrig - Nicht verlässlich
 } as const;
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
@@ -87,7 +87,7 @@ export const MODE_TIMEOUT_MINUTES = 30;
 // PROVENANCE
 // ==========================================
 
-export type ProvenanceType = 
+export type ProvenanceType =
   | 'database_record'
   | 'hgb_paragraph'
   | 'calculation'
@@ -108,7 +108,7 @@ export interface ProvenanceInfo {
 // ACTIONS
 // ==========================================
 
-export type SuggestedActionType = 
+export type SuggestedActionType =
   | 'navigate'
   | 'create_correction'
   | 'export'
@@ -169,8 +169,14 @@ export interface AgentTool {
   requiresConfirmation: boolean;
   supportsBatch: boolean;
   maxBatchSize?: number;
-  execute: (params: Record<string, any>, context: AgentContext) => Promise<ToolResult>;
-  executeBatch?: (items: string[], context: AgentContext) => Promise<BatchResult>;
+  execute: (
+    params: Record<string, any>,
+    context: AgentContext,
+  ) => Promise<ToolResult>;
+  executeBatch?: (
+    items: string[],
+    context: AgentContext,
+  ) => Promise<BatchResult>;
 }
 
 // ==========================================
@@ -289,13 +295,13 @@ export interface AuditLogEntry {
 
 export const DISCLAIMERS = {
   general: `Hinweis: Diese AI-Analyse dient als Unterstützung und ersetzt nicht die professionelle Beurteilung des Wirtschaftsprüfers. Alle Empfehlungen sind zu prüfen und zu dokumentieren.`,
-  
+
   action: `Aktions-Modus: Änderungen werden erst nach Ihrer expliziten Bestätigung durchgeführt. Sie tragen die Verantwortung für alle durchgeführten Aktionen.`,
-  
+
   hgb: `Die HGB-Referenzen basieren auf dem aktuellen Rechtsstand. Bei Zweifelsfällen konsultieren Sie bitte die Fachliteratur oder einen Rechtsberater.`,
-  
-  dataQuality: (completeness: number): string | null => 
-    completeness < 0.9 
+
+  dataQuality: (completeness: number): string | null =>
+    completeness < 0.9
       ? `Datenqualität: Nur ${Math.round(completeness * 100)}% der erforderlichen Daten liegen vor. Die Analyse ist entsprechend eingeschränkt.`
       : null,
 };
@@ -305,21 +311,21 @@ export function getDisclaimer(
   quality?: QualityIndicators,
 ): string {
   const parts: string[] = [];
-  
+
   if (context.mode.type === 'action') {
     parts.push(DISCLAIMERS.action);
   } else {
     parts.push(DISCLAIMERS.general);
   }
-  
+
   if (quality) {
     const dataQualityDisclaimer = DISCLAIMERS.dataQuality(
-      quality.dataCompleteness.percentage / 100
+      quality.dataCompleteness.percentage / 100,
     );
     if (dataQualityDisclaimer) {
       parts.push(dataQualityDisclaimer);
     }
   }
-  
+
   return parts.join('\n\n');
 }

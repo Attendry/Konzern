@@ -11,13 +11,41 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { PolicyService, PolicySummary, WahlrechtSummary } from './policy.service';
-import { RulesEngineService, RuleExecutionResult, RuleSummary } from './rules-engine.service';
-import { GaapHgbMappingService, GaapAdjustment, AdjustmentSummary, MappingSummary } from './gaap-hgb-mapping.service';
-import { AccountingPolicy, PolicyCategory, PolicyStatus } from '../../entities/accounting-policy.entity';
-import { ConsolidationRule, ConsolidationRuleType, RuleFlexibility } from '../../entities/consolidation-rule.entity';
-import { GaapHgbMapping, GaapStandard, GaapAdjustmentType } from '../../entities/gaap-hgb-mapping.entity';
-import { HgbWahlrecht, WahlrechtSelection } from '../../entities/hgb-wahlrecht.entity';
+import {
+  PolicyService,
+  PolicySummary,
+  WahlrechtSummary,
+} from './policy.service';
+import {
+  RulesEngineService,
+  RuleExecutionResult,
+  RuleSummary,
+} from './rules-engine.service';
+import {
+  GaapHgbMappingService,
+  GaapAdjustment,
+  AdjustmentSummary,
+  MappingSummary,
+} from './gaap-hgb-mapping.service';
+import {
+  AccountingPolicy,
+  PolicyCategory,
+  PolicyStatus,
+} from '../../entities/accounting-policy.entity';
+import {
+  ConsolidationRule,
+  ConsolidationRuleType,
+  RuleFlexibility,
+} from '../../entities/consolidation-rule.entity';
+import {
+  GaapHgbMapping,
+  GaapStandard,
+  GaapAdjustmentType,
+} from '../../entities/gaap-hgb-mapping.entity';
+import {
+  HgbWahlrecht,
+  WahlrechtSelection,
+} from '../../entities/hgb-wahlrecht.entity';
 
 // ==================== DTOs ====================
 
@@ -224,13 +252,13 @@ export class PolicyController {
    * Create a new policy
    */
   @Post('policies')
-  async createPolicy(
-    @Body() dto: CreatePolicyDto,
-  ): Promise<AccountingPolicy> {
+  async createPolicy(@Body() dto: CreatePolicyDto): Promise<AccountingPolicy> {
     return this.policyService.createPolicy({
       ...dto,
       effectiveDate: new Date(dto.effectiveDate),
-      expirationDate: dto.expirationDate ? new Date(dto.expirationDate) : undefined,
+      expirationDate: dto.expirationDate
+        ? new Date(dto.expirationDate)
+        : undefined,
     } as any);
   }
 
@@ -516,7 +544,9 @@ export class PolicyController {
   async getAdjustmentSummary(
     @Param('financialStatementId', ParseUUIDPipe) financialStatementId: string,
   ): Promise<AdjustmentSummary> {
-    return this.gaapHgbMappingService.getAdjustmentSummary(financialStatementId);
+    return this.gaapHgbMappingService.getAdjustmentSummary(
+      financialStatementId,
+    );
   }
 
   /**
@@ -594,7 +624,10 @@ export class PolicyController {
     @Query('companyId') companyId?: string,
     @Query('financialStatementId') financialStatementId?: string,
   ): Promise<WahlrechtSelection[]> {
-    return this.policyService.getWahlrechtSelections(companyId, financialStatementId);
+    return this.policyService.getWahlrechtSelections(
+      companyId,
+      financialStatementId,
+    );
   }
 
   /**
@@ -609,8 +642,12 @@ export class PolicyController {
       wahlrechtId,
       {
         ...dto,
-        effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : undefined,
-        effectiveUntil: dto.effectiveUntil ? new Date(dto.effectiveUntil) : undefined,
+        effectiveFrom: dto.effectiveFrom
+          ? new Date(dto.effectiveFrom)
+          : undefined,
+        effectiveUntil: dto.effectiveUntil
+          ? new Date(dto.effectiveUntil)
+          : undefined,
       } as any,
       dto.userId,
     );
@@ -659,19 +696,71 @@ export class PolicyController {
   @Get('metadata/rule-types')
   getRuleTypes(): { value: string; label: string; hgbReference?: string }[] {
     return [
-      { value: 'capital_consolidation', label: 'Kapitalkonsolidierung', hgbReference: '§ 301 HGB' },
-      { value: 'debt_consolidation', label: 'Schuldenkonsolidierung', hgbReference: '§ 303 HGB' },
-      { value: 'intercompany_profit', label: 'Zwischenergebniseliminierung', hgbReference: '§ 304 HGB' },
-      { value: 'income_expense', label: 'Aufwands-/Ertragskonsolidierung', hgbReference: '§ 305 HGB' },
-      { value: 'deferred_tax', label: 'Latente Steuern', hgbReference: '§ 306 HGB' },
-      { value: 'minority_interest', label: 'Minderheitenanteile', hgbReference: '§ 307 HGB' },
-      { value: 'uniform_valuation', label: 'Einheitliche Bewertung', hgbReference: '§ 308 HGB' },
-      { value: 'currency_translation', label: 'Währungsumrechnung', hgbReference: '§ 308a HGB' },
-      { value: 'goodwill_treatment', label: 'Geschäftswertbehandlung', hgbReference: '§ 309 HGB' },
-      { value: 'proportional_consolidation', label: 'Quotenkonsolidierung', hgbReference: '§ 310 HGB' },
-      { value: 'equity_method', label: 'At-Equity-Bewertung', hgbReference: '§ 312 HGB' },
-      { value: 'consolidation_scope', label: 'Konsolidierungskreis', hgbReference: '§ 294-296 HGB' },
-      { value: 'disclosure', label: 'Anhangangaben', hgbReference: '§ 313-314 HGB' },
+      {
+        value: 'capital_consolidation',
+        label: 'Kapitalkonsolidierung',
+        hgbReference: '§ 301 HGB',
+      },
+      {
+        value: 'debt_consolidation',
+        label: 'Schuldenkonsolidierung',
+        hgbReference: '§ 303 HGB',
+      },
+      {
+        value: 'intercompany_profit',
+        label: 'Zwischenergebniseliminierung',
+        hgbReference: '§ 304 HGB',
+      },
+      {
+        value: 'income_expense',
+        label: 'Aufwands-/Ertragskonsolidierung',
+        hgbReference: '§ 305 HGB',
+      },
+      {
+        value: 'deferred_tax',
+        label: 'Latente Steuern',
+        hgbReference: '§ 306 HGB',
+      },
+      {
+        value: 'minority_interest',
+        label: 'Minderheitenanteile',
+        hgbReference: '§ 307 HGB',
+      },
+      {
+        value: 'uniform_valuation',
+        label: 'Einheitliche Bewertung',
+        hgbReference: '§ 308 HGB',
+      },
+      {
+        value: 'currency_translation',
+        label: 'Währungsumrechnung',
+        hgbReference: '§ 308a HGB',
+      },
+      {
+        value: 'goodwill_treatment',
+        label: 'Geschäftswertbehandlung',
+        hgbReference: '§ 309 HGB',
+      },
+      {
+        value: 'proportional_consolidation',
+        label: 'Quotenkonsolidierung',
+        hgbReference: '§ 310 HGB',
+      },
+      {
+        value: 'equity_method',
+        label: 'At-Equity-Bewertung',
+        hgbReference: '§ 312 HGB',
+      },
+      {
+        value: 'consolidation_scope',
+        label: 'Konsolidierungskreis',
+        hgbReference: '§ 294-296 HGB',
+      },
+      {
+        value: 'disclosure',
+        label: 'Anhangangaben',
+        hgbReference: '§ 313-314 HGB',
+      },
       { value: 'other', label: 'Sonstige' },
     ];
   }
@@ -683,7 +772,10 @@ export class PolicyController {
   getGaapStandards(): { value: string; label: string }[] {
     return [
       { value: 'hgb', label: 'HGB (Handelsgesetzbuch)' },
-      { value: 'ifrs', label: 'IFRS (International Financial Reporting Standards)' },
+      {
+        value: 'ifrs',
+        label: 'IFRS (International Financial Reporting Standards)',
+      },
       { value: 'us_gaap', label: 'US GAAP' },
       { value: 'local_gaap', label: 'Lokales GAAP' },
       { value: 'other', label: 'Sonstige' },

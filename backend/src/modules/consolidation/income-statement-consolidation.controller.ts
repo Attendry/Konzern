@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, ParseUUIDPipe } from '@nestjs/common';
 import { IncomeStatementConsolidationService } from './income-statement-consolidation.service';
 import { ConsolidatedIncomeStatement } from './income-statement-consolidation.service';
 

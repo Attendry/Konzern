@@ -22,10 +22,17 @@ export class CompanyController {
 
   @Post()
   async create(@Body() createCompanyDto: CreateCompanyDto) {
-    console.log('POST /companies - Creating company:', JSON.stringify(createCompanyDto, null, 2));
+    console.log(
+      'POST /companies - Creating company:',
+      JSON.stringify(createCompanyDto, null, 2),
+    );
     try {
       const result = await this.companyService.create(createCompanyDto);
-      console.log('POST /companies - Company created successfully:', result.id, result.name);
+      console.log(
+        'POST /companies - Company created successfully:',
+        result.id,
+        result.name,
+      );
       return result;
     } catch (error: any) {
       console.error('POST /companies - Error creating company:', error);

@@ -8,8 +8,14 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ComplianceChecklistService, ComplianceSummary } from './compliance-checklist.service';
-import { ChecklistItemStatus, ComplianceCategory } from '../../entities/compliance-checklist.entity';
+import {
+  ComplianceChecklistService,
+  ComplianceSummary,
+} from './compliance-checklist.service';
+import {
+  ChecklistItemStatus,
+  ComplianceCategory,
+} from '../../entities/compliance-checklist.entity';
 
 class UpdateChecklistItemDto {
   status?: ChecklistItemStatus;
@@ -69,7 +75,10 @@ export class ComplianceController {
     @Param('financialStatementId') financialStatementId: string,
     @Param('category') category: ComplianceCategory,
   ) {
-    return this.complianceService.getChecklistByCategory(financialStatementId, category);
+    return this.complianceService.getChecklistByCategory(
+      financialStatementId,
+      category,
+    );
   }
 
   /**
@@ -97,11 +106,13 @@ export class ComplianceController {
    * Complete a checklist item
    */
   @Post('item/:id/complete')
-  async completeItem(
-    @Param('id') id: string,
-    @Body() dto: CompleteItemDto,
-  ) {
-    return this.complianceService.completeItem(id, dto.userId, dto.notes, dto.evidence);
+  async completeItem(@Param('id') id: string, @Body() dto: CompleteItemDto) {
+    return this.complianceService.completeItem(
+      id,
+      dto.userId,
+      dto.notes,
+      dto.evidence,
+    );
   }
 
   /**
@@ -122,7 +133,9 @@ export class ComplianceController {
   async autoUpdateFromConsolidation(
     @Param('financialStatementId') financialStatementId: string,
   ) {
-    await this.complianceService.autoUpdateFromConsolidation(financialStatementId);
+    await this.complianceService.autoUpdateFromConsolidation(
+      financialStatementId,
+    );
     return { message: 'Checkliste automatisch aktualisiert' };
   }
 

@@ -2,7 +2,11 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { GeminiService } from './gemini.service';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { IC_ANALYSIS_PROMPT, buildPrompt } from '../prompts/prompts';
-import { ICExplanationDto, ICCauseType, CorrectionEntry } from '../dto/ic-analysis.dto';
+import {
+  ICExplanationDto,
+  ICCauseType,
+  CorrectionEntry,
+} from '../dto/ic-analysis.dto';
 
 interface EnrichedReconciliation {
   id: string;
@@ -36,18 +40,22 @@ export class ICAnalysisService {
     // 1. Fetch reconciliation with related data
     const { data: recon, error } = await client
       .from('ic_reconciliations')
-      .select(`
+      .select(
+        `
         *,
         company_a:companies!ic_reconciliations_company_a_id_fkey(id, name),
         company_b:companies!ic_reconciliations_company_b_id_fkey(id, name),
         account_a:accounts!ic_reconciliations_account_a_id_fkey(account_number, name),
         account_b:accounts!ic_reconciliations_account_b_id_fkey(account_number, name)
-      `)
+      `,
+      )
       .eq('id', reconciliationId)
       .single();
 
     if (error || !recon) {
-      throw new NotFoundException(`IC-Abstimmung ${reconciliationId} nicht gefunden`);
+      throw new NotFoundException(
+        `IC-Abstimmung ${reconciliationId} nicht gefunden`,
+      );
     }
 
     // 2. Build context for Gemini
@@ -55,18 +63,24 @@ export class ICAnalysisService {
 
     // 3. Ask Gemini to analyze
     const prompt = buildPrompt(IC_ANALYSIS_PROMPT, { IC_DATA: context });
-    
+
     let response: string;
     try {
       response = await this.gemini.complete(prompt);
     } catch (error: any) {
       this.logger.error(`Gemini analysis failed: ${error.message}`);
       // Return a fallback analysis
-      return this.createFallbackAnalysis(reconciliationId, recon as EnrichedReconciliation);
+      return this.createFallbackAnalysis(
+        reconciliationId,
+        recon as EnrichedReconciliation,
+      );
     }
 
     // 4. Parse Gemini's response
-    const analysis = this.parseAnalysisResponse(response, recon as EnrichedReconciliation);
+    const analysis = this.parseAnalysisResponse(
+      response,
+      recon as EnrichedReconciliation,
+    );
 
     // 5. Cache the analysis in database
     try {
@@ -90,7 +104,9 @@ export class ICAnalysisService {
   /**
    * Analyze all open IC differences for a financial statement
    */
-  async batchAnalyze(financialStatementId: string): Promise<ICExplanationDto[]> {
+  async batchAnalyze(
+    financialStatementId: string,
+  ): Promise<ICExplanationDto[]> {
     const client = this.supabase.getClient();
 
     // Get all open IC reconciliations
@@ -102,7 +118,9 @@ export class ICAnalysisService {
       .order('difference_amount', { ascending: false });
 
     if (error) {
-      throw new Error(`Fehler beim Laden der IC-Abstimmungen: ${error.message}`);
+      throw new Error(
+        `Fehler beim Laden der IC-Abstimmungen: ${error.message}`,
+      );
     }
 
     if (!openRecons || openRecons.length === 0) {
@@ -117,7 +135,7 @@ export class ICAnalysisService {
       try {
         const analysis = await this.explainDifference(recon.id);
         results.push(analysis);
-        
+
         // Small delay to avoid rate limiting
         await this.delay(500);
       } catch (error: any) {
@@ -163,32 +181,54 @@ ${recon.explanation ? `- Vorhandene Erklärung: ${recon.explanation}` : ''}
     let likelyCause: ICCauseType = 'unknown';
     let confidence = 0.5;
 
-    if (lowerResponse.includes('timing') || lowerResponse.includes('zeitlich') || 
-        lowerResponse.includes('stichtag') || lowerResponse.includes('buchungsdatum') ||
-        lowerResponse.includes('periode')) {
+    if (
+      lowerResponse.includes('timing') ||
+      lowerResponse.includes('zeitlich') ||
+      lowerResponse.includes('stichtag') ||
+      lowerResponse.includes('buchungsdatum') ||
+      lowerResponse.includes('periode')
+    ) {
       likelyCause = 'timing';
       confidence = 0.8;
-    } else if (lowerResponse.includes('währung') || lowerResponse.includes('wechselkurs') ||
-               lowerResponse.includes('fx') || lowerResponse.includes('currency') ||
-               lowerResponse.includes('kurs')) {
+    } else if (
+      lowerResponse.includes('währung') ||
+      lowerResponse.includes('wechselkurs') ||
+      lowerResponse.includes('fx') ||
+      lowerResponse.includes('currency') ||
+      lowerResponse.includes('kurs')
+    ) {
       likelyCause = 'fx';
       confidence = 0.8;
-    } else if (lowerResponse.includes('rundung') || lowerResponse.includes('rounding') ||
-               diff < 10) {
+    } else if (
+      lowerResponse.includes('rundung') ||
+      lowerResponse.includes('rounding') ||
+      diff < 10
+    ) {
       likelyCause = 'rounding';
       confidence = 0.9;
-    } else if (lowerResponse.includes('fehlend') || lowerResponse.includes('missing') ||
-               lowerResponse.includes('nicht gebucht') || lowerResponse.includes('vergessen')) {
+    } else if (
+      lowerResponse.includes('fehlend') ||
+      lowerResponse.includes('missing') ||
+      lowerResponse.includes('nicht gebucht') ||
+      lowerResponse.includes('vergessen')
+    ) {
       likelyCause = 'missing_entry';
       confidence = 0.7;
-    } else if (lowerResponse.includes('fehler') || lowerResponse.includes('error') ||
-               lowerResponse.includes('falsch') || lowerResponse.includes('inkorrekt')) {
+    } else if (
+      lowerResponse.includes('fehler') ||
+      lowerResponse.includes('error') ||
+      lowerResponse.includes('falsch') ||
+      lowerResponse.includes('inkorrekt')
+    ) {
       likelyCause = 'error';
       confidence = 0.6;
     }
 
     // Generate suggested action based on cause
-    const { suggestedAction, correctionEntry } = this.generateSuggestion(likelyCause, recon);
+    const { suggestedAction, correctionEntry } = this.generateSuggestion(
+      likelyCause,
+      recon,
+    );
 
     return {
       explanation: response,
@@ -211,12 +251,14 @@ ${recon.explanation ? `- Vorhandene Erklärung: ${recon.explanation}` : ''}
     switch (cause) {
       case 'timing':
         return {
-          suggestedAction: 'Als Stichtagsdifferenz akzeptieren oder Buchungsdatum angleichen',
+          suggestedAction:
+            'Als Stichtagsdifferenz akzeptieren oder Buchungsdatum angleichen',
         };
 
       case 'fx':
         return {
-          suggestedAction: 'Einheitlichen Wechselkurs verwenden und Differenz als Währungsanpassung buchen',
+          suggestedAction:
+            'Einheitlichen Wechselkurs verwenden und Differenz als Währungsanpassung buchen',
           correctionEntry: {
             debitAccount: recon.account_a?.account_number || 'TBD',
             creditAccount: 'Währungsdifferenzen',
@@ -243,7 +285,8 @@ ${recon.explanation ? `- Vorhandene Erklärung: ${recon.explanation}` : ''}
 
       case 'error':
         return {
-          suggestedAction: 'Manuelle Prüfung der Buchungen erforderlich - bitte Belege prüfen',
+          suggestedAction:
+            'Manuelle Prüfung der Buchungen erforderlich - bitte Belege prüfen',
         };
 
       default:
@@ -261,17 +304,19 @@ ${recon.explanation ? `- Vorhandene Erklärung: ${recon.explanation}` : ''}
     recon: EnrichedReconciliation,
   ): ICExplanationDto {
     const diff = Math.abs(recon.difference_amount || 0);
-    
+
     let likelyCause: ICCauseType = 'unknown';
     let suggestedAction = 'Manuelle Analyse erforderlich';
 
     // Simple rule-based fallback
     if (diff < 10) {
       likelyCause = 'rounding';
-      suggestedAction = 'Wahrscheinlich Rundungsdifferenz - als unwesentlich akzeptieren';
+      suggestedAction =
+        'Wahrscheinlich Rundungsdifferenz - als unwesentlich akzeptieren';
     } else if (diff < 100) {
       likelyCause = 'rounding';
-      suggestedAction = 'Möglicherweise Rundungsdifferenz - prüfen und ggf. akzeptieren';
+      suggestedAction =
+        'Möglicherweise Rundungsdifferenz - prüfen und ggf. akzeptieren';
     }
 
     return {
@@ -287,6 +332,6 @@ ${recon.explanation ? `- Vorhandene Erklärung: ${recon.explanation}` : ''}
    * Helper delay function
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

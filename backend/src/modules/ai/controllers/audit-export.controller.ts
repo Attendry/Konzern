@@ -29,7 +29,8 @@ export class AuditExportController {
     @Query('endDate') endDate: string,
     @Res() res: Response,
     @Query('userId') userId?: string,
-    @Query('decisionType') decisionType?: 'accept' | 'reject' | 'modify' | 'ignore',
+    @Query('decisionType')
+    decisionType?: 'accept' | 'reject' | 'modify' | 'ignore',
     @Query('format') format: 'csv' | 'xlsx' = 'xlsx',
   ): Promise<void> {
     try {
@@ -60,7 +61,7 @@ export class AuditExportController {
 
       if (format === 'csv') {
         const csv = await this.exportService.generateAuditLogCSV(entries);
-        
+
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader(
           'Content-Disposition',
@@ -116,7 +117,8 @@ export class AuditExportController {
 
       this.logger.log(`Exporting ${overrides.length} overrides`);
 
-      const buffer = await this.exportService.generateOverrideLogExcel(overrides);
+      const buffer =
+        await this.exportService.generateOverrideLogExcel(overrides);
 
       res.setHeader(
         'Content-Type',
@@ -186,19 +188,28 @@ export class AuditExportController {
     });
 
     // Group by date
-    const byDate: Record<string, {
-      total: number;
-      accept: number;
-      reject: number;
-      avgConfidence: number;
-      confidenceSum: number;
-    }> = {};
+    const byDate: Record<
+      string,
+      {
+        total: number;
+        accept: number;
+        reject: number;
+        avgConfidence: number;
+        confidenceSum: number;
+      }
+    > = {};
 
     for (const entry of entries) {
       const date = new Date(entry.requestTimestamp).toISOString().split('T')[0];
-      
+
       if (!byDate[date]) {
-        byDate[date] = { total: 0, accept: 0, reject: 0, avgConfidence: 0, confidenceSum: 0 };
+        byDate[date] = {
+          total: 0,
+          accept: 0,
+          reject: 0,
+          avgConfidence: 0,
+          confidenceSum: 0,
+        };
       }
 
       byDate[date].total++;
@@ -245,18 +256,26 @@ export class AuditExportController {
     });
 
     // Group by tool
-    const byTool: Record<string, {
-      count: number;
-      acceptCount: number;
-      avgConfidence: number;
-      confidenceSum: number;
-    }> = {};
+    const byTool: Record<
+      string,
+      {
+        count: number;
+        acceptCount: number;
+        avgConfidence: number;
+        confidenceSum: number;
+      }
+    > = {};
 
     for (const entry of entries) {
       const tool = entry.toolName || 'chat';
-      
+
       if (!byTool[tool]) {
-        byTool[tool] = { count: 0, acceptCount: 0, avgConfidence: 0, confidenceSum: 0 };
+        byTool[tool] = {
+          count: 0,
+          acceptCount: 0,
+          avgConfidence: 0,
+          confidenceSum: 0,
+        };
       }
 
       byTool[tool].count++;
@@ -292,10 +311,10 @@ export class AuditExportController {
    */
   private getToolLabel(tool: string): string {
     const labels: Record<string, string> = {
-      'analyze_ic_difference': 'IC-Differenz-Analyse',
-      'generate_audit_documentation': 'Prüfpfad-Dokumentation',
-      'explain_plausibility_check': 'Plausibilitätsprüfung',
-      'chat': 'Chat',
+      analyze_ic_difference: 'IC-Differenz-Analyse',
+      generate_audit_documentation: 'Prüfpfad-Dokumentation',
+      explain_plausibility_check: 'Plausibilitätsprüfung',
+      chat: 'Chat',
     };
     return labels[tool] || tool;
   }

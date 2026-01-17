@@ -75,7 +75,8 @@ export interface AuditTrailExport {
 export class LineageService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService?: AuditLogService,
   ) {}
 
@@ -90,7 +91,10 @@ export class LineageService {
   /**
    * Create a new lineage node
    */
-  async createNode(dto: CreateLineageNodeDto, userId?: string): Promise<DataLineageNode> {
+  async createNode(
+    dto: CreateLineageNodeDto,
+    userId?: string,
+  ): Promise<DataLineageNode> {
     const { data, error } = await this.supabase
       .from('data_lineage_nodes')
       .insert({
@@ -141,7 +145,9 @@ export class LineageService {
   /**
    * Create multiple lineage nodes in batch
    */
-  async createNodesBatch(nodes: CreateLineageNodeDto[]): Promise<DataLineageNode[]> {
+  async createNodesBatch(
+    nodes: CreateLineageNodeDto[],
+  ): Promise<DataLineageNode[]> {
     if (nodes.length === 0) return [];
 
     const insertData = nodes.map((dto) => ({
@@ -204,7 +210,10 @@ export class LineageService {
       .select('*, companies(name), accounts(code, name)');
 
     if (query.financialStatementId) {
-      queryBuilder = queryBuilder.eq('financial_statement_id', query.financialStatementId);
+      queryBuilder = queryBuilder.eq(
+        'financial_statement_id',
+        query.financialStatementId,
+      );
     }
     if (query.companyId) {
       queryBuilder = queryBuilder.eq('company_id', query.companyId);
@@ -251,10 +260,13 @@ export class LineageService {
       updated_at: SupabaseMapper.getCurrentTimestamp(),
     };
 
-    if (updates.valueAmount !== undefined) updateData.value_amount = updates.valueAmount;
-    if (updates.valueInGroupCurrency !== undefined) updateData.value_in_group_currency = updates.valueInGroupCurrency;
+    if (updates.valueAmount !== undefined)
+      updateData.value_amount = updates.valueAmount;
+    if (updates.valueInGroupCurrency !== undefined)
+      updateData.value_in_group_currency = updates.valueInGroupCurrency;
     if (updates.nodeName !== undefined) updateData.node_name = updates.nodeName;
-    if (updates.hgbSection !== undefined) updateData.hgb_section = updates.hgbSection;
+    if (updates.hgbSection !== undefined)
+      updateData.hgb_section = updates.hgbSection;
 
     const { data, error } = await this.supabase
       .from('data_lineage_nodes')
@@ -364,7 +376,9 @@ export class LineageService {
   /**
    * Create multiple lineage traces in batch
    */
-  async createTracesBatch(traces: CreateLineageTraceDto[]): Promise<DataLineageTrace[]> {
+  async createTracesBatch(
+    traces: CreateLineageTraceDto[],
+  ): Promise<DataLineageTrace[]> {
     if (traces.length === 0) return [];
 
     const insertData = traces.map((dto) => ({
@@ -415,9 +429,7 @@ export class LineageService {
    * Query lineage traces
    */
   async queryTraces(query: LineageTraceQuery): Promise<DataLineageTrace[]> {
-    let queryBuilder = this.supabase
-      .from('data_lineage_traces')
-      .select('*');
+    let queryBuilder = this.supabase.from('data_lineage_traces').select('*');
 
     if (query.sourceNodeId) {
       queryBuilder = queryBuilder.eq('source_node_id', query.sourceNodeId);
@@ -426,10 +438,16 @@ export class LineageService {
       queryBuilder = queryBuilder.eq('target_node_id', query.targetNodeId);
     }
     if (query.transformationType) {
-      queryBuilder = queryBuilder.eq('transformation_type', query.transformationType);
+      queryBuilder = queryBuilder.eq(
+        'transformation_type',
+        query.transformationType,
+      );
     }
     if (query.consolidationEntryId) {
-      queryBuilder = queryBuilder.eq('consolidation_entry_id', query.consolidationEntryId);
+      queryBuilder = queryBuilder.eq(
+        'consolidation_entry_id',
+        query.consolidationEntryId,
+      );
     }
     if (!query.includeReversed) {
       queryBuilder = queryBuilder.is('reversed_at', null);
@@ -469,10 +487,18 @@ export class LineageService {
     ]);
 
     if (incomingResult.error) {
-      SupabaseErrorHandler.handle(incomingResult.error, 'Lineage Traces', 'fetch incoming');
+      SupabaseErrorHandler.handle(
+        incomingResult.error,
+        'Lineage Traces',
+        'fetch incoming',
+      );
     }
     if (outgoingResult.error) {
-      SupabaseErrorHandler.handle(outgoingResult.error, 'Lineage Traces', 'fetch outgoing');
+      SupabaseErrorHandler.handle(
+        outgoingResult.error,
+        'Lineage Traces',
+        'fetch outgoing',
+      );
     }
 
     return {
@@ -521,7 +547,7 @@ export class LineageService {
 
     // Get all traces for these nodes
     const nodeIds = (nodesData || []).map((n: any) => n.id);
-    
+
     if (nodeIds.length === 0) {
       return { nodes: [], edges: [] };
     }
@@ -529,7 +555,9 @@ export class LineageService {
     const { data: tracesData, error: tracesError } = await this.supabase
       .from('data_lineage_traces')
       .select('*')
-      .or(`source_node_id.in.(${nodeIds.join(',')}),target_node_id.in.(${nodeIds.join(',')})`)
+      .or(
+        `source_node_id.in.(${nodeIds.join(',')}),target_node_id.in.(${nodeIds.join(',')})`,
+      )
       .is('reversed_at', null);
 
     if (tracesError) {
@@ -556,9 +584,15 @@ export class LineageService {
       source: t.source_node_id,
       target: t.target_node_id,
       transformationType: t.transformation_type,
-      label: t.transformation_description || this.getTransformationLabel(t.transformation_type),
-      contributionAmount: t.contribution_amount ? parseFloat(t.contribution_amount) : undefined,
-      contributionPercentage: t.contribution_percentage ? parseFloat(t.contribution_percentage) : undefined,
+      label:
+        t.transformation_description ||
+        this.getTransformationLabel(t.transformation_type),
+      contributionAmount: t.contribution_amount
+        ? parseFloat(t.contribution_amount)
+        : undefined,
+      contributionPercentage: t.contribution_percentage
+        ? parseFloat(t.contribution_percentage)
+        : undefined,
     }));
 
     return { nodes: graphNodes, edges: graphEdges };
@@ -629,7 +663,9 @@ export class LineageService {
   /**
    * Create documentation for an entity
    */
-  async createDocumentation(dto: CreatePruefpfadDto): Promise<PruefpfadDocumentation> {
+  async createDocumentation(
+    dto: CreatePruefpfadDto,
+  ): Promise<PruefpfadDocumentation> {
     const { data, error } = await this.supabase
       .from('pruefpfad_documentation')
       .insert({
@@ -666,7 +702,9 @@ export class LineageService {
   /**
    * Get documentation by ID
    */
-  async getDocumentationById(id: string): Promise<PruefpfadDocumentation | null> {
+  async getDocumentationById(
+    id: string,
+  ): Promise<PruefpfadDocumentation | null> {
     const { data, error } = await this.supabase
       .from('pruefpfad_documentation')
       .select('*')
@@ -706,13 +744,18 @@ export class LineageService {
   /**
    * Query documentation
    */
-  async queryDocumentation(query: PruefpfadQuery): Promise<PruefpfadDocumentation[]> {
+  async queryDocumentation(
+    query: PruefpfadQuery,
+  ): Promise<PruefpfadDocumentation[]> {
     let queryBuilder = this.supabase
       .from('pruefpfad_documentation')
       .select('*');
 
     if (query.financialStatementId) {
-      queryBuilder = queryBuilder.eq('financial_statement_id', query.financialStatementId);
+      queryBuilder = queryBuilder.eq(
+        'financial_statement_id',
+        query.financialStatementId,
+      );
     }
     if (query.entityType) {
       queryBuilder = queryBuilder.eq('entity_type', query.entityType);
@@ -727,7 +770,10 @@ export class LineageService {
       queryBuilder = queryBuilder.eq('hgb_section', query.hgbSection);
     }
     if (query.workingPaperRef) {
-      queryBuilder = queryBuilder.eq('working_paper_ref', query.workingPaperRef);
+      queryBuilder = queryBuilder.eq(
+        'working_paper_ref',
+        query.workingPaperRef,
+      );
     }
     if (query.riskLevel) {
       queryBuilder = queryBuilder.eq('risk_level', query.riskLevel);
@@ -756,14 +802,20 @@ export class LineageService {
     };
 
     if (dto.status !== undefined) updateData.status = dto.status;
-    if (dto.documentationSummary !== undefined) updateData.documentation_summary = dto.documentationSummary;
-    if (dto.detailedDescription !== undefined) updateData.detailed_description = dto.detailedDescription;
-    if (dto.calculationBasis !== undefined) updateData.calculation_basis = dto.calculationBasis;
+    if (dto.documentationSummary !== undefined)
+      updateData.documentation_summary = dto.documentationSummary;
+    if (dto.detailedDescription !== undefined)
+      updateData.detailed_description = dto.detailedDescription;
+    if (dto.calculationBasis !== undefined)
+      updateData.calculation_basis = dto.calculationBasis;
     if (dto.assumptions !== undefined) updateData.assumptions = dto.assumptions;
-    if (dto.evidenceReferences !== undefined) updateData.evidence_references = dto.evidenceReferences;
-    if (dto.complianceNotes !== undefined) updateData.compliance_notes = dto.complianceNotes;
+    if (dto.evidenceReferences !== undefined)
+      updateData.evidence_references = dto.evidenceReferences;
+    if (dto.complianceNotes !== undefined)
+      updateData.compliance_notes = dto.complianceNotes;
     if (dto.riskLevel !== undefined) updateData.risk_level = dto.riskLevel;
-    if (dto.materialRiskFactors !== undefined) updateData.material_risk_factors = dto.materialRiskFactors;
+    if (dto.materialRiskFactors !== undefined)
+      updateData.material_risk_factors = dto.materialRiskFactors;
 
     // Review fields
     if (dto.reviewedByUserId !== undefined) {
@@ -835,7 +887,9 @@ export class LineageService {
   /**
    * Export complete audit trail for a financial statement
    */
-  async exportAuditTrail(financialStatementId: string): Promise<AuditTrailExport> {
+  async exportAuditTrail(
+    financialStatementId: string,
+  ): Promise<AuditTrailExport> {
     // Get financial statement info
     const { data: fsData, error: fsError } = await this.supabase
       .from('financial_statements')
@@ -853,12 +907,14 @@ export class LineageService {
     // Get all traces for these nodes
     const nodeIds = nodes.map((n) => n.id);
     let traces: DataLineageTrace[] = [];
-    
+
     if (nodeIds.length > 0) {
       const { data: tracesData, error: tracesError } = await this.supabase
         .from('data_lineage_traces')
         .select('*')
-        .or(`source_node_id.in.(${nodeIds.join(',')}),target_node_id.in.(${nodeIds.join(',')})`)
+        .or(
+          `source_node_id.in.(${nodeIds.join(',')}),target_node_id.in.(${nodeIds.join(',')})`,
+        )
         .is('reversed_at', null);
 
       if (tracesError) {
@@ -869,7 +925,9 @@ export class LineageService {
     }
 
     // Get all documentation
-    const documentation = await this.queryDocumentation({ financialStatementId });
+    const documentation = await this.queryDocumentation({
+      financialStatementId,
+    });
 
     // Calculate summary
     const nodesByType: Record<string, number> = {};
@@ -878,10 +936,10 @@ export class LineageService {
     }
 
     const documentedCount = documentation.filter(
-      (d) => d.status !== PruefpfadStatus.UNDOCUMENTED
+      (d) => d.status !== PruefpfadStatus.UNDOCUMENTED,
     ).length;
     const verifiedCount = documentation.filter(
-      (d) => d.status === PruefpfadStatus.VERIFIED
+      (d) => d.status === PruefpfadStatus.VERIFIED,
     ).length;
 
     return {
@@ -894,12 +952,14 @@ export class LineageService {
       summary: {
         totalNodes: nodes.length,
         totalTraces: traces.length,
-        documentedPercentage: nodes.length > 0 
-          ? Math.round((documentedCount / nodes.length) * 100) 
-          : 0,
-        verifiedPercentage: nodes.length > 0 
-          ? Math.round((verifiedCount / nodes.length) * 100) 
-          : 0,
+        documentedPercentage:
+          nodes.length > 0
+            ? Math.round((documentedCount / nodes.length) * 100)
+            : 0,
+        verifiedPercentage:
+          nodes.length > 0
+            ? Math.round((verifiedCount / nodes.length) * 100)
+            : 0,
         nodesByType,
       },
     };
@@ -914,7 +974,9 @@ export class LineageService {
     byHgbSection: Record<string, number>;
     byRiskLevel: Record<string, number>;
   }> {
-    const documentation = await this.queryDocumentation({ financialStatementId });
+    const documentation = await this.queryDocumentation({
+      financialStatementId,
+    });
 
     const byStatus: Record<string, number> = {};
     const byHgbSection: Record<string, number> = {};
@@ -971,7 +1033,9 @@ export class LineageService {
       nodeName: data.node_name,
       valueAmount: parseFloat(data.value_amount),
       valueCurrency: data.value_currency,
-      valueInGroupCurrency: data.value_in_group_currency ? parseFloat(data.value_in_group_currency) : null,
+      valueInGroupCurrency: data.value_in_group_currency
+        ? parseFloat(data.value_in_group_currency)
+        : null,
       accountId: data.account_id,
       accountCode: data.account_code,
       sourceEntityType: data.source_entity_type,
@@ -994,10 +1058,16 @@ export class LineageService {
       targetNodeId: data.target_node_id,
       transformationType: data.transformation_type,
       transformationDescription: data.transformation_description,
-      transformationFactor: data.transformation_factor ? parseFloat(data.transformation_factor) : null,
+      transformationFactor: data.transformation_factor
+        ? parseFloat(data.transformation_factor)
+        : null,
       transformationFormula: data.transformation_formula,
-      contributionAmount: data.contribution_amount ? parseFloat(data.contribution_amount) : null,
-      contributionPercentage: data.contribution_percentage ? parseFloat(data.contribution_percentage) : null,
+      contributionAmount: data.contribution_amount
+        ? parseFloat(data.contribution_amount)
+        : null,
+      contributionPercentage: data.contribution_percentage
+        ? parseFloat(data.contribution_percentage)
+        : null,
       consolidationEntryId: data.consolidation_entry_id,
       sequenceOrder: data.sequence_order,
       isReversible: data.is_reversible,

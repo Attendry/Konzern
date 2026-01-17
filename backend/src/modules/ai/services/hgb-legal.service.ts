@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { 
-  HGBParagraph, 
-  LegislativeChange, 
-  IDWStandard, 
+import {
+  HGBParagraph,
+  LegislativeChange,
+  IDWStandard,
   LegalContext,
-  LegalChangeAlert 
+  LegalChangeAlert,
 } from '../types/legal.types';
 
 @Injectable()
 export class HGBLegalService {
   private readonly logger = new Logger(HGBLegalService.name);
-  
+
   // Cache with TTL
   private cache: Map<string, { data: any; expiry: Date }> = new Map();
   private readonly CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
@@ -24,31 +24,27 @@ export class HGBLegalService {
    */
   async getLegalContext(
     consolidationType: string,
-    options?: { includeRelated?: boolean; includeIdw?: boolean }
+    options?: { includeRelated?: boolean; includeIdw?: boolean },
   ): Promise<LegalContext | null> {
     const primaryRef = this.mapConsolidationTypeToHGB(consolidationType);
-    
+
     const primaryParagraph = await this.getCurrentParagraph(primaryRef);
     if (!primaryParagraph) {
       this.logger.warn(`No paragraph found for ${consolidationType}`);
       return null;
     }
 
-    const [
-      relatedParagraphs,
-      idwStandards,
-      upcomingChanges,
-      recentChanges,
-    ] = await Promise.all([
-      options?.includeRelated !== false 
-        ? this.getRelatedParagraphs(primaryRef) 
-        : Promise.resolve([]),
-      options?.includeIdw !== false 
-        ? this.getRelevantIDWStandards(primaryRef) 
-        : Promise.resolve([]),
-      this.getUpcomingChanges(primaryRef),
-      this.getRecentChanges(primaryRef, 12), // Last 12 months
-    ]);
+    const [relatedParagraphs, idwStandards, upcomingChanges, recentChanges] =
+      await Promise.all([
+        options?.includeRelated !== false
+          ? this.getRelatedParagraphs(primaryRef)
+          : Promise.resolve([]),
+        options?.includeIdw !== false
+          ? this.getRelevantIDWStandards(primaryRef)
+          : Promise.resolve([]),
+        this.getUpcomingChanges(primaryRef),
+        this.getRecentChanges(primaryRef, 12), // Last 12 months
+      ]);
 
     return {
       primaryParagraph,
@@ -85,9 +81,10 @@ export class HGBLegalService {
       const result = this.mapParagraphFromDb(data);
       this.setCache(cacheKey, result);
       return result;
-
     } catch (error: any) {
-      this.logger.warn(`Failed to get paragraph ${reference}: ${error.message}`);
+      this.logger.warn(
+        `Failed to get paragraph ${reference}: ${error.message}`,
+      );
       return this.getLocalFallback(reference);
     }
   }
@@ -132,8 +129,7 @@ export class HGBLegalService {
       const { data, error } = await query;
       if (error || !data) return [];
 
-      return data.map(row => this.mapChangeFromDb(row));
-
+      return data.map((row) => this.mapChangeFromDb(row));
     } catch (error: any) {
       this.logger.warn(`Failed to get upcoming changes: ${error.message}`);
       return [];
@@ -143,7 +139,10 @@ export class HGBLegalService {
   /**
    * Get changes that became effective in the last N months
    */
-  async getRecentChanges(paragraph?: string, months: number = 12): Promise<LegislativeChange[]> {
+  async getRecentChanges(
+    paragraph?: string,
+    months: number = 12,
+  ): Promise<LegislativeChange[]> {
     try {
       const client = this.supabase.getClient();
       const cutoffDate = new Date();
@@ -164,8 +163,7 @@ export class HGBLegalService {
       const { data, error } = await query;
       if (error || !data) return [];
 
-      return data.map(row => this.mapChangeFromDb(row));
-
+      return data.map((row) => this.mapChangeFromDb(row));
     } catch (error: any) {
       this.logger.warn(`Failed to get recent changes: ${error.message}`);
       return [];
@@ -186,8 +184,7 @@ export class HGBLegalService {
 
       if (error || !data) return [];
 
-      return data.map(row => this.mapIdwFromDb(row));
-
+      return data.map((row) => this.mapIdwFromDb(row));
     } catch (error: any) {
       this.logger.warn(`Failed to get IDW standards: ${error.message}`);
       return [];
@@ -204,11 +201,12 @@ export class HGBLegalService {
     for (const change of upcomingChanges) {
       const userHasSeen = await this.hasUserSeenChange(userId, change.id);
       const paragraph = await this.getCurrentParagraph(change.paragraph);
-      
+
       if (!paragraph) continue;
 
       const daysUntil = Math.ceil(
-        (new Date(change.effectiveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date(change.effectiveDate).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24),
       );
 
       alerts.push({
@@ -223,7 +221,8 @@ export class HGBLegalService {
     // Sort by severity and date
     return alerts.sort((a, b) => {
       const severityOrder = { high: 0, medium: 1, low: 2 };
-      const sevDiff = severityOrder[a.impactSeverity] - severityOrder[b.impactSeverity];
+      const sevDiff =
+        severityOrder[a.impactSeverity] - severityOrder[b.impactSeverity];
       if (sevDiff !== 0) return sevDiff;
       return a.daysUntilEffective - b.daysUntilEffective;
     });
@@ -251,17 +250,21 @@ export class HGBLegalService {
    */
   formatLegalContextForDisplay(context: LegalContext): string {
     const lines: string[] = [];
-    
-    lines.push(`**${context.primaryParagraph.fullReference}** - ${context.primaryParagraph.title}`);
-    lines.push(`Stand: ${this.formatDate(context.primaryParagraph.verifiedDate)}`);
+
+    lines.push(
+      `**${context.primaryParagraph.fullReference}** - ${context.primaryParagraph.title}`,
+    );
+    lines.push(
+      `Stand: ${this.formatDate(context.primaryParagraph.verifiedDate)}`,
+    );
     lines.push('');
-    
+
     if (context.primaryParagraph.consolidationRelevance) {
       lines.push(context.primaryParagraph.consolidationRelevance);
     } else if (context.primaryParagraph.contentSummary) {
       lines.push(context.primaryParagraph.contentSummary);
     }
-    
+
     if (context.idwStandards.length > 0) {
       lines.push('');
       lines.push('**IDW Hinweise:**');
@@ -269,20 +272,24 @@ export class HGBLegalService {
         lines.push(`- ${idw.standardId}: ${idw.summary}`);
       }
     }
-    
+
     if (context.upcomingChanges.length > 0) {
       lines.push('');
       lines.push('**Bevorstehende Änderungen:**');
       for (const change of context.upcomingChanges) {
-        lines.push(`- Ab ${this.formatDate(change.effectiveDate)}: ${change.changeSummary}`);
+        lines.push(
+          `- Ab ${this.formatDate(change.effectiveDate)}: ${change.changeSummary}`,
+        );
       }
     }
-    
+
     if (context.primaryParagraph.sourceUrl) {
       lines.push('');
-      lines.push(`[Volltext bei dejure.org](${context.primaryParagraph.sourceUrl})`);
+      lines.push(
+        `[Volltext bei dejure.org](${context.primaryParagraph.sourceUrl})`,
+      );
     }
-    
+
     return lines.join('\n');
   }
 
@@ -291,33 +298,38 @@ export class HGBLegalService {
    */
   private mapConsolidationTypeToHGB(consolidationType: string): string {
     const mapping: Record<string, string> = {
-      'capital_consolidation': '§ 301 HGB',
-      'debt_consolidation': '§ 303 HGB',
-      'ic_elimination': '§ 303 HGB',
-      'expense_income_elimination': '§ 305 HGB',
-      'intermediate_result': '§ 304 HGB',
-      'goodwill': '§ 309 HGB',
-      'consolidation_obligation': '§ 290 HGB',
-      'consolidation_scope': '§ 300 HGB',
-      'minority_interests': '§ 307 HGB',
-      'associated_companies': '§ 312 HGB',
-      'currency_translation': '§ 308a HGB',
-      'deferred_taxes': '§ 306 HGB',
+      capital_consolidation: '§ 301 HGB',
+      debt_consolidation: '§ 303 HGB',
+      ic_elimination: '§ 303 HGB',
+      expense_income_elimination: '§ 305 HGB',
+      intermediate_result: '§ 304 HGB',
+      goodwill: '§ 309 HGB',
+      consolidation_obligation: '§ 290 HGB',
+      consolidation_scope: '§ 300 HGB',
+      minority_interests: '§ 307 HGB',
+      associated_companies: '§ 312 HGB',
+      currency_translation: '§ 308a HGB',
+      deferred_taxes: '§ 306 HGB',
     };
 
     return mapping[consolidationType] || '§ 290 HGB';
   }
 
   private getLegalDisclaimer(): string {
-    return `Die HGB-Referenzen basieren auf dem aktuellen Rechtsstand und dienen als Orientierung. ` +
+    return (
+      `Die HGB-Referenzen basieren auf dem aktuellen Rechtsstand und dienen als Orientierung. ` +
       `Bei Zweifelsfällen konsultieren Sie bitte die Fachliteratur, aktuelle Kommentare ` +
-      `oder einen Rechtsberater. Diese Informationen stellen keine Rechtsberatung dar.`;
+      `oder einen Rechtsberater. Diese Informationen stellen keine Rechtsberatung dar.`
+    );
   }
 
   /**
    * Check if user has seen a change
    */
-  private async hasUserSeenChange(userId: string, changeId: string): Promise<boolean> {
+  private async hasUserSeenChange(
+    userId: string,
+    changeId: string,
+  ): Promise<boolean> {
     try {
       const client = this.supabase.getClient();
       const { data } = await client
@@ -339,10 +351,14 @@ export class HGBLegalService {
   /**
    * Assess impact severity
    */
-  private assessImpactSeverity(change: LegislativeChange, daysUntil: number): 'low' | 'medium' | 'high' {
+  private assessImpactSeverity(
+    change: LegislativeChange,
+    daysUntil: number,
+  ): 'low' | 'medium' | 'high' {
     if (daysUntil < 30) return 'high';
     if (daysUntil < 90) return 'medium';
-    if (change.changeType === 'repeal' || change.changeType === 'amendment') return 'medium';
+    if (change.changeType === 'repeal' || change.changeType === 'amendment')
+      return 'medium';
     return 'low';
   }
 
@@ -355,15 +371,22 @@ export class HGBLegalService {
       paragraph: row.paragraph || row.full_reference?.replace(' HGB', '') || '',
       fullReference: row.full_reference || row.paragraph || '',
       title: row.title,
-      contentSummary: row.content_summary || row.content?.substring(0, 200) || '',
+      contentSummary:
+        row.content_summary || row.content?.substring(0, 200) || '',
       contentFull: row.content_full || row.content,
       consolidationRelevance: row.consolidation_relevance,
-      effectiveDate: row.effective_date ? new Date(row.effective_date) : new Date(),
-      supersededDate: row.superseded_date ? new Date(row.superseded_date) : undefined,
+      effectiveDate: row.effective_date
+        ? new Date(row.effective_date)
+        : new Date(),
+      supersededDate: row.superseded_date
+        ? new Date(row.superseded_date)
+        : undefined,
       isCurrent: row.is_current ?? true,
       sourceReference: row.source_reference,
       sourceUrl: row.source_url,
-      verifiedDate: row.verified_date ? new Date(row.verified_date) : new Date(),
+      verifiedDate: row.verified_date
+        ? new Date(row.verified_date)
+        : new Date(),
       verifiedBy: row.verified_by,
       category: row.category,
       subcategory: row.subcategory,
@@ -381,7 +404,9 @@ export class HGBLegalService {
       id: row.id,
       paragraph: row.paragraph,
       changeType: row.change_type,
-      announcedDate: row.announced_date ? new Date(row.announced_date) : undefined,
+      announcedDate: row.announced_date
+        ? new Date(row.announced_date)
+        : undefined,
       effectiveDate: new Date(row.effective_date),
       changeSummary: row.change_summary,
       changeDetails: row.change_details,
@@ -391,7 +416,9 @@ export class HGBLegalService {
       sourceUrl: row.source_url,
       status: row.status,
       notifyUsers: row.notify_users,
-      notificationSentAt: row.notification_sent_at ? new Date(row.notification_sent_at) : undefined,
+      notificationSentAt: row.notification_sent_at
+        ? new Date(row.notification_sent_at)
+        : undefined,
     };
   }
 
@@ -407,7 +434,9 @@ export class HGBLegalService {
       keyPoints: row.key_points || [],
       version: row.version,
       effectiveDate: new Date(row.effective_date),
-      supersededDate: row.superseded_date ? new Date(row.superseded_date) : undefined,
+      supersededDate: row.superseded_date
+        ? new Date(row.superseded_date)
+        : undefined,
       isCurrent: row.is_current ?? true,
       sourceUrl: row.source_url,
       verifiedDate: new Date(row.verified_date),
@@ -424,8 +453,10 @@ export class HGBLegalService {
         paragraph: '§ 303',
         fullReference: '§ 303 HGB',
         title: 'Schuldenkonsolidierung',
-        contentSummary: 'Ausleihungen und andere Forderungen, Rückstellungen und Verbindlichkeiten zwischen den in den Konzernabschluss einbezogenen Unternehmen sowie entsprechende Rechnungsabgrenzungsposten sind wegzulassen.',
-        consolidationRelevance: 'Relevant für die Eliminierung konzerninterner Verbindlichkeiten und Forderungen.',
+        contentSummary:
+          'Ausleihungen und andere Forderungen, Rückstellungen und Verbindlichkeiten zwischen den in den Konzernabschluss einbezogenen Unternehmen sowie entsprechende Rechnungsabgrenzungsposten sind wegzulassen.',
+        consolidationRelevance:
+          'Relevant für die Eliminierung konzerninterner Verbindlichkeiten und Forderungen.',
         category: 'Konsolidierung',
         tags: ['Schuldenkonsolidierung', 'IC'],
       },
@@ -474,6 +505,10 @@ export class HGBLegalService {
    */
   private formatDate(date: Date | string): string {
     const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return d.toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
   }
 }

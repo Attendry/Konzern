@@ -67,10 +67,21 @@ export class DataLineageNode {
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'value_amount' })
   valueAmount: number;
 
-  @Column({ type: 'varchar', length: 3, name: 'value_currency', default: 'EUR' })
+  @Column({
+    type: 'varchar',
+    length: 3,
+    name: 'value_currency',
+    default: 'EUR',
+  })
   valueCurrency: string;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'value_in_group_currency', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'value_in_group_currency',
+    nullable: true,
+  })
   valueInGroupCurrency: number | null;
 
   // Account reference
@@ -85,7 +96,12 @@ export class DataLineageNode {
   accountCode: string | null;
 
   // Source reference
-  @Column({ type: 'varchar', length: 100, name: 'source_entity_type', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'source_entity_type',
+    nullable: true,
+  })
   sourceEntityType: string | null;
 
   @Column({ type: 'uuid', name: 'source_entity_id', nullable: true })
@@ -107,7 +123,12 @@ export class DataLineageNode {
   @Column({ type: 'integer', name: 'fiscal_year', nullable: true })
   fiscalYear: number | null;
 
-  @Column({ type: 'varchar', length: 20, name: 'reporting_period', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    name: 'reporting_period',
+    nullable: true,
+  })
   reportingPeriod: string | null;
 
   @Column({ type: 'boolean', name: 'is_audited', default: false })
@@ -117,10 +138,18 @@ export class DataLineageNode {
   isFinal: boolean;
 
   // Timestamps
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 

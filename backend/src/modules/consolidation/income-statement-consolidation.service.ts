@@ -109,9 +109,10 @@ export class IncomeStatementConsolidationService {
     const parentCompanyId = financialStatement.company_id;
 
     // 2. Bestimme Konsolidierungskreis
-    const consolidationCircle = await this.dependencyService.determineConsolidationCircle(
-      parentCompanyId,
-    );
+    const consolidationCircle =
+      await this.dependencyService.determineConsolidationCircle(
+        parentCompanyId,
+      );
 
     if (!consolidationCircle.consolidationRequired) {
       throw new BadRequestException(
@@ -125,11 +126,12 @@ export class IncomeStatementConsolidationService {
     ];
 
     // 3. Lade alle Financial Statements des Konsolidierungskreises
-    const { data: allFinancialStatements, error: fsAllError } = await this.supabase
-      .from('financial_statements')
-      .select('*, companies(*)')
-      .in('company_id', allCompanyIds)
-      .eq('fiscal_year', financialStatement.fiscal_year);
+    const { data: allFinancialStatements, error: fsAllError } =
+      await this.supabase
+        .from('financial_statements')
+        .select('*, companies(*)')
+        .in('company_id', allCompanyIds)
+        .eq('fiscal_year', financialStatement.fiscal_year);
 
     if (fsAllError) {
       throw new BadRequestException(
@@ -137,17 +139,21 @@ export class IncomeStatementConsolidationService {
       );
     }
 
-    const financialStatementIds = (allFinancialStatements || []).map((fs) => fs.id);
+    const financialStatementIds = (allFinancialStatements || []).map(
+      (fs) => fs.id,
+    );
 
     // 4. Lade alle Income Statement Balances
     // Fallback: Verwende Account Balances mit revenue/expense accounts
     const { data: accountBalances, error: balanceError } = await this.supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         accounts!inner(*),
         financial_statements!inner(*, companies(*))
-      `)
+      `,
+      )
       .in('financial_statement_id', financialStatementIds)
       .in('accounts.account_type', ['revenue', 'expense']);
 
@@ -194,7 +200,9 @@ export class IncomeStatementConsolidationService {
         if (
           account.account_number.match(/^5[0-9]{3}/) ||
           account.account_number.match(/^6[0-9]{3}/) ||
-          account.name.toLowerCase().match(/aufwand|kosten|material|lohn|miete/i)
+          account.name
+            .toLowerCase()
+            .match(/aufwand|kosten|material|lohn|miete/i)
         ) {
           expensePositions.push(position);
         } else {
@@ -216,9 +224,8 @@ export class IncomeStatementConsolidationService {
     );
 
     // 8. Eliminiere Zwischengewinne in GuV
-    const profitElimination = await this.eliminateIntercompanyProfits(
-      financialStatementId,
-    );
+    const profitElimination =
+      await this.eliminateIntercompanyProfits(financialStatementId);
 
     // 9. Eliminiere Zinsen zwischen Konzernunternehmen
     const interestElimination = await this.eliminateIntercompanyInterest(
@@ -244,7 +251,8 @@ export class IncomeStatementConsolidationService {
       0,
     );
 
-    const consolidatedRevenue = totalRevenue - revenueElimination.totalEliminated;
+    const consolidatedRevenue =
+      totalRevenue - revenueElimination.totalEliminated;
     const consolidatedCostOfSales =
       totalCostOfSales - expenseElimination.totalEliminated;
     const consolidatedOperatingExpenses =
@@ -265,7 +273,9 @@ export class IncomeStatementConsolidationService {
       .from('account_balances')
       .select('balance, accounts!inner(*)')
       .in('financial_statement_id', financialStatementIds)
-      .or('accounts.account_number.ilike.%steuer%,accounts.name.ilike.%steuer%');
+      .or(
+        'accounts.account_number.ilike.%steuer%,accounts.name.ilike.%steuer%',
+      );
 
     const totalTax = (taxBalances || []).reduce(
       (sum, b) => sum + Math.abs(parseFloat(b.balance || '0')),
@@ -296,13 +306,17 @@ export class IncomeStatementConsolidationService {
         total: totalCostOfSales,
         intercompanyEliminated: expenseElimination.totalEliminated,
         consolidated: consolidatedCostOfSales,
-        positions: expensePositions.filter((p) => p.accountNumber.match(/^5[0-9]{3}/)),
+        positions: expensePositions.filter((p) =>
+          p.accountNumber.match(/^5[0-9]{3}/),
+        ),
       },
       operatingExpenses: {
         total: totalOperatingExpenses,
         intercompanyEliminated: expenseElimination.totalEliminated,
         consolidated: consolidatedOperatingExpenses,
-        positions: expensePositions.filter((p) => !p.accountNumber.match(/^5[0-9]{3}/)),
+        positions: expensePositions.filter(
+          (p) => !p.accountNumber.match(/^5[0-9]{3}/),
+        ),
       },
       financialResult: {
         total: totalFinancialIncome - totalFinancialExpense,
@@ -367,20 +381,24 @@ export class IncomeStatementConsolidationService {
     let totalEliminated = 0;
 
     // Finde alle intercompany revenue positions
-    const intercompanyRevenues = revenuePositions.filter((p) => p.isIntercompany);
+    const intercompanyRevenues = revenuePositions.filter(
+      (p) => p.isIntercompany,
+    );
 
     for (const revenue of intercompanyRevenues) {
       const eliminationAmount = revenue.amount;
       totalEliminated += eliminationAmount;
 
       // Erstelle Consolidation Entry
-      const { error } = await this.supabase.from('consolidation_entries').insert({
-        financial_statement_id: financialStatementId,
-        account_id: revenue.accountId,
-        adjustment_type: 'elimination',
-        amount: -eliminationAmount, // Negativ, da Eliminierung
-        description: `Eliminierung Zwischenumsatz: ${revenue.accountName} (${revenue.companyName})`,
-      });
+      const { error } = await this.supabase
+        .from('consolidation_entries')
+        .insert({
+          financial_statement_id: financialStatementId,
+          account_id: revenue.accountId,
+          adjustment_type: 'elimination',
+          amount: -eliminationAmount, // Negativ, da Eliminierung
+          description: `Eliminierung Zwischenumsatz: ${revenue.accountName} (${revenue.companyName})`,
+        });
 
       if (!error) {
         entries.push({
@@ -405,20 +423,24 @@ export class IncomeStatementConsolidationService {
     let totalEliminated = 0;
 
     // Finde alle intercompany expense positions
-    const intercompanyExpenses = expensePositions.filter((p) => p.isIntercompany);
+    const intercompanyExpenses = expensePositions.filter(
+      (p) => p.isIntercompany,
+    );
 
     for (const expense of intercompanyExpenses) {
       const eliminationAmount = expense.amount;
       totalEliminated += eliminationAmount;
 
       // Erstelle Consolidation Entry
-      const { error } = await this.supabase.from('consolidation_entries').insert({
-        financial_statement_id: financialStatementId,
-        account_id: expense.accountId,
-        adjustment_type: 'elimination',
-        amount: eliminationAmount, // Positiv, da Aufwand negativ ist
-        description: `Eliminierung Zwischenaufwand: ${expense.accountName} (${expense.companyName})`,
-      });
+      const { error } = await this.supabase
+        .from('consolidation_entries')
+        .insert({
+          financial_statement_id: financialStatementId,
+          account_id: expense.accountId,
+          adjustment_type: 'elimination',
+          amount: eliminationAmount, // Positiv, da Aufwand negativ ist
+          description: `Eliminierung Zwischenaufwand: ${expense.accountName} (${expense.companyName})`,
+        });
 
       if (!error) {
         entries.push({
@@ -443,9 +465,10 @@ export class IncomeStatementConsolidationService {
     let totalEliminated = 0;
 
     // Erkenne Zwischengesellschaftsgeschäfte
-    const detectionResult = await this.intercompanyService.detectIntercompanyTransactions(
-      financialStatementId,
-    );
+    const detectionResult =
+      await this.intercompanyService.detectIntercompanyTransactions(
+        financialStatementId,
+      );
 
     // Finde Lieferungen/Leistungen mit Gewinn
     const deliveryTransactions = detectionResult.transactions.filter(
@@ -458,13 +481,15 @@ export class IncomeStatementConsolidationService {
       totalEliminated += estimatedProfit;
 
       // Erstelle Consolidation Entry
-      const { error } = await this.supabase.from('consolidation_entries').insert({
-        financial_statement_id: financialStatementId,
-        account_id: transaction.accountId,
-        adjustment_type: 'elimination',
-        amount: -estimatedProfit,
-        description: `Eliminierung Zwischengewinn aus Lieferung: ${transaction.accountName}`,
-      });
+      const { error } = await this.supabase
+        .from('consolidation_entries')
+        .insert({
+          financial_statement_id: financialStatementId,
+          account_id: transaction.accountId,
+          adjustment_type: 'elimination',
+          amount: -estimatedProfit,
+          description: `Eliminierung Zwischengewinn aus Lieferung: ${transaction.accountName}`,
+        });
 
       if (!error) {
         entries.push({
@@ -491,25 +516,29 @@ export class IncomeStatementConsolidationService {
 
     // Finde intercompany Zinserträge
     const intercompanyInterestIncome = financialIncomePositions.filter(
-      (p) => p.isIntercompany && p.accountName.toLowerCase().match(/zins|interest/i),
+      (p) =>
+        p.isIntercompany && p.accountName.toLowerCase().match(/zins|interest/i),
     );
 
     // Finde intercompany Zinsaufwendungen
     const intercompanyInterestExpense = financialExpensePositions.filter(
-      (p) => p.isIntercompany && p.accountName.toLowerCase().match(/zins|interest/i),
+      (p) =>
+        p.isIntercompany && p.accountName.toLowerCase().match(/zins|interest/i),
     );
 
     // Eliminiere Zinserträge
     for (const income of intercompanyInterestIncome) {
       totalEliminated += income.amount;
 
-      const { error } = await this.supabase.from('consolidation_entries').insert({
-        financial_statement_id: financialStatementId,
-        account_id: income.accountId,
-        adjustment_type: 'elimination',
-        amount: -income.amount,
-        description: `Eliminierung Zwischenzinsertrag: ${income.accountName}`,
-      });
+      const { error } = await this.supabase
+        .from('consolidation_entries')
+        .insert({
+          financial_statement_id: financialStatementId,
+          account_id: income.accountId,
+          adjustment_type: 'elimination',
+          amount: -income.amount,
+          description: `Eliminierung Zwischenzinsertrag: ${income.accountName}`,
+        });
 
       if (!error) {
         entries.push({
@@ -524,13 +553,15 @@ export class IncomeStatementConsolidationService {
     for (const expense of intercompanyInterestExpense) {
       totalEliminated += expense.amount;
 
-      const { error } = await this.supabase.from('consolidation_entries').insert({
-        financial_statement_id: financialStatementId,
-        account_id: expense.accountId,
-        adjustment_type: 'elimination',
-        amount: expense.amount,
-        description: `Eliminierung Zwischenzinsaufwand: ${expense.accountName}`,
-      });
+      const { error } = await this.supabase
+        .from('consolidation_entries')
+        .insert({
+          financial_statement_id: financialStatementId,
+          account_id: expense.accountId,
+          adjustment_type: 'elimination',
+          amount: expense.amount,
+          description: `Eliminierung Zwischenzinsaufwand: ${expense.accountName}`,
+        });
 
       if (!error) {
         entries.push({
@@ -569,12 +600,15 @@ export class IncomeStatementConsolidationService {
         .single();
 
       if (participation) {
-        const participationPercentage = parseFloat(participation.participation_percentage || '0');
+        const participationPercentage = parseFloat(
+          participation.participation_percentage || '0',
+        );
         const minorityPercentage = 100 - participationPercentage;
 
         // Vereinfachte Annahme: Net Income der Tochter proportional
         // In Produktion sollte dies aus der GuV der Tochter kommen
-        const subsidiaryNetIncome = netIncome * (minorityPercentage / 100) * 0.3; // 30% Anteil am Gesamtergebnis (vereinfacht)
+        const subsidiaryNetIncome =
+          netIncome * (minorityPercentage / 100) * 0.3; // 30% Anteil am Gesamtergebnis (vereinfacht)
         totalMinorityInterests += subsidiaryNetIncome;
       }
     }
@@ -597,7 +631,8 @@ export class IncomeStatementConsolidationService {
     errors: string[];
     warnings: string[];
   }> {
-    const incomeStatement = await this.consolidateIncomeStatement(financialStatementId);
+    const incomeStatement =
+      await this.consolidateIncomeStatement(financialStatementId);
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -605,7 +640,8 @@ export class IncomeStatementConsolidationService {
     const netIncomeCheck =
       Math.abs(
         incomeStatement.netIncome.consolidated -
-        (incomeStatement.netIncome.parentCompany + incomeStatement.netIncome.minorityInterests),
+          (incomeStatement.netIncome.parentCompany +
+            incomeStatement.netIncome.minorityInterests),
       ) < 0.01;
 
     if (!netIncomeCheck) {

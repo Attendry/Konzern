@@ -8,7 +8,7 @@ export default defineConfig({
     host: '0.0.0.0', // Listen on all network interfaces
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         rewrite: (path) => path, // Keep the /api prefix when forwarding
       },

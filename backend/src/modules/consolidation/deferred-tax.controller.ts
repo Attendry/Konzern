@@ -9,10 +9,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { DeferredTaxService } from './deferred-tax.service';
-import { 
-  DeferredTaxSource, 
-  DeferredTaxStatus, 
-  TemporaryDifferenceType 
+import {
+  DeferredTaxSource,
+  DeferredTaxStatus,
+  TemporaryDifferenceType,
 } from '../../entities/deferred-tax.entity';
 
 class CreateDeferredTaxDto {
@@ -51,7 +51,10 @@ export class DeferredTaxController {
     @Query('taxRate') taxRate?: string,
   ) {
     const rate = taxRate ? parseFloat(taxRate) : undefined;
-    return this.deferredTaxService.calculateDeferredTaxes(financialStatementId, rate);
+    return this.deferredTaxService.calculateDeferredTaxes(
+      financialStatementId,
+      rate,
+    );
   }
 
   /**

@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 import { AdjustmentType } from '../../entities/consolidation-entry.entity';
@@ -98,15 +102,19 @@ export class GoodwillAmortizationService {
         annual_amortization: annualAmortization,
         notes: dto.notes,
       })
-      .select(`
+      .select(
+        `
         *,
         subsidiary_company:companies!goodwill_amortization_schedules_subsidiary_company_id_fkey(name),
         parent_company:companies!goodwill_amortization_schedules_parent_company_id_fkey(name)
-      `)
+      `,
+      )
       .single();
 
     if (error) {
-      throw new BadRequestException(`Abschreibungsplan konnte nicht erstellt werden: ${error.message}`);
+      throw new BadRequestException(
+        `Abschreibungsplan konnte nicht erstellt werden: ${error.message}`,
+      );
     }
 
     return this.mapToSchedule(data);
@@ -115,20 +123,26 @@ export class GoodwillAmortizationService {
   /**
    * Get all schedules for a parent company
    */
-  async getSchedulesByParent(parentCompanyId: string): Promise<GoodwillSchedule[]> {
+  async getSchedulesByParent(
+    parentCompanyId: string,
+  ): Promise<GoodwillSchedule[]> {
     const { data, error } = await this.supabase
       .from('goodwill_amortization_schedules')
-      .select(`
+      .select(
+        `
         *,
         subsidiary_company:companies!goodwill_amortization_schedules_subsidiary_company_id_fkey(name),
         parent_company:companies!goodwill_amortization_schedules_parent_company_id_fkey(name)
-      `)
+      `,
+      )
       .eq('parent_company_id', parentCompanyId)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Abschreibungspläne: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Abschreibungspläne: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapToSchedule);
@@ -140,16 +154,20 @@ export class GoodwillAmortizationService {
   async getScheduleById(id: string): Promise<GoodwillSchedule> {
     const { data, error } = await this.supabase
       .from('goodwill_amortization_schedules')
-      .select(`
+      .select(
+        `
         *,
         subsidiary_company:companies!goodwill_amortization_schedules_subsidiary_company_id_fkey(name),
         parent_company:companies!goodwill_amortization_schedules_parent_company_id_fkey(name)
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
     if (error || !data) {
-      throw new NotFoundException(`Abschreibungsplan mit ID ${id} nicht gefunden`);
+      throw new NotFoundException(
+        `Abschreibungsplan mit ID ${id} nicht gefunden`,
+      );
     }
 
     return this.mapToSchedule(data);
@@ -158,28 +176,37 @@ export class GoodwillAmortizationService {
   /**
    * Update schedule
    */
-  async updateSchedule(id: string, updates: Partial<CreateScheduleDto>): Promise<GoodwillSchedule> {
+  async updateSchedule(
+    id: string,
+    updates: Partial<CreateScheduleDto>,
+  ): Promise<GoodwillSchedule> {
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
 
-    if (updates.usefulLifeYears !== undefined) updateData.useful_life_years = updates.usefulLifeYears;
-    if (updates.amortizationMethod !== undefined) updateData.amortization_method = updates.amortizationMethod;
+    if (updates.usefulLifeYears !== undefined)
+      updateData.useful_life_years = updates.usefulLifeYears;
+    if (updates.amortizationMethod !== undefined)
+      updateData.amortization_method = updates.amortizationMethod;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
 
     const { data, error } = await this.supabase
       .from('goodwill_amortization_schedules')
       .update(updateData)
       .eq('id', id)
-      .select(`
+      .select(
+        `
         *,
         subsidiary_company:companies!goodwill_amortization_schedules_subsidiary_company_id_fkey(name),
         parent_company:companies!goodwill_amortization_schedules_parent_company_id_fkey(name)
-      `)
+      `,
+      )
       .single();
 
     if (error) {
-      throw new BadRequestException(`Abschreibungsplan konnte nicht aktualisiert werden: ${error.message}`);
+      throw new BadRequestException(
+        `Abschreibungsplan konnte nicht aktualisiert werden: ${error.message}`,
+      );
     }
 
     return this.mapToSchedule(data);
@@ -197,27 +224,35 @@ export class GoodwillAmortizationService {
     const schedule = await this.getScheduleById(scheduleId);
 
     const newImpairment = schedule.impairmentAmount + impairmentAmount;
-    const newRemaining = schedule.initialGoodwill - schedule.accumulatedAmortization - newImpairment;
+    const newRemaining =
+      schedule.initialGoodwill -
+      schedule.accumulatedAmortization -
+      newImpairment;
 
     const { data, error } = await this.supabase
       .from('goodwill_amortization_schedules')
       .update({
         impairment_amount: newImpairment,
-        impairment_date: impairmentDate || new Date().toISOString().split('T')[0],
+        impairment_date:
+          impairmentDate || new Date().toISOString().split('T')[0],
         impairment_reason: reason,
         remaining_goodwill: newRemaining,
         updated_at: new Date().toISOString(),
       })
       .eq('id', scheduleId)
-      .select(`
+      .select(
+        `
         *,
         subsidiary_company:companies!goodwill_amortization_schedules_subsidiary_company_id_fkey(name),
         parent_company:companies!goodwill_amortization_schedules_parent_company_id_fkey(name)
-      `)
+      `,
+      )
       .single();
 
     if (error) {
-      throw new BadRequestException(`Wertminderung konnte nicht erfasst werden: ${error.message}`);
+      throw new BadRequestException(
+        `Wertminderung konnte nicht erfasst werden: ${error.message}`,
+      );
     }
 
     return this.mapToSchedule(data);
@@ -228,7 +263,9 @@ export class GoodwillAmortizationService {
   /**
    * Create amortization entry for a fiscal year
    */
-  async createAmortizationEntry(dto: CreateAmortizationDto): Promise<AmortizationEntry> {
+  async createAmortizationEntry(
+    dto: CreateAmortizationDto,
+  ): Promise<AmortizationEntry> {
     const schedule = await this.getScheduleById(dto.scheduleId);
 
     // Check if entry for this year already exists
@@ -240,7 +277,9 @@ export class GoodwillAmortizationService {
       .single();
 
     if (existing) {
-      throw new BadRequestException(`Abschreibung für Geschäftsjahr ${dto.fiscalYear} existiert bereits`);
+      throw new BadRequestException(
+        `Abschreibung für Geschäftsjahr ${dto.fiscalYear} existiert bereits`,
+      );
     }
 
     // Get last entry to determine opening balance
@@ -252,7 +291,8 @@ export class GoodwillAmortizationService {
       .limit(1)
       .single();
 
-    const openingBalance = lastEntry?.closing_balance || schedule.initialGoodwill;
+    const openingBalance =
+      lastEntry?.closing_balance || schedule.initialGoodwill;
     const amortizationAmount = schedule.annualAmortization;
     const closingBalance = Math.max(0, openingBalance - amortizationAmount);
 
@@ -273,14 +313,17 @@ export class GoodwillAmortizationService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Abschreibungsbuchung konnte nicht erstellt werden: ${error.message}`);
+      throw new BadRequestException(
+        `Abschreibungsbuchung konnte nicht erstellt werden: ${error.message}`,
+      );
     }
 
     // Update schedule accumulated amortization
     await this.supabase
       .from('goodwill_amortization_schedules')
       .update({
-        accumulated_amortization: schedule.accumulatedAmortization + amortizationAmount,
+        accumulated_amortization:
+          schedule.accumulatedAmortization + amortizationAmount,
         remaining_goodwill: closingBalance,
         updated_at: new Date().toISOString(),
       })
@@ -300,7 +343,9 @@ export class GoodwillAmortizationService {
       .order('fiscal_year', { ascending: true });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Abschreibungsbuchungen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Abschreibungsbuchungen: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapToEntry);
@@ -321,7 +366,9 @@ export class GoodwillAmortizationService {
       .single();
 
     if (fetchError || !entry) {
-      throw new NotFoundException(`Abschreibungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Abschreibungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (entry.is_booked) {
@@ -345,7 +392,9 @@ export class GoodwillAmortizationService {
       .single();
 
     if (consError) {
-      throw new BadRequestException(`Konsolidierungsbuchung konnte nicht erstellt werden: ${consError.message}`);
+      throw new BadRequestException(
+        `Konsolidierungsbuchung konnte nicht erstellt werden: ${consError.message}`,
+      );
     }
 
     // Update entry as booked
@@ -363,7 +412,9 @@ export class GoodwillAmortizationService {
       .single();
 
     if (updateError) {
-      throw new BadRequestException(`Buchung konnte nicht aktualisiert werden: ${updateError.message}`);
+      throw new BadRequestException(
+        `Buchung konnte nicht aktualisiert werden: ${updateError.message}`,
+      );
     }
 
     return {
@@ -375,7 +426,10 @@ export class GoodwillAmortizationService {
   /**
    * Calculate amortization projection
    */
-  async calculateProjection(scheduleId: string, years: number = 10): Promise<any[]> {
+  async calculateProjection(
+    scheduleId: string,
+    years: number = 10,
+  ): Promise<any[]> {
     const schedule = await this.getScheduleById(scheduleId);
     const projection: any[] = [];
 
@@ -440,14 +494,18 @@ export class GoodwillAmortizationService {
       parentCompanyName: data.parent_company?.name,
       participationId: data.participation_id,
       initialGoodwill: parseFloat(data.initial_goodwill),
-      acquisitionDate: data.acquisition_date ? new Date(data.acquisition_date) : undefined,
+      acquisitionDate: data.acquisition_date
+        ? new Date(data.acquisition_date)
+        : undefined,
       usefulLifeYears: data.useful_life_years,
       amortizationMethod: data.amortization_method,
       accumulatedAmortization: parseFloat(data.accumulated_amortization || '0'),
       remainingGoodwill: parseFloat(data.remaining_goodwill || '0'),
       annualAmortization: parseFloat(data.annual_amortization || '0'),
       impairmentAmount: parseFloat(data.impairment_amount || '0'),
-      impairmentDate: data.impairment_date ? new Date(data.impairment_date) : undefined,
+      impairmentDate: data.impairment_date
+        ? new Date(data.impairment_date)
+        : undefined,
       impairmentReason: data.impairment_reason,
       hgbReference: data.hgb_reference || '§ 309 HGB',
       notes: data.notes,

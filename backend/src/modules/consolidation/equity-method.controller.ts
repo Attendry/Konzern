@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 import { EquityMethodService } from './equity-method.service';
 
 @Controller('consolidation/equity-method')

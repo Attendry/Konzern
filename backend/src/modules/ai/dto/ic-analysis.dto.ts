@@ -10,7 +10,13 @@ export class BatchAnalyzeRequestDto {
   financialStatementId: string;
 }
 
-export type ICCauseType = 'timing' | 'fx' | 'rounding' | 'missing_entry' | 'error' | 'unknown';
+export type ICCauseType =
+  | 'timing'
+  | 'fx'
+  | 'rounding'
+  | 'missing_entry'
+  | 'error'
+  | 'unknown';
 
 export interface CorrectionEntry {
   debitAccount: string;

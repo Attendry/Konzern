@@ -53,7 +53,8 @@ export interface RuleParameterOverride {
 export class RulesEngineService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService: AuditLogService,
   ) {}
 
@@ -70,10 +71,12 @@ export class RulesEngineService {
 
     let query = supabase
       .from('consolidation_rules')
-      .select(`
+      .select(
+        `
         *,
         policy:accounting_policies(*)
-      `)
+      `,
+      )
       .order('execution_order', { ascending: true });
 
     if (ruleType) {
@@ -121,10 +124,12 @@ export class RulesEngineService {
 
     const { data, error } = await supabase
       .from('consolidation_rules')
-      .select(`
+      .select(
+        `
         *,
         policy:accounting_policies(*)
-      `)
+      `,
+      )
       .eq('id', ruleId)
       .single();
 
@@ -243,22 +248,26 @@ export class RulesEngineService {
   /**
    * Get parameter overrides for a financial statement
    */
-  async getRuleOverrides(financialStatementId: string): Promise<RuleParameterOverride[]> {
+  async getRuleOverrides(
+    financialStatementId: string,
+  ): Promise<RuleParameterOverride[]> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
       .from('rule_parameter_overrides')
-      .select(`
+      .select(
+        `
         *,
         rule:consolidation_rules(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId);
 
     if (error) {
       throw new Error(`Failed to fetch rule overrides: ${error.message}`);
     }
 
-    return (data || []).map(d => ({
+    return (data || []).map((d) => ({
       id: d.id,
       ruleId: d.rule_id,
       financialStatementId: d.financial_statement_id,
@@ -289,7 +298,9 @@ export class RulesEngineService {
     // Mandatory rules require approval for overrides
     if (rule.isHgbMandatory) {
       if (!justification) {
-        throw new Error('Justification required for overriding HGB-mandatory rule parameters');
+        throw new Error(
+          'Justification required for overriding HGB-mandatory rule parameters',
+        );
       }
     }
 
@@ -321,7 +332,10 @@ export class RulesEngineService {
   /**
    * Approve a rule override (required for mandatory rules)
    */
-  async approveRuleOverride(overrideId: string, userId: string): Promise<RuleParameterOverride> {
+  async approveRuleOverride(
+    overrideId: string,
+    userId: string,
+  ): Promise<RuleParameterOverride> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -364,7 +378,7 @@ export class RulesEngineService {
     }
 
     const overrides = await this.getRuleOverrides(financialStatementId);
-    const override = overrides.find(o => o.ruleId === ruleId);
+    const override = overrides.find((o) => o.ruleId === ruleId);
 
     // Merge base parameters with overrides
     return {
@@ -389,7 +403,10 @@ export class RulesEngineService {
       throw new Error('Rule not found');
     }
 
-    const parameters = await this.getEffectiveParameters(ruleId, financialStatementId);
+    const parameters = await this.getEffectiveParameters(
+      ruleId,
+      financialStatementId,
+    );
 
     let wasApplied = false;
     let wasSuccessful = true;
@@ -401,7 +418,7 @@ export class RulesEngineService {
     try {
       // Execute rule based on type
       const result = await this.evaluateRuleLogic(rule, parameters, context);
-      
+
       wasApplied = result.applied;
       wasSuccessful = result.success;
       message = result.message;
@@ -452,14 +469,19 @@ export class RulesEngineService {
     let rules = await this.getRules();
 
     if (ruleTypes && ruleTypes.length > 0) {
-      rules = rules.filter(r => ruleTypes.includes(r.ruleType));
+      rules = rules.filter((r) => ruleTypes.includes(r.ruleType));
     }
 
     const results: RuleExecutionResult[] = [];
 
     for (const rule of rules) {
       try {
-        const result = await this.executeRule(rule.id, financialStatementId, context, userId);
+        const result = await this.executeRule(
+          rule.id,
+          financialStatementId,
+          context,
+          userId,
+        );
         results.push(result);
       } catch (err) {
         results.push({
@@ -497,8 +519,12 @@ export class RulesEngineService {
     if (config.conditions) {
       for (const condition of config.conditions) {
         const fieldValue = context[condition.field];
-        const conditionMet = this.evaluateCondition(fieldValue, condition.operator, condition.value);
-        
+        const conditionMet = this.evaluateCondition(
+          fieldValue,
+          condition.operator,
+          condition.value,
+        );
+
         if (!conditionMet) {
           return {
             applied: false,
@@ -527,7 +553,8 @@ export class RulesEngineService {
         break;
 
       case ConsolidationRuleType.INCOME_EXPENSE:
-        message = 'Aufwands- und Ertragskonsolidierung gemäß § 305 HGB durchgeführt';
+        message =
+          'Aufwands- und Ertragskonsolidierung gemäß § 305 HGB durchgeführt';
         break;
 
       case ConsolidationRuleType.DEFERRED_TAX:
@@ -561,7 +588,11 @@ export class RulesEngineService {
   /**
    * Evaluate a single condition
    */
-  private evaluateCondition(fieldValue: unknown, operator: string, conditionValue: unknown): boolean {
+  private evaluateCondition(
+    fieldValue: unknown,
+    operator: string,
+    conditionValue: unknown,
+  ): boolean {
     switch (operator) {
       case 'eq':
         return fieldValue === conditionValue;
@@ -576,13 +607,19 @@ export class RulesEngineService {
       case 'lte':
         return Number(fieldValue) <= Number(conditionValue);
       case 'in':
-        return Array.isArray(conditionValue) && conditionValue.includes(fieldValue);
+        return (
+          Array.isArray(conditionValue) && conditionValue.includes(fieldValue)
+        );
       case 'not_in':
-        return Array.isArray(conditionValue) && !conditionValue.includes(fieldValue);
+        return (
+          Array.isArray(conditionValue) && !conditionValue.includes(fieldValue)
+        );
       case 'between':
         if (Array.isArray(conditionValue) && conditionValue.length === 2) {
           const num = Number(fieldValue);
-          return num >= Number(conditionValue[0]) && num <= Number(conditionValue[1]);
+          return (
+            num >= Number(conditionValue[0]) && num <= Number(conditionValue[1])
+          );
         }
         return false;
       default:
@@ -604,14 +641,20 @@ export class RulesEngineService {
       byFlexibility: [],
     };
 
-    const typeMap = new Map<ConsolidationRuleType, { count: number; mandatoryCount: number }>();
+    const typeMap = new Map<
+      ConsolidationRuleType,
+      { count: number; mandatoryCount: number }
+    >();
     const flexibilityMap = new Map<RuleFlexibility, number>();
 
     for (const rule of rules) {
       if (rule.isActive) summary.activeRules++;
       if (rule.isHgbMandatory) summary.mandatoryRules++;
 
-      const typeStats = typeMap.get(rule.ruleType) || { count: 0, mandatoryCount: 0 };
+      const typeStats = typeMap.get(rule.ruleType) || {
+        count: 0,
+        mandatoryCount: 0,
+      };
       typeStats.count++;
       if (rule.isHgbMandatory) typeStats.mandatoryCount++;
       typeMap.set(rule.ruleType, typeStats);
@@ -626,10 +669,12 @@ export class RulesEngineService {
       mandatoryCount: stats.mandatoryCount,
     }));
 
-    summary.byFlexibility = Array.from(flexibilityMap.entries()).map(([flexibility, count]) => ({
-      flexibility,
-      count,
-    }));
+    summary.byFlexibility = Array.from(flexibilityMap.entries()).map(
+      ([flexibility, count]) => ({
+        flexibility,
+        count,
+      }),
+    );
 
     return summary;
   }
@@ -642,11 +687,13 @@ export class RulesEngineService {
 
     const { data, error } = await supabase
       .from('policy_application_logs')
-      .select(`
+      .select(
+        `
         *,
         policy:accounting_policies(*),
         rule:consolidation_rules(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId)
       .order('applied_at', { ascending: false });
 

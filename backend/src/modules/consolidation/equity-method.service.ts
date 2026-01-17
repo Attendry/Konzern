@@ -1,8 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
-import { AdjustmentType, EntrySource, EntryStatus, HgbReference, ConsolidationEntry } from '../../entities/consolidation-entry.entity';
+import {
+  AdjustmentType,
+  EntrySource,
+  EntryStatus,
+  HgbReference,
+  ConsolidationEntry,
+} from '../../entities/consolidation-entry.entity';
 
 // At-Equity result interface
 export interface EquityMethodResult {
@@ -53,15 +63,19 @@ export class EquityMethodService {
     financialStatementId: string,
     parentCompanyId: string,
   ): Promise<{ results: EquityMethodResult[]; summary: any }> {
-    console.log(`[EquityMethodService] Calculating equity method for parent: ${parentCompanyId}`);
+    console.log(
+      `[EquityMethodService] Calculating equity method for parent: ${parentCompanyId}`,
+    );
 
     // Get all participations that should be accounted for using equity method
     const { data: participations, error: partError } = await this.supabase
       .from('participations')
-      .select(`
+      .select(
+        `
         *,
         subsidiary:companies!participations_subsidiary_company_id_fkey(*)
-      `)
+      `,
+      )
       .eq('parent_company_id', parentCompanyId)
       .eq('is_active', true)
       .gte('participation_percentage', 20) // 20% or more but not consolidated
@@ -88,9 +102,10 @@ export class EquityMethodService {
       if (!participation.subsidiary) continue;
 
       // Check if company is excluded from full consolidation
-      const isEquityMethod = 
+      const isEquityMethod =
         participation.subsidiary.consolidation_type === 'equity' ||
-        (participation.participation_percentage >= 20 && participation.participation_percentage < 50);
+        (participation.participation_percentage >= 20 &&
+          participation.participation_percentage < 50);
 
       if (!isEquityMethod) continue;
 
@@ -104,7 +119,9 @@ export class EquityMethodService {
         .single();
 
       if (fsError || !subsidiarFS) {
-        console.warn(`No financial statement found for subsidiary ${participation.subsidiary.name}`);
+        console.warn(
+          `No financial statement found for subsidiary ${participation.subsidiary.name}`,
+        );
         continue;
       }
 
@@ -115,12 +132,19 @@ export class EquityMethodService {
           participationId: participation.id,
           subsidiaryCompanyId: participation.subsidiary_company_id,
           subsidiaryName: participation.subsidiary.name,
-          participationPercentage: Number(participation.participation_percentage),
+          participationPercentage: Number(
+            participation.participation_percentage,
+          ),
           acquisitionCost: Number(participation.acquisition_cost || 0),
           goodwill: Number(participation.goodwill || 0),
           goodwillUsefulLife: 10, // Default 10 years per HGB
-          subsidiaryNetIncome: await this.getSubsidiaryNetIncome(subsidiarFS.id),
-          dividendsReceived: await this.getDividendsReceived(parentCompanyId, participation.subsidiary_company_id),
+          subsidiaryNetIncome: await this.getSubsidiaryNetIncome(
+            subsidiarFS.id,
+          ),
+          dividendsReceived: await this.getDividendsReceived(
+            parentCompanyId,
+            participation.subsidiary_company_id,
+          ),
           otherComprehensiveIncome: 0,
         },
       );
@@ -132,10 +156,16 @@ export class EquityMethodService {
     // Calculate summary
     const summary = {
       totalAssociates: results.length,
-      totalCarryingValue: results.reduce((sum, r) => sum + r.closingCarryingValue, 0),
+      totalCarryingValue: results.reduce(
+        (sum, r) => sum + r.closingCarryingValue,
+        0,
+      ),
       totalShareOfProfit: results.reduce((sum, r) => sum + r.shareOfProfit, 0),
       totalDividends: results.reduce((sum, r) => sum + r.dividendsReceived, 0),
-      totalGoodwillAmortization: results.reduce((sum, r) => sum + r.goodwillAmortization, 0),
+      totalGoodwillAmortization: results.reduce(
+        (sum, r) => sum + r.goodwillAmortization,
+        0,
+      ),
     };
 
     return { results, summary };
@@ -151,18 +181,19 @@ export class EquityMethodService {
     const entries: ConsolidationEntry[] = [];
 
     // Calculate share of profit/loss
-    const shareOfProfit = input.subsidiaryNetIncome * (input.participationPercentage / 100);
+    const shareOfProfit =
+      input.subsidiaryNetIncome * (input.participationPercentage / 100);
 
     // Calculate goodwill amortization (§ 309 Abs. 1 HGB)
-    const goodwillAmortization = input.goodwill > 0 
-      ? input.goodwill / input.goodwillUsefulLife 
-      : 0;
+    const goodwillAmortization =
+      input.goodwill > 0 ? input.goodwill / input.goodwillUsefulLife : 0;
 
     // Calculate opening carrying value (if not provided, use acquisition cost)
-    const openingCarryingValue = input.openingCarryingValue ?? input.acquisitionCost;
+    const openingCarryingValue =
+      input.openingCarryingValue ?? input.acquisitionCost;
 
     // Calculate closing carrying value
-    const closingCarryingValue = 
+    const closingCarryingValue =
       openingCarryingValue +
       shareOfProfit -
       input.dividendsReceived -
@@ -267,35 +298,41 @@ export class EquityMethodService {
   /**
    * Get subsidiary net income from financial statement
    */
-  private async getSubsidiaryNetIncome(financialStatementId: string): Promise<number> {
+  private async getSubsidiaryNetIncome(
+    financialStatementId: string,
+  ): Promise<number> {
     // Try to get from income statement balances
     const { data: balances, error } = await this.supabase
       .from('income_statement_balances')
-      .select(`
+      .select(
+        `
         *,
         account:income_statement_accounts(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId);
 
     if (error || !balances || balances.length === 0) {
       // Fallback: calculate from account balances
       const { data: accountBalances } = await this.supabase
         .from('account_balances')
-        .select(`
+        .select(
+          `
           *,
           account:accounts(*)
-        `)
+        `,
+        )
         .eq('financial_statement_id', financialStatementId);
 
       if (!accountBalances) return 0;
 
       // Sum revenue - expenses
       const revenue = accountBalances
-        .filter(ab => ab.account?.account_type === 'revenue')
+        .filter((ab) => ab.account?.account_type === 'revenue')
         .reduce((sum, ab) => sum + Number(ab.balance || 0), 0);
 
       const expenses = accountBalances
-        .filter(ab => ab.account?.account_type === 'expense')
+        .filter((ab) => ab.account?.account_type === 'expense')
         .reduce((sum, ab) => sum + Number(ab.balance || 0), 0);
 
       return revenue - expenses;
@@ -341,7 +378,7 @@ export class EquityMethodService {
     );
 
     return {
-      associates: results.map(r => ({
+      associates: results.map((r) => ({
         name: r.subsidiaryName,
         ownershipPercentage: r.participationPercentage,
         carryingValue: r.closingCarryingValue,
@@ -352,7 +389,8 @@ export class EquityMethodService {
         shareOfProfit: summary.totalShareOfProfit,
       },
       hgbReference: '§ 312 HGB',
-      methodology: 'Die Beteiligungen an assoziierten Unternehmen werden nach der Equity-Methode bewertet. Der Unterschiedsbetrag zwischen Anschaffungskosten und anteiligem Eigenkapital wurde als Geschäfts- oder Firmenwert aktiviert und wird planmäßig abgeschrieben.',
+      methodology:
+        'Die Beteiligungen an assoziierten Unternehmen werden nach der Equity-Methode bewertet. Der Unterschiedsbetrag zwischen Anschaffungskosten und anteiligem Eigenkapital wurde als Geschäfts- oder Firmenwert aktiviert und wird planmäßig abgeschrieben.',
     };
   }
 }

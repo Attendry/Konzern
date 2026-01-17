@@ -23,10 +23,12 @@ import { AIModule } from './modules/ai/ai.module';
       expandVariables: true,
     }),
     // Rate limiting: 100 requests per minute per IP
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // Time window in milliseconds (1 minute)
-      limit: 100, // Max requests per window
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // Time window in milliseconds (1 minute)
+        limit: 100, // Max requests per window
+      },
+    ]),
     HealthModule, // Health check should always be available
     SupabaseModule,
     AuthModule, // Authentication module

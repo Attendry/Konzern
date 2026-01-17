@@ -55,7 +55,8 @@ export class VarianceAnalysisTool implements AgentTool {
   private readonly logger = new Logger(VarianceAnalysisTool.name);
 
   name = 'analyze_variance';
-  description = 'Analysiert Periodenabweichungen und erklärt signifikante Veränderungen';
+  description =
+    'Analysiert Periodenabweichungen und erklärt signifikante Veränderungen';
   parameters: ToolParameter[] = [
     {
       name: 'account_id',
@@ -72,7 +73,8 @@ export class VarianceAnalysisTool implements AgentTool {
     {
       name: 'threshold',
       type: 'number',
-      description: 'Schwellwert für signifikante Abweichungen in Prozent (default: 10)',
+      description:
+        'Schwellwert für signifikante Abweichungen in Prozent (default: 10)',
       required: false,
       default: 10,
     },
@@ -98,14 +100,18 @@ export class VarianceAnalysisTool implements AgentTool {
     context: AgentContext,
   ): Promise<ToolResult> {
     const startTime = Date.now();
-    
+
     try {
       const threshold = params.threshold || 10;
-      
+
       if (params.account_id) {
         return await this.analyzeAccount(params.account_id, threshold, context);
-      } else if (params.financial_statement_id || context.financialStatementId) {
-        const fsId = params.financial_statement_id || context.financialStatementId;
+      } else if (
+        params.financial_statement_id ||
+        context.financialStatementId
+      ) {
+        const fsId =
+          params.financial_statement_id || context.financialStatementId;
         return await this.analyzeFinancialStatement(fsId, threshold, context);
       } else {
         return {
@@ -166,7 +172,7 @@ export class VarianceAnalysisTool implements AgentTool {
     }
 
     const significantVariances = results.filter(
-      r => r.success && r.data?.isSignificant
+      (r) => r.success && r.data?.isSignificant,
     ).length;
 
     return {
@@ -190,7 +196,7 @@ export class VarianceAnalysisTool implements AgentTool {
     context: AgentContext,
   ): Promise<ToolResult> {
     const data = await this.fetchAccountData(accountId);
-    
+
     if (!data) {
       return {
         success: false,
@@ -243,13 +249,15 @@ export class VarianceAnalysisTool implements AgentTool {
     // Get current financial statement
     const { data: fs, error: fsError } = await client
       .from('financial_statements')
-      .select(`
+      .select(
+        `
         id,
         fiscal_year,
         period_start,
         period_end,
         company:companies(id, name)
-      `)
+      `,
+      )
       .eq('id', financialStatementId)
       .single();
 
@@ -257,7 +265,9 @@ export class VarianceAnalysisTool implements AgentTool {
       return {
         success: false,
         message: 'Jahresabschluss nicht gefunden.',
-        reasoning: this.reasoning.buildEmptyChain('Jahresabschluss nicht gefunden'),
+        reasoning: this.reasoning.buildEmptyChain(
+          'Jahresabschluss nicht gefunden',
+        ),
         quality: this.buildDefaultQuality(),
         provenance: [],
         disclaimer: DISCLAIMERS.general,
@@ -267,7 +277,7 @@ export class VarianceAnalysisTool implements AgentTool {
     // Get previous period
     const companyId = (fs.company as any)?.id;
     const currentYear = fs.fiscal_year;
-    
+
     const { data: previousFs } = await client
       .from('financial_statements')
       .select('id, fiscal_year, period_start, period_end')
@@ -283,7 +293,7 @@ export class VarianceAnalysisTool implements AgentTool {
       .select('*, accounts(*)')
       .eq('financial_statement_id', financialStatementId);
 
-    const { data: previousBalances } = previousFs 
+    const { data: previousBalances } = previousFs
       ? await client
           .from('account_balances')
           .select('*, accounts(*)')
@@ -293,16 +303,18 @@ export class VarianceAnalysisTool implements AgentTool {
     // Build balance sheet data from account balances
     const currentData: Record<string, number> = {};
     (currentBalances || []).forEach((balance: any) => {
-      const accountNumber = balance.accounts?.account_number || balance.account_id;
+      const accountNumber =
+        balance.accounts?.account_number || balance.account_id;
       currentData[accountNumber] = Number(balance.balance || 0);
     });
 
     const previousData: Record<string, number> = {};
     (previousBalances || []).forEach((balance: any) => {
-      const accountNumber = balance.accounts?.account_number || balance.account_id;
+      const accountNumber =
+        balance.accounts?.account_number || balance.account_id;
       previousData[accountNumber] = Number(balance.balance || 0);
     });
-    
+
     const significantVariances: Array<{
       account: string;
       current: number;
@@ -319,15 +331,21 @@ export class VarianceAnalysisTool implements AgentTool {
     for (const key of accountKeys) {
       const current = Number(currentData[key]) || 0;
       const previous = Number(previousData[key]) || 0;
-      
-      if (previous === 0 && current === 0) continue;
-      
-      const variance = current - previous;
-      const variancePercent = previous !== 0 
-        ? (variance / Math.abs(previous)) * 100 
-        : (current !== 0 ? 100 : 0);
 
-      if (Math.abs(variancePercent) >= threshold || Math.abs(variance) > 100000) {
+      if (previous === 0 && current === 0) continue;
+
+      const variance = current - previous;
+      const variancePercent =
+        previous !== 0
+          ? (variance / Math.abs(previous)) * 100
+          : current !== 0
+            ? 100
+            : 0;
+
+      if (
+        Math.abs(variancePercent) >= threshold ||
+        Math.abs(variance) > 100000
+      ) {
         significantVariances.push({
           account: key,
           current,
@@ -339,8 +357,8 @@ export class VarianceAnalysisTool implements AgentTool {
     }
 
     // Sort by absolute variance
-    significantVariances.sort((a, b) => 
-      Math.abs(b.variance) - Math.abs(a.variance)
+    significantVariances.sort(
+      (a, b) => Math.abs(b.variance) - Math.abs(a.variance),
     );
 
     const reasoning = this.reasoning.buildReasoningChain(
@@ -351,7 +369,7 @@ export class VarianceAnalysisTool implements AgentTool {
           confidence: 0.9,
           dataPoints: [`${accountKeys.size} Positionen verglichen`],
         },
-        ...significantVariances.slice(0, 5).map(v => ({
+        ...significantVariances.slice(0, 5).map((v) => ({
           observation: `${v.account}: ${this.formatCurrency(v.previous)} → ${this.formatCurrency(v.current)}`,
           inference: `Veränderung ${v.variancePercent > 0 ? '+' : ''}${v.variancePercent.toFixed(1)}%`,
           confidence: 0.85,
@@ -377,7 +395,11 @@ export class VarianceAnalysisTool implements AgentTool {
       quality: this.reasoning.buildQualityIndicators(
         { percentage: previousFs ? 100 : 50 },
         true,
-        { dataQuality: previousFs ? 0.95 : 0.5, patternMatch: 0.8, ruleMatch: 0.9 },
+        {
+          dataQuality: previousFs ? 0.95 : 0.5,
+          patternMatch: 0.8,
+          ruleMatch: 0.9,
+        },
         [],
         undefined,
       ),
@@ -387,16 +409,18 @@ export class VarianceAnalysisTool implements AgentTool {
           financialStatementId,
           `Jahresabschluss ${fs.fiscal_year}`,
         ),
-        ...(previousFs ? [
-          this.provenance.createDatabaseProvenance(
-            'financial_statements',
-            previousFs.id,
-            `Vorjahresabschluss ${previousFs.fiscal_year}`,
-          ),
-        ] : []),
+        ...(previousFs
+          ? [
+              this.provenance.createDatabaseProvenance(
+                'financial_statements',
+                previousFs.id,
+                `Vorjahresabschluss ${previousFs.fiscal_year}`,
+              ),
+            ]
+          : []),
       ],
-      disclaimer: previousFs 
-        ? DISCLAIMERS.general 
+      disclaimer: previousFs
+        ? DISCLAIMERS.general
         : 'Hinweis: Kein Vorjahresvergleich möglich - dies ist die erste Periode.',
     };
   }
@@ -404,14 +428,17 @@ export class VarianceAnalysisTool implements AgentTool {
   /**
    * Fetch account data with historical comparison
    */
-  private async fetchAccountData(accountId: string): Promise<VarianceData | null> {
+  private async fetchAccountData(
+    accountId: string,
+  ): Promise<VarianceData | null> {
     const client = this.supabase.getClient();
 
-    // This is a simplified example - in reality, you'd need to query 
+    // This is a simplified example - in reality, you'd need to query
     // actual account/line item tables
     const { data, error } = await client
       .from('consolidation_entries')
-      .select(`
+      .select(
+        `
         id,
         account,
         amount,
@@ -421,7 +448,8 @@ export class VarianceAnalysisTool implements AgentTool {
           period,
           company:companies(name)
         )
-      `)
+      `,
+      )
       .eq('id', accountId)
       .single();
 
@@ -432,14 +460,13 @@ export class VarianceAnalysisTool implements AgentTool {
     // Get previous period entry for same account
     const fs = data.financial_statement as any;
     const companyName = fs?.company?.name || 'Unbekannt';
-    
+
     // Simulated previous period data
     const previousBalance = Math.random() * 1000000; // In reality, fetch from DB
     const currentBalance = data.amount || 0;
     const variance = currentBalance - previousBalance;
-    const variancePercent = previousBalance !== 0 
-      ? (variance / Math.abs(previousBalance)) * 100 
-      : 0;
+    const variancePercent =
+      previousBalance !== 0 ? (variance / Math.abs(previousBalance)) * 100 : 0;
 
     return {
       currentPeriod: {
@@ -469,7 +496,7 @@ export class VarianceAnalysisTool implements AgentTool {
     threshold: number,
   ): Promise<VarianceAnalysis> {
     const isSignificant = Math.abs(data.variancePercent) >= threshold;
-    
+
     if (!isSignificant) {
       return {
         isSignificant: false,
@@ -501,7 +528,7 @@ Gib eine JSON-Antwort mit:
 
         const response = await this.gemini.complete(prompt);
         const parsed = this.parseJsonResponse(response);
-        
+
         return {
           isSignificant: true,
           causes: parsed.causes || ['Keine spezifische Ursache identifiziert'],
@@ -532,32 +559,34 @@ Gib eine JSON-Antwort mit:
     const direction = data.variancePercent > 0 ? 'Erhöhung' : 'Verringerung';
 
     const categorySpecificCauses: Record<string, string[]> = {
-      'Anlagevermögen': [
+      Anlagevermögen: [
         `${direction} durch Investitionen/Desinvestitionen`,
         'Planmäßige/außerplanmäßige Abschreibungen',
         'Zuschreibungen gem. § 253 Abs. 5 HGB',
       ],
-      'Umlaufvermögen': [
+      Umlaufvermögen: [
         `${direction} der Vorräte/Forderungen`,
         'Veränderung der Zahlungsmittel',
         'Bewertungsanpassungen',
       ],
-      'Eigenkapital': [
+      Eigenkapital: [
         'Jahresergebnis',
         'Gewinnausschüttung/Kapitalerhöhung',
         'Veränderung der Rücklagen',
       ],
-      'Verbindlichkeiten': [
+      Verbindlichkeiten: [
         `${direction} der Finanzschulden`,
         'Veränderung der Lieferantenverbindlichkeiten',
         'Rückstellungsveränderungen',
       ],
     };
 
-    return categorySpecificCauses[category] || [
-      `${direction} zum Vorjahr festgestellt`,
-      'Ursache sollte manuell geprüft werden',
-    ];
+    return (
+      categorySpecificCauses[category] || [
+        `${direction} zum Vorjahr festgestellt`,
+        'Ursache sollte manuell geprüft werden',
+      ]
+    );
   }
 
   /**
@@ -565,17 +594,34 @@ Gib eine JSON-Antwort mit:
    */
   private categorizeAccount(account: string): string {
     const lower = (account || '').toLowerCase();
-    
-    if (lower.includes('anlage') || lower.includes('maschine') || lower.includes('gebäude')) {
+
+    if (
+      lower.includes('anlage') ||
+      lower.includes('maschine') ||
+      lower.includes('gebäude')
+    ) {
       return 'Anlagevermögen';
     }
-    if (lower.includes('vorrat') || lower.includes('forderung') || lower.includes('bank') || lower.includes('kasse')) {
+    if (
+      lower.includes('vorrat') ||
+      lower.includes('forderung') ||
+      lower.includes('bank') ||
+      lower.includes('kasse')
+    ) {
       return 'Umlaufvermögen';
     }
-    if (lower.includes('kapital') || lower.includes('rücklage') || lower.includes('gewinn')) {
+    if (
+      lower.includes('kapital') ||
+      lower.includes('rücklage') ||
+      lower.includes('gewinn')
+    ) {
       return 'Eigenkapital';
     }
-    if (lower.includes('verbindlich') || lower.includes('rückstellung') || lower.includes('schuld')) {
+    if (
+      lower.includes('verbindlich') ||
+      lower.includes('rückstellung') ||
+      lower.includes('schuld')
+    ) {
       return 'Verbindlichkeiten';
     }
     return 'Sonstige';
@@ -638,7 +684,9 @@ Gib eine JSON-Antwort mit:
       data.historicalVariances.length > 0
         ? {
             similarCases: data.historicalVariances.length,
-            correctPredictions: Math.floor(data.historicalVariances.length * 0.8),
+            correctPredictions: Math.floor(
+              data.historicalVariances.length * 0.8,
+            ),
           }
         : undefined,
     );
@@ -672,18 +720,23 @@ Gib eine JSON-Antwort mit:
   /**
    * Format analysis message
    */
-  private formatMessage(data: VarianceData, analysis: VarianceAnalysis): string {
-    const status = analysis.isSignificant 
-      ? (analysis.needsInvestigation ? '[PRÜFUNG ERFORDERLICH]' : '[SIGNIFIKANT]') 
+  private formatMessage(
+    data: VarianceData,
+    analysis: VarianceAnalysis,
+  ): string {
+    const status = analysis.isSignificant
+      ? analysis.needsInvestigation
+        ? '[PRÜFUNG ERFORDERLICH]'
+        : '[SIGNIFIKANT]'
       : '[OK]';
-    
+
     let message = `${status} **Abweichungsanalyse: ${data.currentPeriod.account}**\n\n`;
     message += `**Veränderung:** ${data.variancePercent > 0 ? '+' : ''}${data.variancePercent.toFixed(1)}% `;
     message += `(${this.formatCurrency(data.variance)})\n\n`;
 
     if (analysis.isSignificant && analysis.causes.length > 0) {
       message += `**Mögliche Ursachen:**\n`;
-      analysis.causes.forEach(cause => {
+      analysis.causes.forEach((cause) => {
         message += `- ${cause}\n`;
       });
       message += '\n';
@@ -703,14 +756,14 @@ Gib eine JSON-Antwort mit:
     threshold: number,
   ): string {
     let message = `**Abweichungsanalyse Jahresabschluss ${fs.period}**\n\n`;
-    
+
     if (variances.length === 0) {
       message += `[OK] Keine wesentlichen Abweichungen (>${threshold}%) zum Vorjahr festgestellt.`;
       return message;
     }
 
     message += `**${variances.length} signifikante Abweichungen gefunden:**\n\n`;
-    
+
     variances.slice(0, 5).forEach((v, i) => {
       const direction = v.variancePercent > 0 ? '[+]' : '[-]';
       message += `${i + 1}. ${direction} **${v.account}**: ${v.variancePercent > 0 ? '+' : ''}${v.variancePercent.toFixed(1)}% `;

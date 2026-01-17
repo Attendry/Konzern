@@ -76,10 +76,20 @@ export class PruefpfadDocumentation {
   complianceNotes: string | null;
 
   // Audit working paper reference
-  @Column({ type: 'varchar', length: 100, name: 'working_paper_ref', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'working_paper_ref',
+    nullable: true,
+  })
   workingPaperRef: string | null;
 
-  @Column({ type: 'varchar', length: 100, name: 'audit_program_ref', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'audit_program_ref',
+    nullable: true,
+  })
   auditProgramRef: string | null;
 
   // Documentation content
@@ -110,17 +120,31 @@ export class PruefpfadDocumentation {
   @Column({ type: 'uuid', name: 'prepared_by_user_id', nullable: true })
   preparedByUserId: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'prepared_by_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'prepared_by_name',
+    nullable: true,
+  })
   preparedByName: string | null;
 
-  @Column({ type: 'timestamp', name: 'prepared_at', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    name: 'prepared_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   preparedAt: Date;
 
   // Reviewed by (4-eyes principle)
   @Column({ type: 'uuid', name: 'reviewed_by_user_id', nullable: true })
   reviewedByUserId: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'reviewed_by_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'reviewed_by_name',
+    nullable: true,
+  })
   reviewedByName: string | null;
 
   @Column({ type: 'timestamp', name: 'reviewed_at', nullable: true })
@@ -133,7 +157,12 @@ export class PruefpfadDocumentation {
   @Column({ type: 'uuid', name: 'verified_by_user_id', nullable: true })
   verifiedByUserId: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'verified_by_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'verified_by_name',
+    nullable: true,
+  })
   verifiedByName: string | null;
 
   @Column({ type: 'timestamp', name: 'verified_at', nullable: true })
@@ -143,10 +172,18 @@ export class PruefpfadDocumentation {
   verificationNotes: string | null;
 
   // Timestamps
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 

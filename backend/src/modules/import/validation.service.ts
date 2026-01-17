@@ -83,7 +83,9 @@ export class ValidationService {
     let totalEquity = 0;
 
     balances.forEach((balance: any) => {
-      const account = Array.isArray(balance.accounts) ? balance.accounts[0] : balance.accounts;
+      const account = Array.isArray(balance.accounts)
+        ? balance.accounts[0]
+        : balance.accounts;
       const accountType = account?.account_type;
       const balanceValue = parseFloat(balance.balance) || 0;
 
@@ -214,12 +216,14 @@ export class ValidationService {
     allWarnings.push(...balanceResult.warnings);
 
     // Zeitraum-Validierung
-    const periodResult = await this.validatePeriodConsistency(financialStatementId);
+    const periodResult =
+      await this.validatePeriodConsistency(financialStatementId);
     allErrors.push(...periodResult.errors);
     allWarnings.push(...periodResult.warnings);
 
     // Währungskonsistenz
-    const currencyResult = await this.validateCurrencyConsistency(financialStatementId);
+    const currencyResult =
+      await this.validateCurrencyConsistency(financialStatementId);
     allWarnings.push(...currencyResult.warnings);
 
     return {

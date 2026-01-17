@@ -43,9 +43,7 @@ export class ExportService {
   /**
    * Generate Excel report for overrides
    */
-  async generateOverrideLogExcel(
-    overrides: OverrideRecord[],
-  ): Promise<Buffer> {
+  async generateOverrideLogExcel(overrides: OverrideRecord[]): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Konzern Konsolidierung';
     workbook.created = new Date();
@@ -111,7 +109,7 @@ export class ExportService {
       'Verarbeitungszeit (ms)',
     ];
 
-    const rows = entries.map(e => [
+    const rows = entries.map((e) => [
       e.requestTimestamp.toISOString(),
       e.userId,
       `"${(e.requestText || '').replace(/"/g, '""')}"`,
@@ -123,7 +121,7 @@ export class ExportService {
       e.processingTimeMs?.toString() || '-',
     ]);
 
-    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
   }
 
   /**
@@ -144,7 +142,8 @@ export class ExportService {
 
     // Period
     sheet.getCell('A3').value = 'Zeitraum:';
-    sheet.getCell('B3').value = `${new Date(statistics.period.startDate).toLocaleDateString('de-DE')} - ${new Date(statistics.period.endDate).toLocaleDateString('de-DE')}`;
+    sheet.getCell('B3').value =
+      `${new Date(statistics.period.startDate).toLocaleDateString('de-DE')} - ${new Date(statistics.period.endDate).toLocaleDateString('de-DE')}`;
     sheet.getCell('A3').font = { bold: true };
 
     // Summary statistics
@@ -210,7 +209,9 @@ export class ExportService {
         request: entry.requestText?.substring(0, 100) || '-',
         mode: entry.requestMode === 'action' ? 'Aktion' : 'Erklär',
         tool: entry.toolName || '-',
-        confidence: entry.aiConfidence ? `${Math.round(entry.aiConfidence * 100)}%` : '-',
+        confidence: entry.aiConfidence
+          ? `${Math.round(entry.aiConfidence * 100)}%`
+          : '-',
         decision: this.getDecisionLabel(entry.userDecision || 'ignore'),
         reasoning: entry.userReasoning || '-',
         time: entry.processingTimeMs || '-',
@@ -317,7 +318,7 @@ export class ExportService {
     const sheet = workbook.addWorksheet('Niedrige Konfidenz');
 
     const lowConfidence = entries.filter(
-      e => e.aiConfidence && e.aiConfidence < 0.65
+      (e) => e.aiConfidence && e.aiConfidence < 0.65,
     );
 
     sheet.columns = [
@@ -352,10 +353,10 @@ export class ExportService {
    */
   private getDecisionLabel(decision: string): string {
     const labels: Record<string, string> = {
-      'accept': 'Akzeptiert',
-      'reject': 'Abgelehnt',
-      'modify': 'Modifiziert',
-      'ignore': 'Ignoriert',
+      accept: 'Akzeptiert',
+      reject: 'Abgelehnt',
+      modify: 'Modifiziert',
+      ignore: 'Ignoriert',
     };
     return labels[decision] || decision;
   }
@@ -365,9 +366,9 @@ export class ExportService {
    */
   private getToolLabel(tool: string): string {
     const labels: Record<string, string> = {
-      'analyze_ic_difference': 'IC-Differenz-Analyse',
-      'generate_audit_documentation': 'Prüfpfad-Dokumentation',
-      'explain_plausibility_check': 'Plausibilitätsprüfung',
+      analyze_ic_difference: 'IC-Differenz-Analyse',
+      generate_audit_documentation: 'Prüfpfad-Dokumentation',
+      explain_plausibility_check: 'Plausibilitätsprüfung',
     };
     return labels[tool] || tool;
   }

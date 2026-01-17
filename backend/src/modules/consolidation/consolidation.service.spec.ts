@@ -76,9 +76,9 @@ describe('ConsolidationService', () => {
       getRepositoryToken(ConsolidationEntry),
     );
     companyRepo = module.get<Repository<Company>>(getRepositoryToken(Company));
-    intercompanyTransactionRepo = module.get<Repository<IntercompanyTransaction>>(
-      getRepositoryToken(IntercompanyTransaction),
-    );
+    intercompanyTransactionRepo = module.get<
+      Repository<IntercompanyTransaction>
+    >(getRepositoryToken(IntercompanyTransaction));
   });
 
   afterEach(() => {
@@ -113,11 +113,15 @@ describe('ConsolidationService', () => {
         company: mockCompany,
       };
 
-      mockFinancialStatementRepo.findOne.mockResolvedValue(mockFinancialStatement);
+      mockFinancialStatementRepo.findOne.mockResolvedValue(
+        mockFinancialStatement,
+      );
       mockCompanyRepo.find.mockResolvedValue([mockCompany]);
       mockAccountBalanceRepo.find.mockResolvedValue([]);
       mockIntercompanyTransactionRepo.find.mockResolvedValue([]);
-      mockConsolidationEntryRepo.save.mockImplementation((entry) => Promise.resolve(entry));
+      mockConsolidationEntryRepo.save.mockImplementation((entry) =>
+        Promise.resolve(entry),
+      );
       mockConsolidationEntryRepo.create.mockImplementation((data) => data);
 
       const result = await service.calculateConsolidation(financialStatementId);
@@ -144,7 +148,8 @@ describe('ConsolidationService', () => {
 
       mockConsolidationEntryRepo.find.mockResolvedValue(mockEntries);
 
-      const result = await service.getConsolidationEntries(financialStatementId);
+      const result =
+        await service.getConsolidationEntries(financialStatementId);
 
       expect(result).toEqual(mockEntries);
       expect(mockConsolidationEntryRepo.find).toHaveBeenCalledWith({

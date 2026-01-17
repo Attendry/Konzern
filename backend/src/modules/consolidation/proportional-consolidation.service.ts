@@ -2,7 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
-import { AdjustmentType, EntrySource, EntryStatus, HgbReference, ConsolidationEntry } from '../../entities/consolidation-entry.entity';
+import {
+  AdjustmentType,
+  EntrySource,
+  EntryStatus,
+  HgbReference,
+  ConsolidationEntry,
+} from '../../entities/consolidation-entry.entity';
 
 // Proportional consolidation result
 export interface ProportionalConsolidationResult {
@@ -46,15 +52,19 @@ export class ProportionalConsolidationService {
     financialStatementId: string,
     parentCompanyId: string,
   ): Promise<{ results: ProportionalConsolidationResult[]; summary: any }> {
-    console.log(`[ProportionalConsolidationService] Consolidating proportionally for parent: ${parentCompanyId}`);
+    console.log(
+      `[ProportionalConsolidationService] Consolidating proportionally for parent: ${parentCompanyId}`,
+    );
 
     // Get all proportionally consolidated companies (joint ventures)
     const { data: jointVentures, error: jvError } = await this.supabase
       .from('companies')
-      .select(`
+      .select(
+        `
         *,
         participations:participations!participations_subsidiary_company_id_fkey(*)
-      `)
+      `,
+      )
       .eq('consolidation_type', 'proportional');
 
     if (jvError) {
@@ -70,7 +80,9 @@ export class ProportionalConsolidationService {
       );
 
       if (!participation) {
-        console.warn(`No active participation found for joint venture ${jv.name}`);
+        console.warn(
+          `No active participation found for joint venture ${jv.name}`,
+        );
         continue;
       }
 
@@ -84,7 +96,9 @@ export class ProportionalConsolidationService {
         .single();
 
       if (fsError || !jvFS) {
-        console.warn(`No financial statement found for joint venture ${jv.name}`);
+        console.warn(
+          `No financial statement found for joint venture ${jv.name}`,
+        );
         continue;
       }
 
@@ -103,12 +117,31 @@ export class ProportionalConsolidationService {
     // Calculate summary
     const summary = {
       totalJointVentures: results.length,
-      totalProportionalAssets: results.reduce((sum, r) => sum + r.proportionalAssets, 0),
-      totalProportionalLiabilities: results.reduce((sum, r) => sum + r.proportionalLiabilities, 0),
-      totalProportionalRevenue: results.reduce((sum, r) => sum + r.proportionalRevenue, 0),
-      totalProportionalExpenses: results.reduce((sum, r) => sum + r.proportionalExpenses, 0),
-      totalICEliminations: results.reduce((sum, r) => 
-        sum + r.icEliminationsAssets + r.icEliminationsLiabilities + r.icEliminationsRevenue + r.icEliminationsExpenses, 0),
+      totalProportionalAssets: results.reduce(
+        (sum, r) => sum + r.proportionalAssets,
+        0,
+      ),
+      totalProportionalLiabilities: results.reduce(
+        (sum, r) => sum + r.proportionalLiabilities,
+        0,
+      ),
+      totalProportionalRevenue: results.reduce(
+        (sum, r) => sum + r.proportionalRevenue,
+        0,
+      ),
+      totalProportionalExpenses: results.reduce(
+        (sum, r) => sum + r.proportionalExpenses,
+        0,
+      ),
+      totalICEliminations: results.reduce(
+        (sum, r) =>
+          sum +
+          r.icEliminationsAssets +
+          r.icEliminationsLiabilities +
+          r.icEliminationsRevenue +
+          r.icEliminationsExpenses,
+        0,
+      ),
     };
 
     return { results, summary };
@@ -131,10 +164,12 @@ export class ProportionalConsolidationService {
     // Get account balances for joint venture
     const { data: balances, error: balError } = await this.supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', jvFinancialStatementId);
 
     if (balError) {
@@ -196,8 +231,10 @@ export class ProportionalConsolidationService {
     // Process IC transactions and create proportional elimination entries
     for (const ic of icTransactions || []) {
       const isFromJV = ic.from_company_id === jvCompanyId;
-      const isWithParent = ic.from_company_id === parentCompanyId || ic.to_company_id === parentCompanyId;
-      
+      const isWithParent =
+        ic.from_company_id === parentCompanyId ||
+        ic.to_company_id === parentCompanyId;
+
       if (!isWithParent) continue; // Only eliminate transactions with parent
 
       const icAmount = Number(ic.amount || 0);
@@ -244,8 +281,12 @@ export class ProportionalConsolidationService {
     }
 
     // Create proportional consolidation adjustment entry
-    const netProportionalAmount = proportional.assets - proportional.liabilities + proportional.revenue - proportional.expenses;
-    
+    const netProportionalAmount =
+      proportional.assets -
+      proportional.liabilities +
+      proportional.revenue -
+      proportional.expenses;
+
     if (netProportionalAmount !== 0) {
       const { data: propEntry, error: propError } = await this.supabase
         .from('consolidation_entries')
@@ -304,7 +345,7 @@ export class ProportionalConsolidationService {
     );
 
     return {
-      jointVentures: results.map(r => ({
+      jointVentures: results.map((r) => ({
         name: r.companyName,
         participationPercentage: r.participationPercentage,
         proportionalAssets: r.proportionalAssets,
@@ -320,7 +361,8 @@ export class ProportionalConsolidationService {
         icEliminations: summary.totalICEliminations,
       },
       hgbReference: '§ 310 HGB',
-      methodology: 'Gemeinschaftsunternehmen werden entsprechend dem Anteil am Kapital (Quotenkonsolidierung) in den Konzernabschluss einbezogen. Konzerninterne Geschäftsvorfälle werden anteilig eliminiert.',
+      methodology:
+        'Gemeinschaftsunternehmen werden entsprechend dem Anteil am Kapital (Quotenkonsolidierung) in den Konzernabschluss einbezogen. Konzerninterne Geschäftsvorfälle werden anteilig eliminiert.',
     };
   }
 }

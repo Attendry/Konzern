@@ -58,7 +58,8 @@ export class EntryExplanationTool implements AgentTool {
     {
       name: 'entry_type',
       type: 'string',
-      description: 'Buchungstyp für allgemeine Erklärung (z.B. CAPITAL, IC_DEBT, IC_EXPENSE)',
+      description:
+        'Buchungstyp für allgemeine Erklärung (z.B. CAPITAL, IC_DEBT, IC_EXPENSE)',
       required: false,
     },
   ];
@@ -68,64 +69,73 @@ export class EntryExplanationTool implements AgentTool {
   maxBatchSize = 20;
 
   // Entry type explanations
-  private readonly entryTypeInfo: Record<string, {
-    name: string;
-    hgbParagraph: string;
-    description: string;
-    purpose: string;
-  }> = {
-    'CAPITAL': {
+  private readonly entryTypeInfo: Record<
+    string,
+    {
+      name: string;
+      hgbParagraph: string;
+      description: string;
+      purpose: string;
+    }
+  > = {
+    CAPITAL: {
       name: 'Kapitalkonsolidierung',
       hgbParagraph: '§ 301 HGB',
-      description: 'Verrechnung des Beteiligungsbuchwerts mit dem anteiligen Eigenkapital der Tochtergesellschaft',
+      description:
+        'Verrechnung des Beteiligungsbuchwerts mit dem anteiligen Eigenkapital der Tochtergesellschaft',
       purpose: 'Eliminierung der konzerninternen Kapitalverflechtungen',
     },
-    'IC_DEBT': {
+    IC_DEBT: {
       name: 'Schuldenkonsolidierung',
       hgbParagraph: '§ 303 HGB',
-      description: 'Eliminierung von Forderungen und Verbindlichkeiten zwischen Konzernunternehmen',
+      description:
+        'Eliminierung von Forderungen und Verbindlichkeiten zwischen Konzernunternehmen',
       purpose: 'Darstellung der Konzernbilanz ohne interne Verflechtungen',
     },
-    'IC_EXPENSE': {
+    IC_EXPENSE: {
       name: 'Aufwands- und Ertragskonsolidierung',
       hgbParagraph: '§ 305 HGB',
       description: 'Eliminierung konzerninterner Aufwendungen und Erträge',
       purpose: 'Vermeidung von Doppelerfassungen in der Konzern-GuV',
     },
-    'INTERCOMPANY': {
+    INTERCOMPANY: {
       name: 'Zwischenergebniseliminierung',
       hgbParagraph: '§ 304 HGB',
-      description: 'Eliminierung von Gewinnen aus konzerninternen Lieferungen und Leistungen',
+      description:
+        'Eliminierung von Gewinnen aus konzerninternen Lieferungen und Leistungen',
       purpose: 'Bewertung zum Konzern-Anschaffungskosten',
     },
-    'GOODWILL': {
+    GOODWILL: {
       name: 'Geschäfts- oder Firmenwert',
       hgbParagraph: '§ 309 HGB',
-      description: 'Behandlung des Unterschiedsbetrags aus der Kapitalkonsolidierung',
+      description:
+        'Behandlung des Unterschiedsbetrags aus der Kapitalkonsolidierung',
       purpose: 'Planmäßige Abschreibung des aktivierten Geschäftswerts',
     },
-    'MINORITY': {
+    MINORITY: {
       name: 'Minderheitenanteile',
       hgbParagraph: '§ 307 HGB',
       description: 'Ausweis der Anteile anderer Gesellschafter am Eigenkapital',
       purpose: 'Getrennte Darstellung fremder Anteile am Konzerneigenkapital',
     },
-    'EQUITY_METHOD': {
+    EQUITY_METHOD: {
       name: 'Equity-Methode',
       hgbParagraph: '§ 312 HGB',
       description: 'Bewertung assoziierter Unternehmen nach der Equity-Methode',
-      purpose: 'Fortschreibung des Beteiligungsbuchwerts mit dem anteiligen Jahresergebnis',
+      purpose:
+        'Fortschreibung des Beteiligungsbuchwerts mit dem anteiligen Jahresergebnis',
     },
-    'CURRENCY': {
+    CURRENCY: {
       name: 'Währungsumrechnung',
       hgbParagraph: '§ 308a HGB',
       description: 'Umrechnung von Abschlüssen in fremder Währung',
       purpose: 'Vereinheitlichung auf die Konzernwährung',
     },
-    'ADJUSTMENT': {
+    ADJUSTMENT: {
       name: 'Anpassungsbuchung',
       hgbParagraph: '§ 300 HGB',
-      description: 'Vereinheitlichung von Bilanzierungs- und Bewertungsmethoden',
+      description:
+        'Vereinheitlichung von Bilanzierungs- und Bewertungsmethoden',
       purpose: 'Konzerneinheitliche Bilanzierung (HB II Anpassung)',
     },
   };
@@ -147,7 +157,7 @@ export class EntryExplanationTool implements AgentTool {
       if (params.entry_id) {
         return await this.explainSpecificEntry(params.entry_id, context);
       }
-      
+
       // If entry_type provided, give general explanation
       if (params.entry_type) {
         return this.explainEntryType(params.entry_type);
@@ -220,7 +230,7 @@ export class EntryExplanationTool implements AgentTool {
     context: AgentContext,
   ): Promise<ToolResult> {
     const entry = await this.fetchEntry(entryId);
-    
+
     if (!entry) {
       return {
         success: false,
@@ -258,7 +268,7 @@ export class EntryExplanationTool implements AgentTool {
    */
   private explainEntryType(entryType: string): ToolResult {
     const info = this.entryTypeInfo[entryType.toUpperCase()];
-    
+
     if (!info) {
       const availableTypes = Object.keys(this.entryTypeInfo).join(', ');
       return {
@@ -272,7 +282,7 @@ export class EntryExplanationTool implements AgentTool {
     }
 
     const message = this.formatTypeExplanation(entryType.toUpperCase(), info);
-    
+
     return {
       success: true,
       data: {
@@ -310,7 +320,7 @@ export class EntryExplanationTool implements AgentTool {
    */
   private explainAllEntryTypes(): ToolResult {
     let message = `**Übersicht der Konsolidierungsbuchungen**\n\n`;
-    
+
     for (const [type, info] of Object.entries(this.entryTypeInfo)) {
       message += `### ${info.name} (${type})\n`;
       message += `Rechtsgrundlage: ${info.hgbParagraph}\n`;
@@ -344,7 +354,7 @@ export class EntryExplanationTool implements AgentTool {
         [],
         undefined,
       ),
-      provenance: Object.values(this.entryTypeInfo).map(info =>
+      provenance: Object.values(this.entryTypeInfo).map((info) =>
         this.provenance.createHGBProvenance(info.hgbParagraph, info.name),
       ),
       disclaimer: DISCLAIMERS.hgb,
@@ -354,12 +364,15 @@ export class EntryExplanationTool implements AgentTool {
   /**
    * Fetch entry from database
    */
-  private async fetchEntry(entryId: string): Promise<ConsolidationEntry | null> {
+  private async fetchEntry(
+    entryId: string,
+  ): Promise<ConsolidationEntry | null> {
     const client = this.supabase.getClient();
-    
+
     const { data, error } = await client
       .from('consolidation_entries')
-      .select(`
+      .select(
+        `
         id,
         adjustment_type,
         account_id,
@@ -375,7 +388,8 @@ export class EntryExplanationTool implements AgentTool {
           period_end,
           company:companies(name)
         )
-      `)
+      `,
+      )
       .eq('id', entryId)
       .single();
 
@@ -384,7 +398,7 @@ export class EntryExplanationTool implements AgentTool {
     }
 
     const fs = data.financial_statement as any;
-    
+
     return {
       id: data.id,
       entryType: data.adjustment_type,
@@ -395,7 +409,9 @@ export class EntryExplanationTool implements AgentTool {
       description: data.description || '',
       reference: data.hgb_reference,
       companyName: fs?.company?.name,
-      period: fs ? `${fs.period_start} - ${fs.period_end} (${fs.fiscal_year})` : undefined,
+      period: fs
+        ? `${fs.period_start} - ${fs.period_end} (${fs.fiscal_year})`
+        : undefined,
       createdAt: new Date(data.created_at),
     };
   }
@@ -403,15 +419,17 @@ export class EntryExplanationTool implements AgentTool {
   /**
    * Generate explanation for entry
    */
-  private async generateExplanation(entry: ConsolidationEntry): Promise<EntryExplanation> {
+  private async generateExplanation(
+    entry: ConsolidationEntry,
+  ): Promise<EntryExplanation> {
     const typeInfo = this.entryTypeInfo[entry.entryType];
-    
+
     if (!typeInfo) {
       // Use AI for unknown types
       if (this.gemini.isAvailable()) {
         return await this.generateAIExplanation(entry);
       }
-      
+
       return {
         purpose: 'Konsolidierungsbuchung',
         hgbBasis: 'HGB Konzernrechnungslegung',
@@ -434,7 +452,9 @@ export class EntryExplanationTool implements AgentTool {
   /**
    * Generate AI-powered explanation
    */
-  private async generateAIExplanation(entry: ConsolidationEntry): Promise<EntryExplanation> {
+  private async generateAIExplanation(
+    entry: ConsolidationEntry,
+  ): Promise<EntryExplanation> {
     const prompt = `Erkläre diese Konsolidierungsbuchung nach HGB:
 
 Typ: ${entry.entryType}
@@ -454,12 +474,13 @@ Antworte mit JSON:
     try {
       const response = await this.gemini.complete(prompt);
       const parsed = this.parseJsonResponse(response);
-      
+
       return {
         purpose: parsed.purpose || 'Konsolidierungsbuchung',
         hgbBasis: parsed.hgbBasis || 'HGB Konzernrechnungslegung',
         hgbParagraph: parsed.hgbParagraph,
-        effect: parsed.effect || `Buchung über ${this.formatCurrency(entry.amount)}`,
+        effect:
+          parsed.effect || `Buchung über ${this.formatCurrency(entry.amount)}`,
         relatedEntries: [],
         confidence: parsed.confidence || 0.7,
       };
@@ -480,7 +501,7 @@ Antworte mit JSON:
    */
   private describeEffect(entry: ConsolidationEntry, typeInfo: any): string {
     const amount = this.formatCurrency(entry.amount);
-    
+
     switch (entry.entryType) {
       case 'CAPITAL':
         return `Eliminiert Beteiligungsbuchwert von ${amount} gegen anteiliges Eigenkapital`;
@@ -506,9 +527,9 @@ Antworte mit JSON:
     hgbInfo: any,
   ): string {
     const typeInfo = this.entryTypeInfo[entry.entryType];
-    
+
     let message = `**${typeInfo?.name || entry.entryType}** [${entry.entryType}]\n\n`;
-    
+
     if (entry.companyName) {
       message += `${entry.companyName}`;
       if (entry.period) message += ` | ${entry.period}`;
@@ -541,7 +562,7 @@ Antworte mit JSON:
     message += `**Rechtsgrundlage:** ${info.hgbParagraph}\n\n`;
     message += `**Beschreibung:**\n${info.description}\n\n`;
     message += `**Zweck:**\n${info.purpose}\n\n`;
-    
+
     // Add practical examples
     message += `**Typische Buchungsvorgänge:**\n`;
     message += this.getExamples(entryType);
@@ -554,15 +575,23 @@ Antworte mit JSON:
    */
   private getExamples(entryType: string): string {
     const examples: Record<string, string> = {
-      'CAPITAL': '- Eliminierung Beteiligung gegen Eigenkapital\n- Ausweis passiver Unterschiedsbetrag\n- Aufdeckung stiller Reserven',
-      'IC_DEBT': '- Forderung Mutter an Tochter\n- Darlehen zwischen Konzerngesellschaften\n- Verrechnungskonten',
-      'IC_EXPENSE': '- Konzerninterne Warenlieferungen\n- Managementgebühren\n- Lizenzgebühren im Konzern',
-      'INTERCOMPANY': '- Marge auf konzerninterne Vorräte\n- Gewinn aus Anlagenverkauf im Konzern',
-      'GOODWILL': '- Planmäßige AfA Geschäftswert\n- Außerplanmäßige Abschreibung',
-      'MINORITY': '- Anteil fremder Gesellschafter am EK\n- Anteil am Jahresergebnis',
-      'EQUITY_METHOD': '- Anteil am assoziierten Unternehmen\n- Dividendenverrechnung',
-      'CURRENCY': '- Umrechnung Aktiva zum Stichtagskurs\n- GuV zum Durchschnittskurs',
-      'ADJUSTMENT': '- LIFO zu FIFO Anpassung\n- Aktivierung Entwicklungskosten',
+      CAPITAL:
+        '- Eliminierung Beteiligung gegen Eigenkapital\n- Ausweis passiver Unterschiedsbetrag\n- Aufdeckung stiller Reserven',
+      IC_DEBT:
+        '- Forderung Mutter an Tochter\n- Darlehen zwischen Konzerngesellschaften\n- Verrechnungskonten',
+      IC_EXPENSE:
+        '- Konzerninterne Warenlieferungen\n- Managementgebühren\n- Lizenzgebühren im Konzern',
+      INTERCOMPANY:
+        '- Marge auf konzerninterne Vorräte\n- Gewinn aus Anlagenverkauf im Konzern',
+      GOODWILL:
+        '- Planmäßige AfA Geschäftswert\n- Außerplanmäßige Abschreibung',
+      MINORITY:
+        '- Anteil fremder Gesellschafter am EK\n- Anteil am Jahresergebnis',
+      EQUITY_METHOD:
+        '- Anteil am assoziierten Unternehmen\n- Dividendenverrechnung',
+      CURRENCY:
+        '- Umrechnung Aktiva zum Stichtagskurs\n- GuV zum Durchschnittskurs',
+      ADJUSTMENT: '- LIFO zu FIFO Anpassung\n- Aktivierung Entwicklungskosten',
     };
     return examples[entryType] || '- Keine Beispiele verfügbar';
   }
@@ -576,7 +605,7 @@ Antworte mit JSON:
     hgbInfo: any,
   ): ReasoningChain {
     const typeInfo = this.entryTypeInfo[entry.entryType];
-    
+
     return this.reasoning.buildReasoningChain(
       [
         {
@@ -589,15 +618,18 @@ Antworte mit JSON:
           observation: `Betrag: ${this.formatCurrency(entry.amount)}`,
           inference: explanation.effect,
           confidence: explanation.confidence,
-          dataPoints: entry.debitAccount && entry.creditAccount 
-            ? [entry.debitAccount, entry.creditAccount] 
-            : [entry.account],
+          dataPoints:
+            entry.debitAccount && entry.creditAccount
+              ? [entry.debitAccount, entry.creditAccount]
+              : [entry.account],
         },
         {
           observation: `HGB-Grundlage: ${explanation.hgbParagraph || 'HGB'}`,
           inference: explanation.purpose,
           confidence: 0.9,
-          dataPoints: [explanation.hgbParagraph || 'HGB Konzernrechnungslegung'],
+          dataPoints: [
+            explanation.hgbParagraph || 'HGB Konzernrechnungslegung',
+          ],
         },
       ],
       `${typeInfo?.name || entry.entryType}: ${explanation.purpose}`,
@@ -612,7 +644,7 @@ Antworte mit JSON:
     explanation: EntryExplanation,
   ): QualityIndicators {
     const typeInfo = this.entryTypeInfo[entry.entryType];
-    
+
     return this.reasoning.buildQualityIndicators(
       {
         percentage: entry.description ? 100 : 80,

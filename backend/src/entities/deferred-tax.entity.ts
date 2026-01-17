@@ -19,14 +19,14 @@ export enum TemporaryDifferenceType {
 
 // Source of the deferred tax (which consolidation step created it)
 export enum DeferredTaxSource {
-  CAPITAL_CONSOLIDATION = 'capital_consolidation',     // § 301 HGB - Kapitalkonsolidierung
-  DEBT_CONSOLIDATION = 'debt_consolidation',           // § 303 HGB - Schuldenkonsolidierung
-  INTERCOMPANY_PROFIT = 'intercompany_profit',         // § 304 HGB - Zwischenergebniseliminierung
-  INCOME_EXPENSE = 'income_expense',                   // § 305 HGB - Aufwands-/Ertragskonsolidierung
-  HIDDEN_RESERVES = 'hidden_reserves',                 // Aufdeckung stiller Reserven
-  GOODWILL = 'goodwill',                               // Geschäfts- oder Firmenwert
-  PENSION_PROVISIONS = 'pension_provisions',           // Pensionsrückstellungen
-  VALUATION_ADJUSTMENT = 'valuation_adjustment',       // Bewertungsanpassung § 308 HGB
+  CAPITAL_CONSOLIDATION = 'capital_consolidation', // § 301 HGB - Kapitalkonsolidierung
+  DEBT_CONSOLIDATION = 'debt_consolidation', // § 303 HGB - Schuldenkonsolidierung
+  INTERCOMPANY_PROFIT = 'intercompany_profit', // § 304 HGB - Zwischenergebniseliminierung
+  INCOME_EXPENSE = 'income_expense', // § 305 HGB - Aufwands-/Ertragskonsolidierung
+  HIDDEN_RESERVES = 'hidden_reserves', // Aufdeckung stiller Reserven
+  GOODWILL = 'goodwill', // Geschäfts- oder Firmenwert
+  PENSION_PROVISIONS = 'pension_provisions', // Pensionsrückstellungen
+  VALUATION_ADJUSTMENT = 'valuation_adjustment', // Bewertungsanpassung § 308 HGB
   OTHER = 'other',
 }
 
@@ -77,7 +77,12 @@ export class DeferredTax {
   description: string;
 
   // Amount of the temporary difference (base amount)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'temporary_difference_amount' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'temporary_difference_amount',
+  })
   temporaryDifferenceAmount: number;
 
   // Applicable tax rate (%)
@@ -85,15 +90,32 @@ export class DeferredTax {
   taxRate: number;
 
   // Calculated deferred tax amount (difference * rate)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'deferred_tax_amount' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'deferred_tax_amount',
+  })
   deferredTaxAmount: number;
 
   // Previous year's deferred tax amount (for movement analysis)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'prior_year_amount', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'prior_year_amount',
+    nullable: true,
+  })
   priorYearAmount: number | null;
 
   // Change in deferred tax (current - prior year)
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'change_amount', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'change_amount',
+    nullable: true,
+  })
   changeAmount: number | null;
 
   // Whether this affects equity (eigenkapitalneutral) or P&L (ergebniswirksam)
@@ -133,10 +155,18 @@ export class DeferredTax {
   @Column({ type: 'text', name: 'hgb_note', nullable: true })
   hgbNote: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 

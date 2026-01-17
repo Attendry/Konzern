@@ -67,14 +67,24 @@ export class GaapHgbMapping {
   })
   sourceGaap: GaapStandard;
 
-  @Column({ type: 'varchar', length: 100, name: 'source_gaap_reference', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'source_gaap_reference',
+    nullable: true,
+  })
   sourceGaapReference: string | null;
 
   @Column({ type: 'text', name: 'source_gaap_description', nullable: true })
   sourceGaapDescription: string | null;
 
   // Target (HGB)
-  @Column({ type: 'varchar', length: 100, name: 'hgb_reference', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'hgb_reference',
+    nullable: true,
+  })
   hgbReference: string | null;
 
   @Column({ type: 'text', name: 'hgb_description', nullable: true })
@@ -113,10 +123,20 @@ export class GaapHgbMapping {
   affectsDeferredTax: boolean;
 
   // Account Mapping
-  @Column({ type: 'text', array: true, name: 'source_accounts', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'source_accounts',
+    nullable: true,
+  })
   sourceAccounts: string[] | null;
 
-  @Column({ type: 'text', array: true, name: 'target_accounts', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'target_accounts',
+    nullable: true,
+  })
   targetAccounts: string[] | null;
 
   // Status
@@ -138,9 +158,17 @@ export class GaapHgbMapping {
   @Column({ type: 'uuid', name: 'created_by_user_id', nullable: true })
   createdByUserId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

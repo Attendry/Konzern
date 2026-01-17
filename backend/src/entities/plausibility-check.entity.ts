@@ -46,7 +46,11 @@ export class PlausibilityCheck {
   company: Company | null;
 
   // Execution Details
-  @Column({ type: 'timestamp', name: 'executed_at', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    name: 'executed_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   executedAt: Date;
 
   @Column({ type: 'uuid', name: 'executed_by_user_id', nullable: true })
@@ -62,26 +66,60 @@ export class PlausibilityCheck {
   status: PlausibilityCheckStatus;
 
   // Values
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'expected_value', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'expected_value',
+    nullable: true,
+  })
   expectedValue: number | null;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'actual_value', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'actual_value',
+    nullable: true,
+  })
   actualValue: number | null;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'difference_value', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'difference_value',
+    nullable: true,
+  })
   differenceValue: number | null;
 
-  @Column({ type: 'decimal', precision: 8, scale: 4, name: 'difference_percentage', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 8,
+    scale: 4,
+    name: 'difference_percentage',
+    nullable: true,
+  })
   differencePercentage: number | null;
 
   // Context
   @Column({ type: 'jsonb', nullable: true })
   context: Record<string, unknown> | null;
 
-  @Column({ type: 'text', array: true, name: 'affected_accounts', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'affected_accounts',
+    nullable: true,
+  })
   affectedAccounts: string[] | null;
 
-  @Column({ type: 'uuid', array: true, name: 'affected_entries', nullable: true })
+  @Column({
+    type: 'uuid',
+    array: true,
+    name: 'affected_entries',
+    nullable: true,
+  })
   affectedEntries: string[] | null;
 
   // Messages
@@ -110,9 +148,17 @@ export class PlausibilityCheck {
   @Column({ type: 'text', name: 'waiver_reason', nullable: true })
   waiverReason: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

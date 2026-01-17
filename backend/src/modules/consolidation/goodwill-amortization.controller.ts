@@ -34,8 +34,11 @@ export class GoodwillAmortizationController {
    * Get schedules by parent company
    */
   @Get('schedules/parent/:parentCompanyId')
-  async getSchedulesByParent(@Param('parentCompanyId') parentCompanyId: string) {
-    const schedules = await this.goodwillService.getSchedulesByParent(parentCompanyId);
+  async getSchedulesByParent(
+    @Param('parentCompanyId') parentCompanyId: string,
+  ) {
+    const schedules =
+      await this.goodwillService.getSchedulesByParent(parentCompanyId);
     return { success: true, schedules };
   }
 
@@ -70,7 +73,12 @@ export class GoodwillAmortizationController {
     @Body('reason') reason: string,
     @Body('date') date?: string,
   ) {
-    const schedule = await this.goodwillService.recordImpairment(id, amount, reason, date);
+    const schedule = await this.goodwillService.recordImpairment(
+      id,
+      amount,
+      reason,
+      date,
+    );
     return { success: true, schedule };
   }
 
@@ -78,10 +86,7 @@ export class GoodwillAmortizationController {
    * Get amortization projection
    */
   @Get('schedules/:id/projection')
-  async getProjection(
-    @Param('id') id: string,
-    @Query('years') years?: string,
-  ) {
+  async getProjection(@Param('id') id: string, @Query('years') years?: string) {
     const projection = await this.goodwillService.calculateProjection(
       id,
       years ? parseInt(years) : 10,
@@ -133,7 +138,8 @@ export class GoodwillAmortizationController {
    */
   @Get('summary/:parentCompanyId')
   async getSummary(@Param('parentCompanyId') parentCompanyId: string) {
-    const summary = await this.goodwillService.getGoodwillSummary(parentCompanyId);
+    const summary =
+      await this.goodwillService.getGoodwillSummary(parentCompanyId);
     return { success: true, summary };
   }
 }

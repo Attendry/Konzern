@@ -50,9 +50,7 @@ export class IntercompanyTransactionService {
    * - Lieferungen und Leistungen
    * - Kredite und Darlehen
    */
-  async detectIntercompanyTransactions(
-    financialStatementId: string,
-  ): Promise<{
+  async detectIntercompanyTransactions(financialStatementId: string): Promise<{
     transactions: DetectedIntercompanyTransaction[];
     missingInfo: string[];
   }> {
@@ -76,16 +74,21 @@ export class IntercompanyTransactionService {
     // 2. Bestimme Konsolidierungskreis
     let consolidationCircle;
     try {
-      consolidationCircle = await this.dependencyService.determineConsolidationCircle(
-        companyId,
-      );
+      consolidationCircle =
+        await this.dependencyService.determineConsolidationCircle(companyId);
     } catch (error) {
       missingInfo.push(
         'Konsolidierungskreis konnte nicht bestimmt werden. Bitte prüfen Sie die Unternehmenshierarchie.',
       );
       // Fallback: Nur das aktuelle Unternehmen
       consolidationCircle = {
-        parentCompany: { id: companyId, name: financialStatement.companies?.name || 'Unbekannt', type: 'standalone' as const, parentCompanyId: null, children: [] },
+        parentCompany: {
+          id: companyId,
+          name: financialStatement.companies?.name || 'Unbekannt',
+          type: 'standalone' as const,
+          parentCompanyId: null,
+          children: [],
+        },
         subsidiaries: [],
         consolidationRequired: false,
       };
@@ -97,13 +100,14 @@ export class IntercompanyTransactionService {
     ];
 
     // 3. Finde alle Account Balances mit is_intercompany Flag
-    const { data: intercompanyBalances, error: balanceError } = await this.supabase
-      .from('account_balances')
-      .select(
-        '*, accounts(*), financial_statements!inner(company_id, companies(*))',
-      )
-      .eq('is_intercompany', true)
-      .in('financial_statements.company_id', allCompanyIds);
+    const { data: intercompanyBalances, error: balanceError } =
+      await this.supabase
+        .from('account_balances')
+        .select(
+          '*, accounts(*), financial_statements!inner(company_id, companies(*))',
+        )
+        .eq('is_intercompany', true)
+        .in('financial_statements.company_id', allCompanyIds);
 
     if (balanceError) {
       throw new BadRequestException(
@@ -260,9 +264,7 @@ export class IntercompanyTransactionService {
     }
 
     // Kredite/Darlehen
-    if (
-      name.match(/kredit|darlehen|loan|finanzierung/i)
-    ) {
+    if (name.match(/kredit|darlehen|loan|finanzierung/i)) {
       return TransactionType.LOAN;
     }
 
@@ -370,7 +372,10 @@ export class IntercompanyTransactionService {
         );
 
         if (partialMatch) {
-          const matchedAmount = Math.min(receivable.amount, partialMatch.amount);
+          const matchedAmount = Math.min(
+            receivable.amount,
+            partialMatch.amount,
+          );
           const difference = Math.abs(receivable.amount - partialMatch.amount);
 
           matched.push({
@@ -417,18 +422,22 @@ export class IntercompanyTransactionService {
   async getICReconciliations(financialStatementId: string): Promise<any[]> {
     const { data, error } = await this.supabase
       .from('ic_reconciliations')
-      .select(`
+      .select(
+        `
         *,
         company_a:companies!ic_reconciliations_company_a_id_fkey(id, name),
         company_b:companies!ic_reconciliations_company_b_id_fkey(id, name),
         account_a:accounts!ic_reconciliations_account_a_id_fkey(id, account_number, name),
         account_b:accounts!ic_reconciliations_account_b_id_fkey(id, account_number, name)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der IC-Abstimmungen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der IC-Abstimmungen: ${error.message}`,
+      );
     }
 
     return data || [];
@@ -441,8 +450,10 @@ export class IntercompanyTransactionService {
     financialStatementId: string,
   ): Promise<{ created: number; differences: number }> {
     // Get detected transactions and match them
-    const { transactions } = await this.detectIntercompanyTransactions(financialStatementId);
-    const { matched, unmatched } = await this.matchReceivablesAndPayables(transactions);
+    const { transactions } =
+      await this.detectIntercompanyTransactions(financialStatementId);
+    const { matched, unmatched } =
+      await this.matchReceivablesAndPayables(transactions);
 
     let created = 0;
     let differences = 0;
@@ -456,21 +467,19 @@ export class IntercompanyTransactionService {
         differences++;
       }
 
-      const { error } = await this.supabase
-        .from('ic_reconciliations')
-        .insert({
-          financial_statement_id: financialStatementId,
-          company_a_id: match.receivable.fromCompanyId,
-          company_b_id: match.payable.fromCompanyId,
-          account_a_id: match.receivable.accountId,
-          account_b_id: match.payable.accountId,
-          amount_company_a: match.receivable.amount,
-          amount_company_b: match.payable.amount,
-          difference_amount: differenceAmount,
-          status: status,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await this.supabase.from('ic_reconciliations').insert({
+        financial_statement_id: financialStatementId,
+        company_a_id: match.receivable.fromCompanyId,
+        company_b_id: match.payable.fromCompanyId,
+        account_a_id: match.receivable.accountId,
+        account_b_id: match.payable.accountId,
+        amount_company_a: match.receivable.amount,
+        amount_company_b: match.payable.amount,
+        difference_amount: differenceAmount,
+        status: status,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (!error) created++;
     }
@@ -478,24 +487,22 @@ export class IntercompanyTransactionService {
     // Create reconciliation records for unmatched transactions (as open differences)
     for (const tx of unmatched) {
       const isReceivable = tx.transactionType === TransactionType.RECEIVABLE;
-      
-      const { error } = await this.supabase
-        .from('ic_reconciliations')
-        .insert({
-          financial_statement_id: financialStatementId,
-          company_a_id: isReceivable ? tx.fromCompanyId : tx.toCompanyId,
-          company_b_id: isReceivable ? tx.toCompanyId : tx.fromCompanyId,
-          account_a_id: tx.accountId,
-          account_b_id: tx.accountId, // Same account as placeholder
-          amount_company_a: isReceivable ? tx.amount : 0,
-          amount_company_b: isReceivable ? 0 : tx.amount,
-          difference_amount: tx.amount,
-          status: 'open',
-          difference_reason: 'missing_entry',
-          explanation: `Keine Gegenbuchung gefunden für ${tx.accountName}`,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+
+      const { error } = await this.supabase.from('ic_reconciliations').insert({
+        financial_statement_id: financialStatementId,
+        company_a_id: isReceivable ? tx.fromCompanyId : tx.toCompanyId,
+        company_b_id: isReceivable ? tx.toCompanyId : tx.fromCompanyId,
+        account_a_id: tx.accountId,
+        account_b_id: tx.accountId, // Same account as placeholder
+        amount_company_a: isReceivable ? tx.amount : 0,
+        amount_company_b: isReceivable ? 0 : tx.amount,
+        difference_amount: tx.amount,
+        status: 'open',
+        difference_reason: 'missing_entry',
+        explanation: `Keine Gegenbuchung gefunden für ${tx.accountName}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (!error) {
         created++;
@@ -523,8 +530,10 @@ export class IntercompanyTransactionService {
     };
 
     if (updateData.status) updatePayload.status = updateData.status;
-    if (updateData.differenceReason) updatePayload.difference_reason = updateData.differenceReason;
-    if (updateData.explanation) updatePayload.explanation = updateData.explanation;
+    if (updateData.differenceReason)
+      updatePayload.difference_reason = updateData.differenceReason;
+    if (updateData.explanation)
+      updatePayload.explanation = updateData.explanation;
     if (updateData.resolvedByUserId) {
       updatePayload.resolved_by_user_id = updateData.resolvedByUserId;
       updatePayload.resolved_at = new Date().toISOString();
@@ -538,7 +547,9 @@ export class IntercompanyTransactionService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Aktualisieren: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Aktualisieren: ${error.message}`,
+      );
     }
 
     return data;
@@ -563,12 +574,16 @@ export class IntercompanyTransactionService {
     }
 
     if (recon.status === 'cleared') {
-      throw new BadRequestException('Diese Differenz wurde bereits ausgeglichen');
+      throw new BadRequestException(
+        'Diese Differenz wurde bereits ausgeglichen',
+      );
     }
 
     const differenceAmount = parseFloat(recon.difference_amount);
     if (Math.abs(differenceAmount) < 0.01) {
-      throw new BadRequestException('Keine Differenz zum Ausgleichen vorhanden');
+      throw new BadRequestException(
+        'Keine Differenz zum Ausgleichen vorhanden',
+      );
     }
 
     // Create clearing consolidation entry
@@ -576,8 +591,10 @@ export class IntercompanyTransactionService {
       .from('consolidation_entries')
       .insert({
         financial_statement_id: recon.financial_statement_id,
-        debit_account_id: differenceAmount > 0 ? recon.account_b_id : recon.account_a_id,
-        credit_account_id: differenceAmount > 0 ? recon.account_a_id : recon.account_b_id,
+        debit_account_id:
+          differenceAmount > 0 ? recon.account_b_id : recon.account_a_id,
+        credit_account_id:
+          differenceAmount > 0 ? recon.account_a_id : recon.account_b_id,
         adjustment_type: 'debt_consolidation',
         amount: Math.abs(differenceAmount),
         description: `IC-Differenzausgleich: ${recon.explanation || 'Automatisch generiert'}`,
@@ -593,7 +610,9 @@ export class IntercompanyTransactionService {
       .single();
 
     if (entryError) {
-      throw new BadRequestException(`Fehler beim Erstellen der Buchung: ${entryError.message}`);
+      throw new BadRequestException(
+        `Fehler beim Erstellen der Buchung: ${entryError.message}`,
+      );
     }
 
     // Update reconciliation
@@ -611,7 +630,9 @@ export class IntercompanyTransactionService {
       .single();
 
     if (updateError) {
-      throw new BadRequestException(`Fehler beim Aktualisieren der Abstimmung: ${updateError.message}`);
+      throw new BadRequestException(
+        `Fehler beim Aktualisieren der Abstimmung: ${updateError.message}`,
+      );
     }
 
     return { entryId: entry.id, reconciliation: updatedRecon };
@@ -640,18 +661,21 @@ export class IntercompanyTransactionService {
 
     const records = data || [];
     const total = records.length;
-    const open = records.filter(r => r.status === 'open').length;
-    const explained = records.filter(r => r.status === 'explained').length;
-    const cleared = records.filter(r => r.status === 'cleared').length;
-    const accepted = records.filter(r => r.status === 'accepted').length;
-    
+    const open = records.filter((r) => r.status === 'open').length;
+    const explained = records.filter((r) => r.status === 'explained').length;
+    const cleared = records.filter((r) => r.status === 'cleared').length;
+    const accepted = records.filter((r) => r.status === 'accepted').length;
+
     const totalDifferenceAmount = records.reduce(
-      (sum, r) => sum + Math.abs(parseFloat(r.difference_amount) || 0), 
-      0
+      (sum, r) => sum + Math.abs(parseFloat(r.difference_amount) || 0),
+      0,
     );
     const openDifferenceAmount = records
-      .filter(r => r.status === 'open')
-      .reduce((sum, r) => sum + Math.abs(parseFloat(r.difference_amount) || 0), 0);
+      .filter((r) => r.status === 'open')
+      .reduce(
+        (sum, r) => sum + Math.abs(parseFloat(r.difference_amount) || 0),
+        0,
+      );
 
     return {
       total,

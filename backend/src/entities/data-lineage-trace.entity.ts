@@ -57,17 +57,35 @@ export class DataLineageTrace {
   transformationDescription: string | null;
 
   // Calculation details
-  @Column({ type: 'decimal', precision: 15, scale: 6, name: 'transformation_factor', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 6,
+    name: 'transformation_factor',
+    nullable: true,
+  })
   transformationFactor: number | null;
 
   @Column({ type: 'text', name: 'transformation_formula', nullable: true })
   transformationFormula: string | null;
 
   // Contribution to target
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'contribution_amount', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'contribution_amount',
+    nullable: true,
+  })
   contributionAmount: number | null;
 
-  @Column({ type: 'decimal', precision: 7, scale: 4, name: 'contribution_percentage', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 7,
+    scale: 4,
+    name: 'contribution_percentage',
+    nullable: true,
+  })
   contributionPercentage: number | null;
 
   // Consolidation context
@@ -93,7 +111,11 @@ export class DataLineageTrace {
   reversedByTraceId: string | null;
 
   // Timestamp
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 }
 

@@ -44,7 +44,13 @@ export class ConsolidationObligationCheck {
   })
   reason: ConsolidationObligationReason | null;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'participation_percentage' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    name: 'participation_percentage',
+  })
   participationPercentage: number | null;
 
   @Column({ type: 'boolean', nullable: true, name: 'has_unified_management' })
@@ -62,12 +68,24 @@ export class ConsolidationObligationCheck {
   @Column({ type: 'uuid', nullable: true, name: 'checked_by_user_id' })
   checkedByUserId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'checked_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'checked_at',
+  })
   checkedAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

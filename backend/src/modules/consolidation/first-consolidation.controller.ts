@@ -6,8 +6,8 @@ import {
   Param,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { 
-  FirstConsolidationService, 
+import {
+  FirstConsolidationService,
   FirstConsolidationInput,
   DeconsolidationInput,
 } from './first-consolidation.service';
@@ -59,6 +59,8 @@ export class FirstConsolidationController {
   async getFirstConsolidationSummary(
     @Param('subsidiaryCompanyId', ParseUUIDPipe) subsidiaryCompanyId: string,
   ) {
-    return this.firstConsolidationService.getFirstConsolidationSummary(subsidiaryCompanyId);
+    return this.firstConsolidationService.getFirstConsolidationSummary(
+      subsidiaryCompanyId,
+    );
   }
 }

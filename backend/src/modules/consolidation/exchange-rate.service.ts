@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { RateType, RateSource } from '../../entities/exchange-rate.entity';
 
@@ -71,7 +75,9 @@ export class ExchangeRateService {
     const { data, error } = await query;
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Wechselkurse: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Wechselkurse: ${error.message}`,
+      );
     }
 
     // Map snake_case to camelCase for frontend
@@ -138,7 +144,7 @@ export class ExchangeRateService {
 
       if (inverseError || !inverseData) {
         throw new NotFoundException(
-          `Kein Wechselkurs gefunden für ${fromCurrency}/${toCurrency} am ${rateDate} (${rateType})`
+          `Kein Wechselkurs gefunden für ${fromCurrency}/${toCurrency} am ${rateDate} (${rateType})`,
         );
       }
 
@@ -205,7 +211,9 @@ export class ExchangeRateService {
   /**
    * Bulk import exchange rates
    */
-  async bulkImportRates(rates: ExchangeRateDto[]): Promise<{ imported: number; errors: string[] }> {
+  async bulkImportRates(
+    rates: ExchangeRateDto[],
+  ): Promise<{ imported: number; errors: string[] }> {
     let imported = 0;
     const errors: string[] = [];
 
@@ -214,7 +222,9 @@ export class ExchangeRateService {
         await this.upsertRate(rate);
         imported++;
       } catch (error: any) {
-        errors.push(`${rate.fromCurrency}/${rate.toCurrency} ${rate.rateDate}: ${error.message}`);
+        errors.push(
+          `${rate.fromCurrency}/${rate.toCurrency} ${rate.rateDate}: ${error.message}`,
+        );
       }
     }
 
@@ -268,9 +278,18 @@ export class ExchangeRateService {
     fiscalYear: number,
   ): Promise<CurrencyTranslationResult> {
     // Get rates
-    const spotRate = await this.getRate(sourceCurrency, targetCurrency, rateDate, RateType.SPOT);
-    const averageRate = await this.getRate(sourceCurrency, targetCurrency, rateDate, RateType.AVERAGE)
-      .catch(() => spotRate); // Fallback to spot if no average
+    const spotRate = await this.getRate(
+      sourceCurrency,
+      targetCurrency,
+      rateDate,
+      RateType.SPOT,
+    );
+    const averageRate = await this.getRate(
+      sourceCurrency,
+      targetCurrency,
+      rateDate,
+      RateType.AVERAGE,
+    ).catch(() => spotRate); // Fallback to spot if no average
 
     // Get balance sheet totals
     const { data: balances } = await this.supabase
@@ -292,7 +311,7 @@ export class ExchangeRateService {
     for (const bal of balances || []) {
       const amount = parseFloat(bal.balance) || 0;
       const accountType = (bal.accounts as any)?.account_type;
-      
+
       if (accountType === 'asset') totalAssets += amount;
       else if (accountType === 'liability') totalLiabilities += amount;
       else if (accountType === 'equity') totalEquity += amount;
@@ -311,7 +330,8 @@ export class ExchangeRateService {
     const equityAtHistorical = totalEquity * spotRate;
 
     // Difference arises from using different rates
-    const balanceSheetDifference = (totalAssets - totalLiabilities) * (spotRate - averageRate);
+    const balanceSheetDifference =
+      (totalAssets - totalLiabilities) * (spotRate - averageRate);
     const incomeStatementDifference = totalIncome * (averageRate - spotRate);
 
     const totalDifference = balanceSheetDifference + incomeStatementDifference;
@@ -346,7 +366,9 @@ export class ExchangeRateService {
       .eq('fiscal_year', fiscalYear - 1)
       .single();
 
-    const previousCumulative = previous ? parseFloat(previous.cumulative_difference) : 0;
+    const previousCumulative = previous
+      ? parseFloat(previous.cumulative_difference)
+      : 0;
     const newCumulative = previousCumulative + translation.totalDifference;
 
     const { data, error } = await this.supabase
@@ -394,7 +416,7 @@ export class ExchangeRateService {
     }
 
     // Map snake_case to camelCase
-    return (data || []).map(row => ({
+    return (data || []).map((row) => ({
       id: row.id,
       companyId: row.company_id,
       financialStatementId: row.financial_statement_id,
@@ -403,7 +425,9 @@ export class ExchangeRateService {
       targetCurrency: row.target_currency,
       spotRate: parseFloat(row.spot_rate),
       averageRate: parseFloat(row.average_rate),
-      historicalRate: row.historical_rate ? parseFloat(row.historical_rate) : null,
+      historicalRate: row.historical_rate
+        ? parseFloat(row.historical_rate)
+        : null,
       balanceSheetDifference: parseFloat(row.balance_sheet_difference),
       incomeStatementDifference: parseFloat(row.income_statement_difference),
       equityDifference: parseFloat(row.equity_difference),

@@ -1,19 +1,15 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 // Type of attached document
 export enum DocumentType {
-  SUPPORTING_DOCUMENT = 'supporting_document',  // Beleg
-  CALCULATION = 'calculation',                   // Berechnung
-  APPROVAL = 'approval',                         // Freigabe
-  CONTRACT = 'contract',                         // Vertrag
-  VALUATION_REPORT = 'valuation_report',        // Bewertungsgutachten
-  AUDIT_CONFIRMATION = 'audit_confirmation',     // Prüfungsbestätigung
-  BANK_STATEMENT = 'bank_statement',             // Kontoauszug
-  INVOICE = 'invoice',                           // Rechnung
+  SUPPORTING_DOCUMENT = 'supporting_document', // Beleg
+  CALCULATION = 'calculation', // Berechnung
+  APPROVAL = 'approval', // Freigabe
+  CONTRACT = 'contract', // Vertrag
+  VALUATION_REPORT = 'valuation_report', // Bewertungsgutachten
+  AUDIT_CONFIRMATION = 'audit_confirmation', // Prüfungsbestätigung
+  BANK_STATEMENT = 'bank_statement', // Kontoauszug
+  INVOICE = 'invoice', // Rechnung
   OTHER = 'other',
 }
 
@@ -78,7 +74,12 @@ export class DocumentAttachment {
   @Column({ type: 'uuid', name: 'uploaded_by_user_id', nullable: true })
   uploadedByUserId: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'uploaded_by_user_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'uploaded_by_user_name',
+    nullable: true,
+  })
   uploadedByUserName: string | null;
 
   // Document date (e.g., invoice date)
@@ -86,7 +87,12 @@ export class DocumentAttachment {
   documentDate: Date | null;
 
   // Reference number (e.g., invoice number)
-  @Column({ type: 'varchar', length: 255, name: 'reference_number', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'reference_number',
+    nullable: true,
+  })
   referenceNumber: string | null;
 
   // Checksum for integrity verification
@@ -107,9 +113,17 @@ export class DocumentAttachment {
   @Column({ type: 'timestamp', name: 'verified_at', nullable: true })
   verifiedAt: Date | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

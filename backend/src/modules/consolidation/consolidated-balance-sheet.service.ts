@@ -80,9 +80,10 @@ export class ConsolidatedBalanceSheetService {
     }
 
     // 2. Bestimme Konsolidierungskreis
-    const consolidationCircle = await this.dependencyService.determineConsolidationCircle(
-      financialStatement.company_id,
-    );
+    const consolidationCircle =
+      await this.dependencyService.determineConsolidationCircle(
+        financialStatement.company_id,
+      );
 
     if (!consolidationCircle.consolidationRequired) {
       throw new BadRequestException(
@@ -96,11 +97,12 @@ export class ConsolidatedBalanceSheetService {
     ];
 
     // 3. Lade alle Einzelbilanzen der konsolidierten Unternehmen
-    const { data: allFinancialStatements, error: allFsError } = await this.supabase
-      .from('financial_statements')
-      .select('*, companies(*)')
-      .in('company_id', allCompanyIds)
-      .eq('fiscal_year', financialStatement.fiscal_year);
+    const { data: allFinancialStatements, error: allFsError } =
+      await this.supabase
+        .from('financial_statements')
+        .select('*, companies(*)')
+        .in('company_id', allCompanyIds)
+        .eq('fiscal_year', financialStatement.fiscal_year);
 
     if (allFsError) {
       throw new BadRequestException(
@@ -109,11 +111,15 @@ export class ConsolidatedBalanceSheetService {
     }
 
     // 4. Lade alle Account Balances für alle Financial Statements
-    const financialStatementIds = (allFinancialStatements || []).map((fs: any) => fs.id);
-    
+    const financialStatementIds = (allFinancialStatements || []).map(
+      (fs: any) => fs.id,
+    );
+
     const { data: allBalances, error: balanceError } = await this.supabase
       .from('account_balances')
-      .select('*, accounts(*), financial_statements!inner(company_id, companies(*))')
+      .select(
+        '*, accounts(*), financial_statements!inner(company_id, companies(*))',
+      )
       .in('financial_statement_id', financialStatementIds);
 
     if (balanceError) {
@@ -125,15 +131,18 @@ export class ConsolidatedBalanceSheetService {
     // 5. Lade alle Konsolidierungsbuchungen
     // CRITICAL: Specify exact foreign key relationship to avoid "more than one relationship" error
     // consolidation_entries has multiple FKs to accounts (account_id, debit_account_id, credit_account_id)
-    const { data: consolidationEntries, error: entriesError } = await this.supabase
-      .from('consolidation_entries')
-      .select(`
+    const { data: consolidationEntries, error: entriesError } =
+      await this.supabase
+        .from('consolidation_entries')
+        .select(
+          `
         *,
         account:accounts!consolidation_entries_account_id_fkey(*),
         debit_account:accounts!consolidation_entries_debit_account_id_fkey(*),
         credit_account:accounts!consolidation_entries_credit_account_id_fkey(*)
-      `)
-      .eq('financial_statement_id', financialStatementId);
+      `,
+        )
+        .eq('financial_statement_id', financialStatementId);
 
     if (entriesError) {
       throw new BadRequestException(
@@ -178,7 +187,7 @@ export class ConsolidatedBalanceSheetService {
       // Use account_id (primary account) or fallback to debit_account_id if account_id is null
       const accountId = entry.account_id || entry.debit_account_id;
       const adjustmentAmount = parseFloat(entry.amount) || 0;
-      
+
       // Get account info from the embedded relationship
       const account = entry.account || entry.debit_account;
 
@@ -199,10 +208,11 @@ export class ConsolidatedBalanceSheetService {
     }
 
     // 9. Hole Minderheitsanteile aus Kapitalkonsolidierung
-    const capitalResult = await this.capitalConsolidationService.consolidateCapital(
-      financialStatementId,
-      financialStatement.company_id,
-    );
+    const capitalResult =
+      await this.capitalConsolidationService.consolidateCapital(
+        financialStatementId,
+        financialStatement.company_id,
+      );
 
     // 10. Strukturiere Bilanz nach HGB
     const assets: BalanceSheetPosition[] = [];
@@ -214,7 +224,11 @@ export class ConsolidatedBalanceSheetService {
       if (position.accountType === 'asset') {
         assets.push(position);
         // Goodwill identifizieren (vereinfacht - sollte aus separatem Konto kommen)
-        if (position.accountName.toLowerCase().match(/goodwill|firmenwert|geschäftswert/i)) {
+        if (
+          position.accountName
+            .toLowerCase()
+            .match(/goodwill|firmenwert|geschäftswert/i)
+        ) {
           goodwill += position.balance;
         }
       } else if (position.accountType === 'liability') {
@@ -244,19 +258,24 @@ export class ConsolidatedBalanceSheetService {
       const accountNum = a.accountNumber;
       const accountName = a.accountName.toLowerCase();
       return (
-        (accountNum.match(/^1[5-9][0-9]{2}/) || accountNum.match(/^2[0-9]{3}/)) &&
+        (accountNum.match(/^1[5-9][0-9]{2}/) ||
+          accountNum.match(/^2[0-9]{3}/)) &&
         !accountName.match(/anlage|fixed|immobilien|sachanlage/i)
       );
     });
 
     // Aktive Rechnungsabgrenzungsposten
     const deferredTaxAssets = assets.filter((a) =>
-      a.accountName.toLowerCase().match(/rechnungsabgrenzung|deferred|aktive rap/i),
+      a.accountName
+        .toLowerCase()
+        .match(/rechnungsabgrenzung|deferred|aktive rap/i),
     );
 
     // 12. Gruppiere Passiva nach HGB-Struktur
-    const provisions = liabilities.filter((a) =>
-      a.accountNumber.match(/^2[0-9]{3}/) || a.accountName.toLowerCase().match(/rückstellung|provision/i),
+    const provisions = liabilities.filter(
+      (a) =>
+        a.accountNumber.match(/^2[0-9]{3}/) ||
+        a.accountName.toLowerCase().match(/rückstellung|provision/i),
     );
     const otherLiabilities = liabilities.filter(
       (a) =>
@@ -269,13 +288,23 @@ export class ConsolidatedBalanceSheetService {
 
     // 13. Berechne Summen
     const totalFixedAssets = fixedAssets.reduce((sum, a) => sum + a.balance, 0);
-    const totalCurrentAssets = currentAssets.reduce((sum, a) => sum + a.balance, 0);
-    const totalDeferredTaxAssets = deferredTaxAssets.reduce((sum, a) => sum + a.balance, 0);
-    const totalAssets = totalFixedAssets + totalCurrentAssets + totalDeferredTaxAssets + goodwill;
+    const totalCurrentAssets = currentAssets.reduce(
+      (sum, a) => sum + a.balance,
+      0,
+    );
+    const totalDeferredTaxAssets = deferredTaxAssets.reduce(
+      (sum, a) => sum + a.balance,
+      0,
+    );
+    const totalAssets =
+      totalFixedAssets + totalCurrentAssets + totalDeferredTaxAssets + goodwill;
 
     const totalEquity = equity.reduce((sum, e) => sum + e.balance, 0);
     const totalProvisions = provisions.reduce((sum, p) => sum + p.balance, 0);
-    const totalOtherLiabilities = otherLiabilities.reduce((sum, l) => sum + l.balance, 0);
+    const totalOtherLiabilities = otherLiabilities.reduce(
+      (sum, l) => sum + l.balance,
+      0,
+    );
     const totalDeferredTaxLiabilities = deferredTaxLiabilities.reduce(
       (sum, d) => sum + d.balance,
       0,
@@ -343,9 +372,7 @@ export class ConsolidatedBalanceSheetService {
   /**
    * Validiert die Bilanzgleichheit
    */
-  async validateBalanceEquality(
-    financialStatementId: string,
-  ): Promise<{
+  async validateBalanceEquality(financialStatementId: string): Promise<{
     isValid: boolean;
     totalAssets: number;
     totalLiabilities: number;
@@ -353,7 +380,8 @@ export class ConsolidatedBalanceSheetService {
     errors: string[];
     warnings: string[];
   }> {
-    const balanceSheet = await this.createConsolidatedBalanceSheet(financialStatementId);
+    const balanceSheet =
+      await this.createConsolidatedBalanceSheet(financialStatementId);
 
     return {
       isValid: balanceSheet.balanceValidation.isBalanced,

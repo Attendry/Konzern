@@ -25,17 +25,14 @@ import { DataQueryTool } from './tools/data-query.tool';
 import { EntryExplanationTool } from './tools/entry-explanation.tool';
 
 @Module({
-  imports: [
-    ConfigModule,
-    SupabaseModule,
-  ],
+  imports: [ConfigModule, SupabaseModule],
   controllers: [AIController, AuditExportController],
   providers: [
     // Core services
     GeminiService,
     ChatService,
     ICAnalysisService,
-    
+
     // Agent services
     AgentOrchestratorService,
     ModeService,
@@ -45,7 +42,7 @@ import { EntryExplanationTool } from './tools/entry-explanation.tool';
     HGBKnowledgeService,
     HGBLegalService,
     ExportService,
-    
+
     // Tools - Phase 3
     ICAnalysisTool,
     AuditDocumentationTool,

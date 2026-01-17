@@ -1,8 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 // Rule Category (HGB-specific areas)
 export enum PlausibilityRuleCategory {
@@ -70,7 +66,12 @@ export class PlausibilityRule {
   severity: PlausibilityRuleSeverity;
 
   // HGB Reference
-  @Column({ type: 'varchar', length: 100, name: 'hgb_reference', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'hgb_reference',
+    nullable: true,
+  })
   hgbReference: string | null;
 
   @Column({ type: 'text', name: 'hgb_description', nullable: true })
@@ -84,23 +85,56 @@ export class PlausibilityRule {
   ruleExpression: string; // JSON expression defining the rule logic
 
   // Thresholds
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'threshold_absolute', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'threshold_absolute',
+    nullable: true,
+  })
   thresholdAbsolute: number | null;
 
-  @Column({ type: 'decimal', precision: 8, scale: 4, name: 'threshold_percentage', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 8,
+    scale: 4,
+    name: 'threshold_percentage',
+    nullable: true,
+  })
   thresholdPercentage: number | null;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'tolerance_amount', default: 0.01 })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'tolerance_amount',
+    default: 0.01,
+  })
   toleranceAmount: number;
 
   // Applicability
-  @Column({ type: 'text', array: true, name: 'applies_to_entity_types', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'applies_to_entity_types',
+    nullable: true,
+  })
   appliesToEntityTypes: string[] | null;
 
-  @Column({ type: 'text', array: true, name: 'applies_to_consolidation_types', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'applies_to_consolidation_types',
+    nullable: true,
+  })
   appliesToConsolidationTypes: string[] | null;
 
-  @Column({ type: 'text', array: true, name: 'applies_to_statement_types', nullable: true })
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'applies_to_statement_types',
+    nullable: true,
+  })
   appliesToStatementTypes: string[] | null;
 
   // Status
@@ -121,10 +155,18 @@ export class PlausibilityRule {
   @Column({ type: 'uuid', name: 'created_by_user_id', nullable: true })
   createdByUserId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 

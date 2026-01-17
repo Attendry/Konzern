@@ -9,7 +9,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ParticipationService } from './participation.service';
-import { 
+import {
   CreateParticipationDto,
   UpdateParticipationDto,
   RecordOwnershipChangeDto,
@@ -30,13 +30,19 @@ export class ParticipationController {
   }
 
   @Get('parent/:parentCompanyId')
-  async findByParentCompany(@Param('parentCompanyId', ParseUUIDPipe) parentCompanyId: string) {
+  async findByParentCompany(
+    @Param('parentCompanyId', ParseUUIDPipe) parentCompanyId: string,
+  ) {
     return this.participationService.findByParentCompany(parentCompanyId);
   }
 
   @Get('subsidiary/:subsidiaryCompanyId')
-  async findBySubsidiaryCompany(@Param('subsidiaryCompanyId', ParseUUIDPipe) subsidiaryCompanyId: string) {
-    return this.participationService.findBySubsidiaryCompany(subsidiaryCompanyId);
+  async findBySubsidiaryCompany(
+    @Param('subsidiaryCompanyId', ParseUUIDPipe) subsidiaryCompanyId: string,
+  ) {
+    return this.participationService.findBySubsidiaryCompany(
+      subsidiaryCompanyId,
+    );
   }
 
   @Post()

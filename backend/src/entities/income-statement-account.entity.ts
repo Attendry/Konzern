@@ -41,7 +41,9 @@ export class IncomeStatementAccount {
   @Column({ type: 'uuid', nullable: true, name: 'parent_account_id' })
   parentAccountId: string | null;
 
-  @ManyToOne(() => IncomeStatementAccount, (account) => account.children, { nullable: true })
+  @ManyToOne(() => IncomeStatementAccount, (account) => account.children, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'parent_account_id' })
   parentAccount: IncomeStatementAccount | null;
 
@@ -51,9 +53,17 @@ export class IncomeStatementAccount {
   @OneToMany(() => IncomeStatementBalance, (balance) => balance.account)
   balances: IncomeStatementBalance[];
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

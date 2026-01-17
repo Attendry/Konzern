@@ -34,7 +34,9 @@ export class ConsolidationObligationService {
    * HGB § 291: Beherrschungsvertrag
    * HGB § 292: Gemeinschaftsunternehmen
    */
-  async checkObligation(companyId: string): Promise<ConsolidationObligationResult> {
+  async checkObligation(
+    companyId: string,
+  ): Promise<ConsolidationObligationResult> {
     // 1. Lade Unternehmensdaten
     const { data: company, error: companyError } = await this.supabase
       .from('companies')
@@ -43,7 +45,9 @@ export class ConsolidationObligationService {
       .single();
 
     if (companyError || !company) {
-      throw new BadRequestException(`Unternehmen mit ID ${companyId} nicht gefunden`);
+      throw new BadRequestException(
+        `Unternehmen mit ID ${companyId} nicht gefunden`,
+      );
     }
 
     // 2. Prüfe Mehrheitsbeteiligung (>50%)
@@ -83,17 +87,22 @@ export class ConsolidationObligationService {
 
     if (isObligatory && !company.is_consolidated) {
       warnings.push(
-        `Unternehmen "${company.name}" sollte konsolidiert werden, ist aber nicht als konsolidiert markiert (HGB § 290)`
+        `Unternehmen "${company.name}" sollte konsolidiert werden, ist aber nicht als konsolidiert markiert (HGB § 290)`,
       );
-      recommendations.push('Bitte markieren Sie das Unternehmen als konsolidiert');
+      recommendations.push(
+        'Bitte markieren Sie das Unternehmen als konsolidiert',
+      );
       hgbReferences.push('HGB § 290 Abs. 1');
     }
 
-    if (majorityInterestCheck.hasMajorityInterest && majorityInterestCheck.participationPercentage) {
+    if (
+      majorityInterestCheck.hasMajorityInterest &&
+      majorityInterestCheck.participationPercentage
+    ) {
       hgbReferences.push('HGB § 290 Abs. 1 (Mehrheitsbeteiligung)');
       if (majorityInterestCheck.participationPercentage < 100) {
         recommendations.push(
-          `Minderheitsanteile von ${(100 - majorityInterestCheck.participationPercentage).toFixed(2)}% müssen berücksichtigt werden (HGB § 301)`
+          `Minderheitsanteile von ${(100 - majorityInterestCheck.participationPercentage).toFixed(2)}% müssen berücksichtigt werden (HGB § 301)`,
         );
       }
     }
@@ -101,7 +110,7 @@ export class ConsolidationObligationService {
     if (unifiedManagementCheck.hasUnifiedManagement) {
       hgbReferences.push('HGB § 290 Abs. 1 (Einheitliche Leitung)');
       warnings.push(
-        'Einheitliche Leitung erkannt - Konsolidierungspflicht besteht auch ohne Mehrheitsbeteiligung'
+        'Einheitliche Leitung erkannt - Konsolidierungspflicht besteht auch ohne Mehrheitsbeteiligung',
       );
     }
 
@@ -112,7 +121,7 @@ export class ConsolidationObligationService {
     if (exceptions.length > 0) {
       hgbReferences.push('HGB § 296 (Ausnahmen)');
       warnings.push(
-        `Ausnahmen erkannt: ${exceptions.join(', ')} - Konsolidierungspflicht kann entfallen`
+        `Ausnahmen erkannt: ${exceptions.join(', ')} - Konsolidierungspflicht kann entfallen`,
       );
     }
 
@@ -152,7 +161,9 @@ export class ConsolidationObligationService {
     // Suche nach Beteiligungen, bei denen dieses Unternehmen Tochtergesellschaft ist
     const { data: participations, error } = await this.supabase
       .from('participations')
-      .select('participation_percentage, parent_company:companies!participations_parent_company_id_fkey(*)')
+      .select(
+        'participation_percentage, parent_company:companies!participations_parent_company_id_fkey(*)',
+      )
       .eq('subsidiary_company_id', companyId);
 
     if (error) {
@@ -167,15 +178,18 @@ export class ConsolidationObligationService {
     // Summiere alle Beteiligungen (für den Fall mehrerer Gesellschafter)
     const totalParticipation = participations.reduce(
       (sum, p) => sum + parseFloat(p.participation_percentage || '0'),
-      0
+      0,
     );
 
     // Prüfe, ob eine einzelne Beteiligung >50% ist oder Gesamtbeteiligung >50%
     const maxParticipation = Math.max(
-      ...participations.map((p) => parseFloat(p.participation_percentage || '0'))
+      ...participations.map((p) =>
+        parseFloat(p.participation_percentage || '0'),
+      ),
     );
 
-    const hasMajorityInterest = maxParticipation > 50 || totalParticipation > 50;
+    const hasMajorityInterest =
+      maxParticipation > 50 || totalParticipation > 50;
 
     return {
       hasMajorityInterest,
@@ -320,7 +334,10 @@ export class ConsolidationObligationService {
         if (companyBalances) {
           const companyAssets = companyBalances
             .filter((b: any) => (b.accounts as any)?.account_type === 'asset')
-            .reduce((sum, b) => sum + Math.abs(parseFloat(b.balance || '0')), 0);
+            .reduce(
+              (sum, b) => sum + Math.abs(parseFloat(b.balance || '0')),
+              0,
+            );
           totalConsolidatedAssets += companyAssets;
         }
       }
@@ -329,7 +346,9 @@ export class ConsolidationObligationService {
     // Bedeutungslosigkeit: Bilanzsumme < 5% der Konzern-Bilanzsumme
     // (Dies ist eine vereinfachte Regel - in der Praxis werden mehrere Kriterien geprüft)
     const materialityThreshold = 0.05;
-    const isMaterial = totalConsolidatedAssets > 0 && totalAssets / totalConsolidatedAssets < materialityThreshold;
+    const isMaterial =
+      totalConsolidatedAssets > 0 &&
+      totalAssets / totalConsolidatedAssets < materialityThreshold;
 
     return { isMaterial };
   }
@@ -352,7 +371,10 @@ export class ConsolidationObligationService {
         const result = await this.checkObligation(company.id);
         results.push(result);
       } catch (err) {
-        console.error(`Error checking obligation for company ${company.id}:`, err);
+        console.error(
+          `Error checking obligation for company ${company.id}:`,
+          err,
+        );
       }
     }
 
@@ -365,7 +387,8 @@ export class ConsolidationObligationService {
   async getWarnings(): Promise<ConsolidationObligationResult[]> {
     const allResults = await this.checkAll();
     return allResults.filter(
-      (r) => r.isObligatory && r.exceptions.length === 0 && r.warnings.length > 0
+      (r) =>
+        r.isObligatory && r.exceptions.length === 0 && r.warnings.length > 0,
     );
   }
 
@@ -381,16 +404,18 @@ export class ConsolidationObligationService {
     hasControlAgreement: boolean | null;
     exceptions: ConsolidationException[] | null;
   }): Promise<void> {
-    const { error } = await this.supabase.from('consolidation_obligation_checks').insert({
-      company_id: check.companyId,
-      is_obligatory: check.isObligatory,
-      reason: check.reason,
-      participation_percentage: check.participationPercentage,
-      has_unified_management: check.hasUnifiedManagement,
-      has_control_agreement: check.hasControlAgreement,
-      exceptions: check.exceptions,
-      checked_at: new Date().toISOString(),
-    });
+    const { error } = await this.supabase
+      .from('consolidation_obligation_checks')
+      .insert({
+        company_id: check.companyId,
+        is_obligatory: check.isObligatory,
+        reason: check.reason,
+        participation_percentage: check.participationPercentage,
+        has_unified_management: check.hasUnifiedManagement,
+        has_control_agreement: check.hasControlAgreement,
+        exceptions: check.exceptions,
+        checked_at: new Date().toISOString(),
+      });
 
     if (error) {
       console.error('Error saving consolidation obligation check:', error);
@@ -400,7 +425,9 @@ export class ConsolidationObligationService {
   /**
    * Ruft letzte Prüfung für ein Unternehmen ab
    */
-  async getLastCheck(companyId: string): Promise<ConsolidationObligationCheck | null> {
+  async getLastCheck(
+    companyId: string,
+  ): Promise<ConsolidationObligationCheck | null> {
     const { data, error } = await this.supabase
       .from('consolidation_obligation_checks')
       .select('*')
@@ -426,20 +453,24 @@ export class ConsolidationObligationService {
       hasControlAgreement?: boolean;
       exceptions?: ConsolidationException[];
       comment?: string;
-    }
+    },
   ): Promise<void> {
     // Hole letzte Prüfung
     const lastCheck = await this.getLastCheck(companyId);
     if (!lastCheck) {
-      throw new BadRequestException('Keine Prüfung für dieses Unternehmen gefunden');
+      throw new BadRequestException(
+        'Keine Prüfung für dieses Unternehmen gefunden',
+      );
     }
 
     // Aktualisiere mit manuellen Entscheidungen
     const { error } = await this.supabase
       .from('consolidation_obligation_checks')
       .update({
-        has_unified_management: decision.hasUnifiedManagement ?? lastCheck.hasUnifiedManagement,
-        has_control_agreement: decision.hasControlAgreement ?? lastCheck.hasControlAgreement,
+        has_unified_management:
+          decision.hasUnifiedManagement ?? lastCheck.hasUnifiedManagement,
+        has_control_agreement:
+          decision.hasControlAgreement ?? lastCheck.hasControlAgreement,
         exceptions: decision.exceptions ?? lastCheck.exceptions,
         manual_decision_comment: decision.comment,
         checked_at: new Date().toISOString(),
@@ -447,7 +478,9 @@ export class ConsolidationObligationService {
       .eq('id', lastCheck.id);
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Aktualisieren der manuellen Entscheidung: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Aktualisieren der manuellen Entscheidung: ${error.message}`,
+      );
     }
   }
 }

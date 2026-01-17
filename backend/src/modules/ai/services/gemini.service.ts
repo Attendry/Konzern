@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export interface ChatMessage {
   role: 'user' | 'model';
@@ -10,25 +10,24 @@ export interface ChatMessage {
 @Injectable()
 export class GeminiService implements OnModuleInit {
   private readonly logger = new Logger(GeminiService.name);
-  private genAI: GoogleGenerativeAI;
-  private model: GenerativeModel;
+  private client: GoogleGenAI;
   private modelName: string;
 
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    
+
     if (!apiKey) {
-      this.logger.warn('GEMINI_API_KEY not configured - AI features will not work');
+      this.logger.warn(
+        'GEMINI_API_KEY not configured - AI features will not work',
+      );
       return;
     }
 
-    this.modelName = this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash';
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: this.modelName,
-    });
+    this.modelName =
+      this.configService.get('GEMINI_MODEL') || 'gemini-2.5-flash';
+    this.client = new GoogleGenAI({ apiKey });
 
     this.logger.log(`Gemini initialized with model: ${this.modelName}`);
   }
@@ -37,7 +36,7 @@ export class GeminiService implements OnModuleInit {
    * Check if Gemini is configured and ready
    */
   isAvailable(): boolean {
-    return !!this.genAI && !!this.model;
+    return !!this.client;
   }
 
   /**
@@ -48,14 +47,17 @@ export class GeminiService implements OnModuleInit {
       throw new Error('Gemini is not configured. Please set GEMINI_API_KEY.');
     }
 
-    const fullPrompt = systemPrompt 
-      ? `${systemPrompt}\n\n---\n\nUser: ${prompt}`
-      : prompt;
-
     try {
-      const result = await this.model.generateContent(fullPrompt);
-      const response = result.response;
-      return response.text();
+      const response = await this.client.models.generateContent({
+        model: this.modelName,
+        contents: prompt,
+        config: systemPrompt
+          ? {
+              systemInstruction: systemPrompt,
+            }
+          : undefined,
+      });
+      return response.text;
     } catch (error: any) {
       this.logger.error(`Gemini completion error: ${error.message}`);
       throw new Error(`AI-Anfrage fehlgeschlagen: ${error.message}`);
@@ -65,10 +67,7 @@ export class GeminiService implements OnModuleInit {
   /**
    * Chat with message history
    */
-  async chat(
-    messages: ChatMessage[],
-    systemPrompt?: string,
-  ): Promise<string> {
+  async chat(messages: ChatMessage[], systemPrompt?: string): Promise<string> {
     if (!this.isAvailable()) {
       throw new Error('Gemini is not configured. Please set GEMINI_API_KEY.');
     }
@@ -79,8 +78,11 @@ export class GeminiService implements OnModuleInit {
 
     try {
       // Build history with system prompt as initial context
-      const history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
-      
+      const history: Array<{
+        role: 'user' | 'model';
+        parts: Array<{ text: string }>;
+      }> = [];
+
       // Add system prompt as initial exchange if provided
       if (systemPrompt) {
         history.push({
@@ -89,7 +91,9 @@ export class GeminiService implements OnModuleInit {
         });
         history.push({
           role: 'model',
-          parts: [{ text: 'Verstanden. Ich werde diese Anweisungen befolgen.' }],
+          parts: [
+            { text: 'Verstanden. Ich werde diese Anweisungen befolgen.' },
+          ],
         });
       }
 
@@ -101,11 +105,22 @@ export class GeminiService implements OnModuleInit {
         });
       }
 
-      const chat = this.model.startChat({ history });
+      // Create chat with history
+      const chat = await this.client.chats.create({
+        model: this.modelName,
+        history: history,
+        config: systemPrompt
+          ? {
+              systemInstruction: systemPrompt,
+            }
+          : undefined,
+      });
 
       const lastMessage = messages[messages.length - 1];
-      const result = await chat.sendMessage(lastMessage.content);
-      return result.response.text();
+      const response = await chat.sendMessage({
+        message: lastMessage.content,
+      });
+      return response.text;
     } catch (error: any) {
       this.logger.error(`Gemini chat error: ${error.message}`);
       throw new Error(`AI-Chat fehlgeschlagen: ${error.message}`);
@@ -120,17 +135,23 @@ export class GeminiService implements OnModuleInit {
       throw new Error('Gemini is not configured. Please set GEMINI_API_KEY.');
     }
 
-    const fullPrompt = systemPrompt 
-      ? `${systemPrompt}\n\n---\n\nUser: ${prompt}`
-      : prompt;
-
     try {
-      const result = await this.model.generateContentStream(fullPrompt);
-      
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
-        if (text) {
-          yield text;
+      const stream = await this.client.models.generateContentStream({
+        model: this.modelName,
+        contents: prompt,
+        config: systemPrompt
+          ? {
+              systemInstruction: systemPrompt,
+            }
+          : undefined,
+      });
+
+      for await (const chunk of stream) {
+        // Handle different chunk types - may be text or other content
+        if (chunk.text) {
+          yield chunk.text;
+        } else if (typeof chunk === 'string') {
+          yield chunk;
         }
       }
     } catch (error: any) {

@@ -37,7 +37,12 @@ export class ExportService {
     const balanceSheetData = [
       ['Konsolidierte Bilanz', '', '', ''],
       ['Geschäftsjahr:', report.fiscalYear, '', ''],
-      ['Periode:', report.periodStart.toISOString().split('T')[0], 'bis', report.periodEnd.toISOString().split('T')[0]],
+      [
+        'Periode:',
+        report.periodStart.toISOString().split('T')[0],
+        'bis',
+        report.periodEnd.toISOString().split('T')[0],
+      ],
       ['', '', '', ''],
       ['AKTIVA', '', '', ''],
       ['', '', '', ''],
@@ -161,7 +166,11 @@ export class ExportService {
     ]);
 
     const balanceSheetSheet = XLSX.utils.aoa_to_sheet(balanceSheetData);
-    XLSX.utils.book_append_sheet(workbook, balanceSheetSheet, 'Konsolidierte Bilanz');
+    XLSX.utils.book_append_sheet(
+      workbook,
+      balanceSheetSheet,
+      'Konsolidierte Bilanz',
+    );
 
     // Blatt 2: Konsolidierungsübersicht
     const overviewData = [
@@ -169,7 +178,12 @@ export class ExportService {
       ['', '', '', ''],
       ['Eliminierungen', '', '', ''],
       ['Zwischenergebniseliminierung', '', '', ''],
-      ['Anzahl:', report.overview.eliminations.intercompanyProfits.count, '', ''],
+      [
+        'Anzahl:',
+        report.overview.eliminations.intercompanyProfits.count,
+        '',
+        '',
+      ],
       [
         'Gesamtbetrag:',
         report.overview.eliminations.intercompanyProfits.totalAmount.toFixed(2),
@@ -187,28 +201,40 @@ export class ExportService {
       ],
       [
         'Forderungen eliminiert:',
-        report.overview.eliminations.debtConsolidation.receivablesEliminated.toFixed(2),
+        report.overview.eliminations.debtConsolidation.receivablesEliminated.toFixed(
+          2,
+        ),
         '',
         '',
       ],
       [
         'Verbindlichkeiten eliminiert:',
-        report.overview.eliminations.debtConsolidation.payablesEliminated.toFixed(2),
+        report.overview.eliminations.debtConsolidation.payablesEliminated.toFixed(
+          2,
+        ),
         '',
         '',
       ],
       ['', '', '', ''],
       ['Kapitalkonsolidierung', '', '', ''],
-      ['Anzahl:', report.overview.eliminations.capitalConsolidation.count, '', ''],
+      [
+        'Anzahl:',
+        report.overview.eliminations.capitalConsolidation.count,
+        '',
+        '',
+      ],
       [
         'Gesamtbetrag:',
-        report.overview.eliminations.capitalConsolidation.totalAmount.toFixed(2),
+        report.overview.eliminations.capitalConsolidation.totalAmount.toFixed(
+          2,
+        ),
         '',
         '',
       ],
       [
         'Beteiligungen verarbeitet:',
-        report.overview.eliminations.capitalConsolidation.participationsProcessed,
+        report.overview.eliminations.capitalConsolidation
+          .participationsProcessed,
         '',
         '',
       ],
@@ -221,9 +247,15 @@ export class ExportService {
     ];
 
     const overviewSheet = XLSX.utils.aoa_to_sheet(overviewData);
-    XLSX.utils.book_append_sheet(workbook, overviewSheet, 'Konsolidierungsübersicht');
+    XLSX.utils.book_append_sheet(
+      workbook,
+      overviewSheet,
+      'Konsolidierungsübersicht',
+    );
 
-    return Buffer.from(XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
+    return Buffer.from(
+      XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
+    );
   }
 
   /**
@@ -258,7 +290,8 @@ export class ExportService {
     xml += '<!-- eBilanz Konzernabschluss nach HGB -->\n';
     xml += '<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance"\n';
     xml += '            xmlns:xlink="http://www.w3.org/1999/xlink"\n';
-    xml += '            xmlns:hgb-konzern="http://www.xbrl.de/taxonomies/hgb-konzern"\n';
+    xml +=
+      '            xmlns:hgb-konzern="http://www.xbrl.de/taxonomies/hgb-konzern"\n';
     xml += '            xmlns:iso4217="http://www.xbrl.org/2003/iso4217">\n\n';
 
     // Context - Current Period
@@ -299,11 +332,14 @@ export class ExportService {
     // AKTIVA
     xml += `  <!-- AKTIVA (§ 266 HGB) -->\n`;
     xml += `  <hgb-konzern:summeAktiva contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.assets.totalAssets.toFixed(2)}</hgb-konzern:summeAktiva>\n`;
-    
+
     // Anlagevermögen
-    const fixedAssetsTotal = report.balanceSheet.assets.fixedAssets.reduce((sum, a) => sum + a.balance, 0);
+    const fixedAssetsTotal = report.balanceSheet.assets.fixedAssets.reduce(
+      (sum, a) => sum + a.balance,
+      0,
+    );
     xml += `  <hgb-konzern:anlagevermoegen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${fixedAssetsTotal.toFixed(2)}</hgb-konzern:anlagevermoegen>\n`;
-    
+
     // Einzelpositionen Anlagevermögen
     for (const asset of report.balanceSheet.assets.fixedAssets) {
       xml += `  <hgb-konzern:anlageposition contextRef="CurrentPeriod" unitRef="EUR" decimals="2">\n`;
@@ -311,11 +347,14 @@ export class ExportService {
       xml += `    ${asset.balance.toFixed(2)}\n`;
       xml += `  </hgb-konzern:anlageposition>\n`;
     }
-    
+
     // Umlaufvermögen
-    const currentAssetsTotal = report.balanceSheet.assets.currentAssets.reduce((sum, a) => sum + a.balance, 0);
+    const currentAssetsTotal = report.balanceSheet.assets.currentAssets.reduce(
+      (sum, a) => sum + a.balance,
+      0,
+    );
     xml += `  <hgb-konzern:umlaufvermoegen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${currentAssetsTotal.toFixed(2)}</hgb-konzern:umlaufvermoegen>\n`;
-    
+
     // Goodwill
     if (report.balanceSheet.assets.goodwill > 0) {
       xml += `  <hgb-konzern:geschaeftsOderFirmenwert contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.assets.goodwill.toFixed(2)}</hgb-konzern:geschaeftsOderFirmenwert>\n`;
@@ -325,37 +364,48 @@ export class ExportService {
     // PASSIVA
     xml += `  <!-- PASSIVA (§ 266 HGB) -->\n`;
     xml += `  <hgb-konzern:summePassiva contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.totalLiabilities.toFixed(2)}</hgb-konzern:summePassiva>\n`;
-    
+
     // Eigenkapital
-    const parentEquity = report.balanceSheet.liabilities.equity.parentCompany.reduce((sum, e) => sum + e.balance, 0);
-    const totalEquity = parentEquity + report.balanceSheet.liabilities.equity.minorityInterests;
+    const parentEquity =
+      report.balanceSheet.liabilities.equity.parentCompany.reduce(
+        (sum, e) => sum + e.balance,
+        0,
+      );
+    const totalEquity =
+      parentEquity + report.balanceSheet.liabilities.equity.minorityInterests;
     xml += `  <hgb-konzern:eigenkapital contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${totalEquity.toFixed(2)}</hgb-konzern:eigenkapital>\n`;
     xml += `  <hgb-konzern:eigenkapitalMutterunternehmen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${parentEquity.toFixed(2)}</hgb-konzern:eigenkapitalMutterunternehmen>\n`;
-    
+
     // Minderheitenanteile (§ 307 HGB)
     if (report.balanceSheet.liabilities.equity.minorityInterests !== 0) {
       xml += `  <hgb-konzern:anteileAndererGesellschafter contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${report.balanceSheet.liabilities.equity.minorityInterests.toFixed(2)}</hgb-konzern:anteileAndererGesellschafter>\n`;
     }
-    
+
     // Rückstellungen
-    const provisionsTotal = report.balanceSheet.liabilities.provisions.reduce((sum, p) => sum + p.balance, 0);
+    const provisionsTotal = report.balanceSheet.liabilities.provisions.reduce(
+      (sum, p) => sum + p.balance,
+      0,
+    );
     xml += `  <hgb-konzern:rueckstellungen contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${provisionsTotal.toFixed(2)}</hgb-konzern:rueckstellungen>\n`;
-    
+
     // Verbindlichkeiten
-    const liabilitiesTotal = report.balanceSheet.liabilities.liabilities.reduce((sum, l) => sum + l.balance, 0);
+    const liabilitiesTotal = report.balanceSheet.liabilities.liabilities.reduce(
+      (sum, l) => sum + l.balance,
+      0,
+    );
     xml += `  <hgb-konzern:verbindlichkeiten contextRef="CurrentPeriod" unitRef="EUR" decimals="2">${liabilitiesTotal.toFixed(2)}</hgb-konzern:verbindlichkeiten>\n\n`;
 
     // Konsolidierungsangaben
     xml += `  <!-- Konsolidierungsangaben (§§ 301-307 HGB) -->\n`;
     xml += `  <hgb-konzern:konsolidierung>\n`;
-    
+
     // Kapitalkonsolidierung
     xml += `    <hgb-konzern:kapitalkonsolidierung>\n`;
     xml += `      <hgb-konzern:anzahlBuchungen>${report.overview.eliminations.capitalConsolidation.count}</hgb-konzern:anzahlBuchungen>\n`;
     xml += `      <hgb-konzern:betrag unitRef="EUR" decimals="2">${report.overview.eliminations.capitalConsolidation.totalAmount.toFixed(2)}</hgb-konzern:betrag>\n`;
     xml += `      <hgb-konzern:hgbParagraph>§ 301 HGB</hgb-konzern:hgbParagraph>\n`;
     xml += `    </hgb-konzern:kapitalkonsolidierung>\n`;
-    
+
     // Schuldenkonsolidierung
     xml += `    <hgb-konzern:schuldenkonsolidierung>\n`;
     xml += `      <hgb-konzern:anzahlBuchungen>${report.overview.eliminations.debtConsolidation.count}</hgb-konzern:anzahlBuchungen>\n`;
@@ -364,14 +414,14 @@ export class ExportService {
     xml += `      <hgb-konzern:verbindlichkeitenEliminiert unitRef="EUR" decimals="2">${report.overview.eliminations.debtConsolidation.payablesEliminated.toFixed(2)}</hgb-konzern:verbindlichkeitenEliminiert>\n`;
     xml += `      <hgb-konzern:hgbParagraph>§ 303 HGB</hgb-konzern:hgbParagraph>\n`;
     xml += `    </hgb-konzern:schuldenkonsolidierung>\n`;
-    
+
     // Zwischenergebniseliminierung
     xml += `    <hgb-konzern:zwischenergebniseliminierung>\n`;
     xml += `      <hgb-konzern:anzahlBuchungen>${report.overview.eliminations.intercompanyProfits.count}</hgb-konzern:anzahlBuchungen>\n`;
     xml += `      <hgb-konzern:betrag unitRef="EUR" decimals="2">${report.overview.eliminations.intercompanyProfits.totalAmount.toFixed(2)}</hgb-konzern:betrag>\n`;
     xml += `      <hgb-konzern:hgbParagraph>§ 304 HGB</hgb-konzern:hgbParagraph>\n`;
     xml += `    </hgb-konzern:zwischenergebniseliminierung>\n`;
-    
+
     xml += `  </hgb-konzern:konsolidierung>\n\n`;
 
     // Goodwill und Minderheiten
@@ -453,7 +503,9 @@ export class ExportService {
   /**
    * Export complete consolidation package (multi-sheet Excel)
    */
-  async exportFullConsolidationPackage(financialStatementId: string): Promise<Buffer> {
+  async exportFullConsolidationPackage(
+    financialStatementId: string,
+  ): Promise<Buffer> {
     const report = await this.reportingService.generateConsolidationReport(
       financialStatementId,
       false,
@@ -471,7 +523,8 @@ export class ExportService {
 
     // Sheet 3: Konzernanhang
     try {
-      const notes = await this.notesService.generateConsolidatedNotes(financialStatementId);
+      const notes =
+        await this.notesService.generateConsolidatedNotes(financialStatementId);
       const notesSheet = this.createNotesSheet(notes);
       XLSX.utils.book_append_sheet(workbook, notesSheet, 'Konzernanhang');
     } catch (error) {
@@ -480,25 +533,40 @@ export class ExportService {
 
     // Sheet 4: Latente Steuern
     try {
-      const deferredTaxes = await this.deferredTaxService.getDeferredTaxes(financialStatementId);
-      const summary = await this.deferredTaxService.getDeferredTaxSummary(financialStatementId);
-      const deferredTaxSheet = this.createDeferredTaxSheet(deferredTaxes, summary);
-      XLSX.utils.book_append_sheet(workbook, deferredTaxSheet, 'Latente Steuern');
+      const deferredTaxes =
+        await this.deferredTaxService.getDeferredTaxes(financialStatementId);
+      const summary =
+        await this.deferredTaxService.getDeferredTaxSummary(
+          financialStatementId,
+        );
+      const deferredTaxSheet = this.createDeferredTaxSheet(
+        deferredTaxes,
+        summary,
+      );
+      XLSX.utils.book_append_sheet(
+        workbook,
+        deferredTaxSheet,
+        'Latente Steuern',
+      );
     } catch (error) {
       console.warn('Could not generate deferred tax sheet:', error);
     }
 
     // Sheet 5: Compliance Checklist
     try {
-      const compliance = await this.complianceService.getComplianceSummary(financialStatementId);
-      const checklist = await this.complianceService.getChecklist(financialStatementId);
+      const compliance =
+        await this.complianceService.getComplianceSummary(financialStatementId);
+      const checklist =
+        await this.complianceService.getChecklist(financialStatementId);
       const complianceSheet = this.createComplianceSheet(checklist, compliance);
       XLSX.utils.book_append_sheet(workbook, complianceSheet, 'Compliance');
     } catch (error) {
       console.warn('Could not generate compliance sheet:', error);
     }
 
-    return Buffer.from(XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
+    return Buffer.from(
+      XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
+    );
   }
 
   /**
@@ -508,7 +576,12 @@ export class ExportService {
     const data = [
       ['Konsolidierte Bilanz', '', '', ''],
       ['Geschäftsjahr:', report.fiscalYear, '', ''],
-      ['Periode:', report.periodStart.toISOString().split('T')[0], 'bis', report.periodEnd.toISOString().split('T')[0]],
+      [
+        'Periode:',
+        report.periodStart.toISOString().split('T')[0],
+        'bis',
+        report.periodEnd.toISOString().split('T')[0],
+      ],
       ['', '', '', ''],
       ['AKTIVA', '', 'EUR', ''],
       ['', '', '', ''],
@@ -516,50 +589,103 @@ export class ExportService {
     ];
 
     for (const asset of report.balanceSheet.assets.fixedAssets) {
-      data.push([`  ${asset.accountName}`, asset.accountNumber, asset.balance.toFixed(2), '']);
+      data.push([
+        `  ${asset.accountName}`,
+        asset.accountNumber,
+        asset.balance.toFixed(2),
+        '',
+      ]);
     }
     data.push([
-      'Summe Anlagevermögen', '', 
-      report.balanceSheet.assets.fixedAssets.reduce((sum: number, a: any) => sum + a.balance, 0).toFixed(2), ''
+      'Summe Anlagevermögen',
+      '',
+      report.balanceSheet.assets.fixedAssets
+        .reduce((sum: number, a: any) => sum + a.balance, 0)
+        .toFixed(2),
+      '',
     ]);
     data.push(['', '', '', '']);
 
     data.push(['Umlaufvermögen', '', '', '']);
     for (const asset of report.balanceSheet.assets.currentAssets) {
-      data.push([`  ${asset.accountName}`, asset.accountNumber, asset.balance.toFixed(2), '']);
+      data.push([
+        `  ${asset.accountName}`,
+        asset.accountNumber,
+        asset.balance.toFixed(2),
+        '',
+      ]);
     }
     data.push([
-      'Summe Umlaufvermögen', '',
-      report.balanceSheet.assets.currentAssets.reduce((sum: number, a: any) => sum + a.balance, 0).toFixed(2), ''
+      'Summe Umlaufvermögen',
+      '',
+      report.balanceSheet.assets.currentAssets
+        .reduce((sum: number, a: any) => sum + a.balance, 0)
+        .toFixed(2),
+      '',
     ]);
     data.push(['', '', '', '']);
 
     if (report.balanceSheet.assets.goodwill > 0) {
-      data.push(['Geschäfts-/Firmenwert', '', report.balanceSheet.assets.goodwill.toFixed(2), '']);
+      data.push([
+        'Geschäfts-/Firmenwert',
+        '',
+        report.balanceSheet.assets.goodwill.toFixed(2),
+        '',
+      ]);
     }
-    data.push(['GESAMT AKTIVA', '', report.balanceSheet.assets.totalAssets.toFixed(2), '']);
+    data.push([
+      'GESAMT AKTIVA',
+      '',
+      report.balanceSheet.assets.totalAssets.toFixed(2),
+      '',
+    ]);
     data.push(['', '', '', '']);
     data.push(['PASSIVA', '', 'EUR', '']);
     data.push(['', '', '', '']);
 
     data.push(['Eigenkapital', '', '', '']);
     for (const equity of report.balanceSheet.liabilities.equity.parentCompany) {
-      data.push([`  ${equity.accountName}`, equity.accountNumber, equity.balance.toFixed(2), '']);
+      data.push([
+        `  ${equity.accountName}`,
+        equity.accountNumber,
+        equity.balance.toFixed(2),
+        '',
+      ]);
     }
-    data.push(['Minderheitsanteile', '', report.balanceSheet.liabilities.equity.minorityInterests.toFixed(2), '']);
+    data.push([
+      'Minderheitsanteile',
+      '',
+      report.balanceSheet.liabilities.equity.minorityInterests.toFixed(2),
+      '',
+    ]);
     data.push(['', '', '', '']);
 
     data.push(['Rückstellungen', '', '', '']);
     for (const provision of report.balanceSheet.liabilities.provisions) {
-      data.push([`  ${provision.accountName}`, provision.accountNumber, provision.balance.toFixed(2), '']);
+      data.push([
+        `  ${provision.accountName}`,
+        provision.accountNumber,
+        provision.balance.toFixed(2),
+        '',
+      ]);
     }
     data.push(['', '', '', '']);
 
     data.push(['Verbindlichkeiten', '', '', '']);
     for (const liability of report.balanceSheet.liabilities.liabilities) {
-      data.push([`  ${liability.accountName}`, liability.accountNumber, liability.balance.toFixed(2), '']);
+      data.push([
+        `  ${liability.accountName}`,
+        liability.accountNumber,
+        liability.balance.toFixed(2),
+        '',
+      ]);
     }
-    data.push(['GESAMT PASSIVA', '', report.balanceSheet.liabilities.totalLiabilities.toFixed(2), '']);
+    data.push([
+      'GESAMT PASSIVA',
+      '',
+      report.balanceSheet.liabilities.totalLiabilities.toFixed(2),
+      '',
+    ]);
 
     return XLSX.utils.aoa_to_sheet(data);
   }
@@ -572,18 +698,60 @@ export class ExportService {
       ['Konsolidierungsübersicht', '', '', ''],
       ['', '', '', ''],
       ['Eliminierungen', 'Anzahl', 'Betrag (EUR)', ''],
-      ['Zwischenergebniseliminierung', report.overview.eliminations.intercompanyProfits.count, report.overview.eliminations.intercompanyProfits.totalAmount.toFixed(2), ''],
-      ['Schuldenkonsolidierung', report.overview.eliminations.debtConsolidation.count, report.overview.eliminations.debtConsolidation.totalAmount.toFixed(2), ''],
-      ['Kapitalkonsolidierung', report.overview.eliminations.capitalConsolidation.count, report.overview.eliminations.capitalConsolidation.totalAmount.toFixed(2), ''],
+      [
+        'Zwischenergebniseliminierung',
+        report.overview.eliminations.intercompanyProfits.count,
+        report.overview.eliminations.intercompanyProfits.totalAmount.toFixed(2),
+        '',
+      ],
+      [
+        'Schuldenkonsolidierung',
+        report.overview.eliminations.debtConsolidation.count,
+        report.overview.eliminations.debtConsolidation.totalAmount.toFixed(2),
+        '',
+      ],
+      [
+        'Kapitalkonsolidierung',
+        report.overview.eliminations.capitalConsolidation.count,
+        report.overview.eliminations.capitalConsolidation.totalAmount.toFixed(
+          2,
+        ),
+        '',
+      ],
       ['', '', '', ''],
       ['Schuldenkonsolidierung Details', '', '', ''],
-      ['Forderungen eliminiert', '', report.overview.eliminations.debtConsolidation.receivablesEliminated.toFixed(2), ''],
-      ['Verbindlichkeiten eliminiert', '', report.overview.eliminations.debtConsolidation.payablesEliminated.toFixed(2), ''],
+      [
+        'Forderungen eliminiert',
+        '',
+        report.overview.eliminations.debtConsolidation.receivablesEliminated.toFixed(
+          2,
+        ),
+        '',
+      ],
+      [
+        'Verbindlichkeiten eliminiert',
+        '',
+        report.overview.eliminations.debtConsolidation.payablesEliminated.toFixed(
+          2,
+        ),
+        '',
+      ],
       ['', '', '', ''],
       ['Kapitalkonsolidierung Details', '', '', ''],
-      ['Beteiligungen verarbeitet', '', report.overview.eliminations.capitalConsolidation.participationsProcessed, ''],
+      [
+        'Beteiligungen verarbeitet',
+        '',
+        report.overview.eliminations.capitalConsolidation
+          .participationsProcessed,
+        '',
+      ],
       ['', '', '', ''],
-      ['Minderheitsanteile', '', report.overview.minorityInterests.total.toFixed(2), ''],
+      [
+        'Minderheitsanteile',
+        '',
+        report.overview.minorityInterests.total.toFixed(2),
+        '',
+      ],
       ['Goodwill', '', report.overview.goodwill.total.toFixed(2), ''],
     ];
 
@@ -599,10 +767,30 @@ export class ExportService {
       ['Geschäftsjahr:', notes.fiscalYear, '', ''],
       ['', '', '', ''],
       ['KONSOLIDIERUNGSKREIS', '', '', ''],
-      ['Mutterunternehmen:', notes.consolidationScope.parentCompany.name, '', ''],
-      ['Anzahl Gesellschaften:', notes.consolidationScope.totalCompanies, '', ''],
-      ['Davon konsolidiert:', notes.consolidationScope.consolidatedCompanies, '', ''],
-      ['Davon ausgeschlossen:', notes.consolidationScope.excludedCompanies, '', ''],
+      [
+        'Mutterunternehmen:',
+        notes.consolidationScope.parentCompany.name,
+        '',
+        '',
+      ],
+      [
+        'Anzahl Gesellschaften:',
+        notes.consolidationScope.totalCompanies,
+        '',
+        '',
+      ],
+      [
+        'Davon konsolidiert:',
+        notes.consolidationScope.consolidatedCompanies,
+        '',
+        '',
+      ],
+      [
+        'Davon ausgeschlossen:',
+        notes.consolidationScope.excludedCompanies,
+        '',
+        '',
+      ],
       ['', '', '', ''],
       ['TOCHTERGESELLSCHAFTEN', 'Beteiligung %', 'Methode', 'Einbezug seit'],
     ];
@@ -631,7 +819,12 @@ export class ExportService {
 
     data.push(['', '', '', '']);
     data.push(['MINDERHEITSANTEILE', '', '', '']);
-    data.push(['Gesamt:', notes.minorityInterestsBreakdown.total.toFixed(2), 'EUR', '']);
+    data.push([
+      'Gesamt:',
+      notes.minorityInterestsBreakdown.total.toFixed(2),
+      'EUR',
+      '',
+    ]);
 
     for (const mi of notes.minorityInterestsBreakdown.breakdown) {
       data.push([
@@ -654,18 +847,51 @@ export class ExportService {
   /**
    * Create deferred tax worksheet
    */
-  private createDeferredTaxSheet(deferredTaxes: any[], summary: any): XLSX.WorkSheet {
+  private createDeferredTaxSheet(
+    deferredTaxes: any[],
+    summary: any,
+  ): XLSX.WorkSheet {
     const data = [
       ['Latente Steuern (§ 306 HGB)', '', '', '', ''],
       ['', '', '', '', ''],
       ['ZUSAMMENFASSUNG', '', '', '', ''],
-      ['Aktive latente Steuern:', summary.totalDeferredTaxAssets?.toFixed(2) || '0.00', 'EUR', '', ''],
-      ['Passive latente Steuern:', summary.totalDeferredTaxLiabilities?.toFixed(2) || '0.00', 'EUR', '', ''],
-      ['Netto latente Steuern:', summary.netDeferredTax?.toFixed(2) || '0.00', 'EUR', '', ''],
-      ['Veränderung zum Vorjahr:', summary.changeFromPriorYear?.toFixed(2) || '0.00', 'EUR', '', ''],
+      [
+        'Aktive latente Steuern:',
+        summary.totalDeferredTaxAssets?.toFixed(2) || '0.00',
+        'EUR',
+        '',
+        '',
+      ],
+      [
+        'Passive latente Steuern:',
+        summary.totalDeferredTaxLiabilities?.toFixed(2) || '0.00',
+        'EUR',
+        '',
+        '',
+      ],
+      [
+        'Netto latente Steuern:',
+        summary.netDeferredTax?.toFixed(2) || '0.00',
+        'EUR',
+        '',
+        '',
+      ],
+      [
+        'Veränderung zum Vorjahr:',
+        summary.changeFromPriorYear?.toFixed(2) || '0.00',
+        'EUR',
+        '',
+        '',
+      ],
       ['', '', '', '', ''],
       ['DETAILAUFSTELLUNG', '', '', '', ''],
-      ['Beschreibung', 'Typ', 'Temporäre Differenz', 'Steuersatz', 'Latente Steuer'],
+      [
+        'Beschreibung',
+        'Typ',
+        'Temporäre Differenz',
+        'Steuersatz',
+        'Latente Steuer',
+      ],
     ];
 
     for (const dt of deferredTaxes) {
@@ -684,17 +910,32 @@ export class ExportService {
   /**
    * Create compliance worksheet
    */
-  private createComplianceSheet(checklist: any[], summary: any): XLSX.WorkSheet {
+  private createComplianceSheet(
+    checklist: any[],
+    summary: any,
+  ): XLSX.WorkSheet {
     const data = [
       ['HGB Compliance Checkliste', '', '', '', ''],
       ['', '', '', '', ''],
       ['ZUSAMMENFASSUNG', '', '', '', ''],
       ['Gesamt Prüfpunkte:', summary.totalItems, '', '', ''],
-      ['Abgeschlossen:', summary.completed, `(${summary.percentComplete}%)`, '', ''],
+      [
+        'Abgeschlossen:',
+        summary.completed,
+        `(${summary.percentComplete}%)`,
+        '',
+        '',
+      ],
       ['In Bearbeitung:', summary.inProgress, '', '', ''],
       ['Offen:', summary.notStarted, '', '', ''],
       ['Überfällig:', summary.overdue, '', '', ''],
-      ['Pflichtpunkte erfüllt:', summary.mandatoryComplete ? 'Ja' : 'Nein', '', '', ''],
+      [
+        'Pflichtpunkte erfüllt:',
+        summary.mandatoryComplete ? 'Ja' : 'Nein',
+        '',
+        '',
+        '',
+      ],
       ['', '', '', '', ''],
       ['CHECKLISTE', '', '', '', ''],
       ['Code', 'Beschreibung', 'HGB', 'Status', 'Pflicht'],
@@ -718,11 +959,11 @@ export class ExportService {
    */
   private translateStatus(status: string): string {
     const translations: Record<string, string> = {
-      'not_started': 'Offen',
-      'in_progress': 'In Bearbeitung',
-      'completed': 'Abgeschlossen',
-      'not_applicable': 'N/A',
-      'requires_review': 'Prüfung erforderlich',
+      not_started: 'Offen',
+      in_progress: 'In Bearbeitung',
+      completed: 'Abgeschlossen',
+      not_applicable: 'N/A',
+      requires_review: 'Prüfung erforderlich',
     };
     return translations[status] || status;
   }

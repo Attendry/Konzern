@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { 
-  AgentMode, 
-  AgentModeType, 
-  MODE_TIMEOUT_MINUTES 
+import {
+  AgentMode,
+  AgentModeType,
+  MODE_TIMEOUT_MINUTES,
 } from '../types/agent.types';
 
 interface UserModeState {
@@ -23,14 +23,16 @@ export class ModeService {
    */
   getCurrentMode(userId: string): AgentMode {
     const state = this.userModes.get(userId);
-    
+
     if (!state) {
       return this.getDefaultMode();
     }
 
     // Check if mode has expired
     if (state.mode.expiresAt && new Date() > state.mode.expiresAt) {
-      this.logger.log(`Mode expired for user ${userId}, reverting to explain mode`);
+      this.logger.log(
+        `Mode expired for user ${userId}, reverting to explain mode`,
+      );
       this.deactivateActionMode(userId);
       return this.getDefaultMode();
     }
@@ -58,7 +60,9 @@ export class ModeService {
     }
 
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + MODE_TIMEOUT_MINUTES * 60 * 1000);
+    const expiresAt = new Date(
+      now.getTime() + MODE_TIMEOUT_MINUTES * 60 * 1000,
+    );
 
     const mode: AgentMode = {
       type: 'action',
@@ -68,15 +72,18 @@ export class ModeService {
     };
 
     // Set timeout to auto-revert
-    const timeoutId = setTimeout(() => {
-      this.logger.log(`Auto-reverting to explain mode for user ${userId}`);
-      this.deactivateActionMode(userId);
-    }, MODE_TIMEOUT_MINUTES * 60 * 1000);
+    const timeoutId = setTimeout(
+      () => {
+        this.logger.log(`Auto-reverting to explain mode for user ${userId}`);
+        this.deactivateActionMode(userId);
+      },
+      MODE_TIMEOUT_MINUTES * 60 * 1000,
+    );
 
     this.userModes.set(userId, { mode, timeoutId });
-    
+
     this.logger.log(
-      `Action mode activated for user ${userId}, expires at ${expiresAt.toISOString()}`
+      `Action mode activated for user ${userId}, expires at ${expiresAt.toISOString()}`,
     );
 
     return mode;
@@ -87,7 +94,7 @@ export class ModeService {
    */
   deactivateActionMode(userId: string): AgentMode {
     const state = this.userModes.get(userId);
-    
+
     if (state?.timeoutId) {
       clearTimeout(state.timeoutId);
     }
@@ -111,7 +118,7 @@ export class ModeService {
    */
   getActionModeRemainingTime(userId: string): number | null {
     const mode = this.getCurrentMode(userId);
-    
+
     if (mode.type !== 'action' || !mode.expiresAt) {
       return null;
     }
@@ -124,8 +131,8 @@ export class ModeService {
    * Check if a tool can be executed in the current mode
    */
   canExecuteTool(
-    userId: string, 
-    requiredMode: 'explain' | 'action' | 'both'
+    userId: string,
+    requiredMode: 'explain' | 'action' | 'both',
   ): { allowed: boolean; reason?: string } {
     const currentMode = this.getCurrentMode(userId);
 
@@ -136,7 +143,8 @@ export class ModeService {
     if (requiredMode === 'action' && currentMode.type === 'explain') {
       return {
         allowed: false,
-        reason: 'Diese Aktion erfordert den Aktions-Modus. Bitte aktivieren Sie zunächst den Aktions-Modus.',
+        reason:
+          'Diese Aktion erfordert den Aktions-Modus. Bitte aktivieren Sie zunächst den Aktions-Modus.',
       };
     }
 

@@ -9,12 +9,12 @@ import { Company } from './company.entity';
 
 // Type of ownership change
 export enum OwnershipChangeType {
-  INITIAL = 'initial',       // Initial acquisition
-  INCREASE = 'increase',     // Additional acquisition
-  DECREASE = 'decrease',     // Partial sale
-  FULL_SALE = 'full_sale',   // Complete divestiture
-  MERGER = 'merger',         // Merger/amalgamation
-  DEMERGER = 'demerger',     // Spin-off/demerger
+  INITIAL = 'initial', // Initial acquisition
+  INCREASE = 'increase', // Additional acquisition
+  DECREASE = 'decrease', // Partial sale
+  FULL_SALE = 'full_sale', // Complete divestiture
+  MERGER = 'merger', // Merger/amalgamation
+  DEMERGER = 'demerger', // Spin-off/demerger
 }
 
 @Entity('participations')
@@ -37,15 +37,32 @@ export class Participation {
   subsidiaryCompany: Company;
 
   // Current participation percentage
-  @Column({ type: 'decimal', precision: 5, scale: 2, name: 'participation_percentage' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'participation_percentage',
+  })
   participationPercentage: number;
 
   // Voting rights percentage (may differ from capital share)
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'voting_rights_percentage' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    name: 'voting_rights_percentage',
+  })
   votingRightsPercentage: number | null;
 
   // Total acquisition cost (historical)
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'acquisition_cost' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'acquisition_cost',
+  })
   acquisitionCost: number | null;
 
   // Date of initial acquisition
@@ -53,23 +70,53 @@ export class Participation {
   acquisitionDate: Date | null;
 
   // NEW: Goodwill from acquisition (Geschäfts- oder Firmenwert)
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'goodwill' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'goodwill',
+  })
   goodwill: number | null;
 
   // NEW: Negative goodwill (Unterschiedsbetrag passivisch)
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'negative_goodwill' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'negative_goodwill',
+  })
   negativeGoodwill: number | null;
 
   // NEW: Hidden reserves at acquisition (Stille Reserven)
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'hidden_reserves' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'hidden_reserves',
+  })
   hiddenReserves: number | null;
 
   // NEW: Hidden liabilities at acquisition (Stille Lasten)
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'hidden_liabilities' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'hidden_liabilities',
+  })
   hiddenLiabilities: number | null;
 
   // NEW: Equity at acquisition date
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'equity_at_acquisition' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'equity_at_acquisition',
+  })
   equityAtAcquisition: number | null;
 
   // NEW: Is this a direct or indirect holding?
@@ -93,13 +140,27 @@ export class Participation {
   disposalDate: Date | null;
 
   // NEW: Sale proceeds (if disposed)
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'disposal_proceeds' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'disposal_proceeds',
+  })
   disposalProceeds: number | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 
@@ -129,7 +190,12 @@ export class OwnershipHistory {
   effectiveDate: Date;
 
   // Percentage before change
-  @Column({ type: 'decimal', precision: 5, scale: 2, name: 'percentage_before' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'percentage_before',
+  })
   percentageBefore: number;
 
   // Percentage after change
@@ -137,15 +203,32 @@ export class OwnershipHistory {
   percentageAfter: number;
 
   // Change in percentage
-  @Column({ type: 'decimal', precision: 5, scale: 2, name: 'percentage_change' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'percentage_change',
+  })
   percentageChange: number;
 
   // Transaction amount
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'transaction_amount' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'transaction_amount',
+  })
   transactionAmount: number | null;
 
   // Goodwill/badwill from this transaction
-  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, name: 'goodwill_change' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+    name: 'goodwill_change',
+  })
   goodwillChange: number | null;
 
   // Description/reason for change
@@ -156,6 +239,10 @@ export class OwnershipHistory {
   @Column({ type: 'uuid', nullable: true, name: 'consolidation_entry_id' })
   consolidationEntryId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 }

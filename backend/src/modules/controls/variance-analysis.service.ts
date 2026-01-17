@@ -56,7 +56,8 @@ export enum AnalysisLevel {
 export class VarianceAnalysisService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService: AuditLogService,
   ) {}
 
@@ -65,7 +66,9 @@ export class VarianceAnalysisService {
   /**
    * Get or calculate materiality thresholds for a financial statement
    */
-  async getMaterialityThresholds(financialStatementId: string): Promise<MaterialityThresholds | null> {
+  async getMaterialityThresholds(
+    financialStatementId: string,
+  ): Promise<MaterialityThresholds | null> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
@@ -76,7 +79,9 @@ export class VarianceAnalysisService {
 
     if (error) {
       if (error.code === 'PGRST116') return null;
-      throw new Error(`Failed to fetch materiality thresholds: ${error.message}`);
+      throw new Error(
+        `Failed to fetch materiality thresholds: ${error.message}`,
+      );
     }
 
     return this.mapMaterialityThresholds(data);
@@ -119,7 +124,9 @@ export class VarianceAnalysisService {
         .single();
 
       if (error) {
-        throw new Error(`Failed to update materiality thresholds: ${error.message}`);
+        throw new Error(
+          `Failed to update materiality thresholds: ${error.message}`,
+        );
       }
       result = data;
     } else {
@@ -130,7 +137,9 @@ export class VarianceAnalysisService {
         .single();
 
       if (error) {
-        throw new Error(`Failed to create materiality thresholds: ${error.message}`);
+        throw new Error(
+          `Failed to create materiality thresholds: ${error.message}`,
+        );
       }
       result = data;
     }
@@ -139,7 +148,7 @@ export class VarianceAnalysisService {
     if (this.auditLogService) {
       await this.auditLogService.log({
         userId,
-        action: existing ? 'update' as any : 'create' as any,
+        action: existing ? ('update' as any) : ('create' as any),
         entityType: 'financial_statement' as any,
         entityId: financialStatementId,
         financialStatementId,
@@ -172,7 +181,9 @@ export class VarianceAnalysisService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to approve materiality thresholds: ${error.message}`);
+      throw new Error(
+        `Failed to approve materiality thresholds: ${error.message}`,
+      );
     }
 
     return this.mapMaterialityThresholds(data);
@@ -181,9 +192,7 @@ export class VarianceAnalysisService {
   /**
    * Calculate suggested materiality based on financial data
    */
-  async calculateSuggestedMateriality(
-    financialStatementId: string,
-  ): Promise<{
+  async calculateSuggestedMateriality(financialStatementId: string): Promise<{
     basisType: string;
     basisAmount: number;
     suggestedPlanning: number;
@@ -195,10 +204,12 @@ export class VarianceAnalysisService {
     // Get account balances to calculate basis
     const { data: balances } = await supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId);
 
     let totalAssets = 0;
@@ -260,7 +271,9 @@ export class VarianceAnalysisService {
     const supabase = this.supabaseService.getClient();
 
     // Get materiality thresholds
-    const materiality = await this.getMaterialityThresholds(currentFinancialStatementId);
+    const materiality = await this.getMaterialityThresholds(
+      currentFinancialStatementId,
+    );
     const planningMateriality = materiality?.planningMateriality || 0;
     const performanceMateriality = materiality?.performanceMateriality || 0;
     const trivialThreshold = materiality?.trivialThreshold || 0;
@@ -268,11 +281,13 @@ export class VarianceAnalysisService {
     // Get current period data
     const { data: currentBalances } = await supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*),
         company:companies(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', currentFinancialStatementId);
 
     // Get current financial statement for year
@@ -285,11 +300,13 @@ export class VarianceAnalysisService {
     // Get prior period data
     const { data: priorBalances } = await supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*),
         company:companies(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', priorFinancialStatementId);
 
     // Get prior financial statement for year
@@ -302,20 +319,24 @@ export class VarianceAnalysisService {
     // Create a map for prior balances by account and company
     const priorMap = new Map<string, number>();
     for (const balance of priorBalances || []) {
-      const key = level === AnalysisLevel.COMPANY
-        ? `${balance.company_id}_${(balance.account as any)?.account_number}`
-        : (balance.account as any)?.account_number;
+      const key =
+        level === AnalysisLevel.COMPANY
+          ? `${balance.company_id}_${(balance.account as any)?.account_number}`
+          : (balance.account as any)?.account_number;
       priorMap.set(key, Number(balance.amount) || 0);
     }
 
     // Aggregate current balances based on level
-    const aggregatedData = new Map<string, {
-      currentValue: number;
-      priorValue: number;
-      accountNumber?: string;
-      accountName?: string;
-      companyId?: string;
-    }>();
+    const aggregatedData = new Map<
+      string,
+      {
+        currentValue: number;
+        priorValue: number;
+        accountNumber?: string;
+        accountName?: string;
+        companyId?: string;
+      }
+    >();
 
     for (const balance of currentBalances || []) {
       const account = balance.account as any;
@@ -354,9 +375,10 @@ export class VarianceAnalysisService {
       existing.currentValue += currentAmount;
 
       // Get prior value
-      const priorKey = level === AnalysisLevel.COMPANY
-        ? `${balance.company_id}_${account?.account_number}`
-        : account?.account_number;
+      const priorKey =
+        level === AnalysisLevel.COMPANY
+          ? `${balance.company_id}_${account?.account_number}`
+          : account?.account_number;
       existing.priorValue += priorMap.get(priorKey) || 0;
 
       aggregatedData.set(key, existing);
@@ -373,9 +395,12 @@ export class VarianceAnalysisService {
 
     for (const [key, data] of aggregatedData) {
       const absoluteVariance = data.currentValue - data.priorValue;
-      const percentageVariance = data.priorValue !== 0
-        ? (absoluteVariance / Math.abs(data.priorValue)) * 100
-        : (data.currentValue !== 0 ? 100 : 0);
+      const percentageVariance =
+        data.priorValue !== 0
+          ? (absoluteVariance / Math.abs(data.priorValue)) * 100
+          : data.currentValue !== 0
+            ? 100
+            : 0;
 
       // Determine significance
       let significance: VarianceSignificance;
@@ -477,7 +502,9 @@ export class VarianceAnalysisService {
   /**
    * Get variance summary
    */
-  async getVarianceSummary(financialStatementId: string): Promise<VarianceSummary> {
+  async getVarianceSummary(
+    financialStatementId: string,
+  ): Promise<VarianceSummary> {
     const analyses = await this.getVarianceAnalyses(financialStatementId);
 
     const summary: VarianceSummary = {
@@ -493,7 +520,10 @@ export class VarianceAnalysisService {
       byCategory: [],
     };
 
-    const categoryMap = new Map<string, { count: number; totalVariance: number }>();
+    const categoryMap = new Map<
+      string,
+      { count: number; totalVariance: number }
+    >();
 
     for (const analysis of analyses) {
       // Count by significance
@@ -525,20 +555,29 @@ export class VarianceAnalysisService {
       }
 
       // Total variance
-      summary.totalAbsoluteVariance += Math.abs(Number(analysis.absoluteVariance) || 0);
+      summary.totalAbsoluteVariance += Math.abs(
+        Number(analysis.absoluteVariance) || 0,
+      );
 
       // By category
       const category = analysis.explanationCategory || 'uncategorized';
-      const catStats = categoryMap.get(category) || { count: 0, totalVariance: 0 };
+      const catStats = categoryMap.get(category) || {
+        count: 0,
+        totalVariance: 0,
+      };
       catStats.count++;
-      catStats.totalVariance += Math.abs(Number(analysis.absoluteVariance) || 0);
+      catStats.totalVariance += Math.abs(
+        Number(analysis.absoluteVariance) || 0,
+      );
       categoryMap.set(category, catStats);
     }
 
-    summary.byCategory = Array.from(categoryMap.entries()).map(([category, stats]) => ({
-      category,
-      ...stats,
-    }));
+    summary.byCategory = Array.from(categoryMap.entries()).map(
+      ([category, stats]) => ({
+        category,
+        ...stats,
+      }),
+    );
 
     return summary;
   }

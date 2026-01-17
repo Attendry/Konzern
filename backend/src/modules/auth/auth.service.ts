@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
 export interface UserProfile {
@@ -55,7 +59,9 @@ export class AuthService {
     });
 
     if (error) {
-      throw new BadRequestException(`Registrierung fehlgeschlagen: ${error.message}`);
+      throw new BadRequestException(
+        `Registrierung fehlgeschlagen: ${error.message}`,
+      );
     }
 
     if (!data.user) {
@@ -71,14 +77,18 @@ export class AuthService {
   /**
    * Login user
    */
-  async login(credentials: LoginCredentials): Promise<{ user: AuthUser; accessToken: string; refreshToken: string }> {
+  async login(
+    credentials: LoginCredentials,
+  ): Promise<{ user: AuthUser; accessToken: string; refreshToken: string }> {
     const { data, error } = await this.supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
     });
 
     if (error) {
-      throw new UnauthorizedException(`Anmeldung fehlgeschlagen: ${error.message}`);
+      throw new UnauthorizedException(
+        `Anmeldung fehlgeschlagen: ${error.message}`,
+      );
     }
 
     if (!data.user || !data.session) {
@@ -108,7 +118,9 @@ export class AuthService {
   async logout(): Promise<void> {
     const { error } = await this.supabase.auth.signOut();
     if (error) {
-      throw new BadRequestException(`Abmeldung fehlgeschlagen: ${error.message}`);
+      throw new BadRequestException(
+        `Abmeldung fehlgeschlagen: ${error.message}`,
+      );
     }
   }
 
@@ -116,7 +128,10 @@ export class AuthService {
    * Validate JWT token and return user
    */
   async validateToken(token: string): Promise<AuthUser> {
-    const { data: { user }, error } = await this.supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error,
+    } = await this.supabase.auth.getUser(token);
 
     if (error || !user) {
       throw new UnauthorizedException('Ungültiger Token');
@@ -134,7 +149,9 @@ export class AuthService {
   /**
    * Refresh access token
    */
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { data, error } = await this.supabase.auth.refreshSession({
       refresh_token: refreshToken,
     });
@@ -172,7 +189,9 @@ export class AuthService {
       phone: data.phone,
       avatarUrl: data.avatar_url,
       preferences: data.preferences,
-      lastLoginAt: data.last_login_at ? new Date(data.last_login_at) : undefined,
+      lastLoginAt: data.last_login_at
+        ? new Date(data.last_login_at)
+        : undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     };
@@ -181,16 +200,23 @@ export class AuthService {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+  async updateProfile(
+    userId: string,
+    updates: Partial<UserProfile>,
+  ): Promise<UserProfile> {
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
 
-    if (updates.displayName !== undefined) updateData.display_name = updates.displayName;
-    if (updates.department !== undefined) updateData.department = updates.department;
+    if (updates.displayName !== undefined)
+      updateData.display_name = updates.displayName;
+    if (updates.department !== undefined)
+      updateData.department = updates.department;
     if (updates.phone !== undefined) updateData.phone = updates.phone;
-    if (updates.avatarUrl !== undefined) updateData.avatar_url = updates.avatarUrl;
-    if (updates.preferences !== undefined) updateData.preferences = updates.preferences;
+    if (updates.avatarUrl !== undefined)
+      updateData.avatar_url = updates.avatarUrl;
+    if (updates.preferences !== undefined)
+      updateData.preferences = updates.preferences;
 
     const { data, error } = await this.supabase
       .from('user_profiles')
@@ -200,7 +226,9 @@ export class AuthService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Profil konnte nicht aktualisiert werden: ${error.message}`);
+      throw new BadRequestException(
+        `Profil konnte nicht aktualisiert werden: ${error.message}`,
+      );
     }
 
     return this.mapProfile(data);
@@ -209,7 +237,10 @@ export class AuthService {
   /**
    * Update user role (admin only)
    */
-  async updateUserRole(userId: string, role: UserProfile['role']): Promise<UserProfile> {
+  async updateUserRole(
+    userId: string,
+    role: UserProfile['role'],
+  ): Promise<UserProfile> {
     const { data, error } = await this.supabase
       .from('user_profiles')
       .update({ role, updated_at: new Date().toISOString() })
@@ -218,7 +249,9 @@ export class AuthService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Rolle konnte nicht aktualisiert werden: ${error.message}`);
+      throw new BadRequestException(
+        `Rolle konnte nicht aktualisiert werden: ${error.message}`,
+      );
     }
 
     return this.mapProfile(data);
@@ -234,7 +267,9 @@ export class AuthService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Benutzer konnten nicht geladen werden: ${error.message}`);
+      throw new BadRequestException(
+        `Benutzer konnten nicht geladen werden: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapProfile);
@@ -243,7 +278,10 @@ export class AuthService {
   /**
    * Check if user has required role
    */
-  async hasRole(userId: string, requiredRoles: UserProfile['role'][]): Promise<boolean> {
+  async hasRole(
+    userId: string,
+    requiredRoles: UserProfile['role'][],
+  ): Promise<boolean> {
     const profile = await this.getProfile(userId);
     if (!profile) return false;
     return requiredRoles.includes(profile.role);
@@ -272,7 +310,9 @@ export class AuthService {
       phone: data.phone,
       avatarUrl: data.avatar_url,
       preferences: data.preferences,
-      lastLoginAt: data.last_login_at ? new Date(data.last_login_at) : undefined,
+      lastLoginAt: data.last_login_at
+        ? new Date(data.last_login_at)
+        : undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     };

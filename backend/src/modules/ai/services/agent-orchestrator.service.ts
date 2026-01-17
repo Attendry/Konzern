@@ -84,7 +84,10 @@ export class AgentOrchestratorService {
 
     try {
       // 3. Check for special commands
-      const specialResponse = await this.handleSpecialCommands(request, context);
+      const specialResponse = await this.handleSpecialCommands(
+        request,
+        context,
+      );
       if (specialResponse) {
         return specialResponse;
       }
@@ -95,10 +98,10 @@ export class AgentOrchestratorService {
       // 5. Validate mode allows requested action
       if (intent.requiresActionMode && mode.type === 'explain') {
         const activationPrompt = this.modeService.getActivationPrompt();
-        
+
         return {
           success: false,
-          message: `Diese Aktion erfordert den Aktions-Modus.\n\n**${activationPrompt.title}**\n\n${activationPrompt.description}\n${activationPrompt.capabilities.map(c => `• ${c}`).join('\n')}\n\n${activationPrompt.warning}`,
+          message: `Diese Aktion erfordert den Aktions-Modus.\n\n**${activationPrompt.title}**\n\n${activationPrompt.description}\n${activationPrompt.capabilities.map((c) => `• ${c}`).join('\n')}\n\n${activationPrompt.warning}`,
           requiresModeChange: true,
           suggestedAction: {
             type: 'activate_action_mode',
@@ -109,7 +112,7 @@ export class AgentOrchestratorService {
 
       // 6. Execute tool(s)
       const tool = this.tools.get(intent.toolName);
-      
+
       if (!tool) {
         // No specific tool matched, use chat fallback
         return await this.handleChatFallback(request, context);
@@ -124,17 +127,26 @@ export class AgentOrchestratorService {
       }
 
       // 7. Build response
-      const response = this.buildResponse(result, context, intent.isBatchOperation);
+      const response = this.buildResponse(
+        result,
+        context,
+        intent.isBatchOperation,
+      );
 
       // 8. Log to audit trail
       const processingTime = Date.now() - startTime;
-      await this.logToAudit(request, response, context, intent.toolName, processingTime);
+      await this.logToAudit(
+        request,
+        response,
+        context,
+        intent.toolName,
+        processingTime,
+      );
 
       return response;
-
     } catch (error: any) {
       this.logger.error(`Error processing request: ${error.message}`);
-      
+
       return {
         success: false,
         message: `Fehler bei der Verarbeitung: ${error.message}`,
@@ -159,8 +171,10 @@ export class AgentOrchestratorService {
       lowerRequest.includes('activate action mode')
     ) {
       const newMode = this.modeService.activateActionMode(context.userId);
-      const remaining = this.modeService.getActionModeRemainingTime(context.userId);
-      
+      const remaining = this.modeService.getActionModeRemainingTime(
+        context.userId,
+      );
+
       return {
         success: true,
         message: `**Aktions-Modus aktiviert**\n\nSie können jetzt Aktionen wie Korrekturbuchungen erstellen und Prüfungen markieren.\n\nDer Modus wird in ${Math.floor((remaining || 1800) / 60)} Minuten automatisch deaktiviert.`,
@@ -176,7 +190,7 @@ export class AgentOrchestratorService {
       lowerRequest.includes('deactivate action mode')
     ) {
       this.modeService.deactivateActionMode(context.userId);
-      
+
       return {
         success: true,
         message: `**Aktions-Modus deaktiviert**\n\nSie befinden sich wieder im Erklär-Modus (nur Lesezugriff).`,
@@ -191,17 +205,21 @@ export class AgentOrchestratorService {
       lowerRequest.includes('current mode')
     ) {
       const mode = this.modeService.getCurrentMode(context.userId);
-      const remaining = this.modeService.getActionModeRemainingTime(context.userId);
-      
-      const modeLabel = mode.type === 'action' ? 'Aktions-Modus' : 'Erklär-Modus';
+      const remaining = this.modeService.getActionModeRemainingTime(
+        context.userId,
+      );
+
+      const modeLabel =
+        mode.type === 'action' ? 'Aktions-Modus' : 'Erklär-Modus';
       let message = `**Aktueller Modus: ${modeLabel}**\n\n`;
-      
+
       if (mode.type === 'action' && remaining) {
         message += `Verbleibende Zeit: ${Math.floor(remaining / 60)} Minuten`;
       } else {
-        message += 'Im Erklär-Modus haben Sie nur Lesezugriff. Aktionen erfordern die Aktivierung des Aktions-Modus.';
+        message +=
+          'Im Erklär-Modus haben Sie nur Lesezugriff. Aktionen erfordern die Aktivierung des Aktions-Modus.';
       }
-      
+
       return {
         success: true,
         message,
@@ -220,7 +238,7 @@ export class AgentOrchestratorService {
   ): Promise<Intent> {
     // Get list of available tools
     const toolDescriptions = Array.from(this.tools.values())
-      .map(t => `- ${t.name}: ${t.description} (Modus: ${t.requiredMode})`)
+      .map((t) => `- ${t.name}: ${t.description} (Modus: ${t.requiredMode})`)
       .join('\n');
 
     const prompt = `Analysiere die folgende Benutzeranfrage und bestimme:
@@ -244,7 +262,7 @@ Antworte im JSON-Format:
 
     try {
       const response = await this.gemini.complete(prompt);
-      
+
       // Parse JSON from response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -290,11 +308,13 @@ Beantworte Fragen klar und präzise. Verweise auf HGB-Paragraphen wo relevant.`;
       success: true,
       message: response,
       disclaimer: getDisclaimer(context),
-      provenance: [{
-        type: 'ai_inference',
-        source: 'Gemini AI',
-        description: 'Antwort basiert auf AI-Analyse',
-      }],
+      provenance: [
+        {
+          type: 'ai_inference',
+          source: 'Gemini AI',
+          description: 'Antwort basiert auf AI-Analyse',
+        },
+      ],
     };
   }
 
@@ -309,15 +329,16 @@ Beantworte Fragen klar und präzise. Verweise auf HGB-Paragraphen wo relevant.`;
     if (isBatch && 'total' in result) {
       // Batch result
       const batchResult = result as BatchResult;
-      
+
       // Merge quality indicators from all results
       const qualities = batchResult.results
-        .filter(r => r.quality)
-        .map(r => r.quality);
-      
-      const mergedQuality = qualities.length > 0
-        ? this.reasoningService.mergeQualityIndicators(qualities)
-        : undefined;
+        .filter((r) => r.quality)
+        .map((r) => r.quality);
+
+      const mergedQuality =
+        qualities.length > 0
+          ? this.reasoningService.mergeQualityIndicators(qualities)
+          : undefined;
 
       return {
         success: batchResult.succeeded > 0,
@@ -339,7 +360,8 @@ Beantworte Fragen klar und präzise. Verweise auf HGB-Paragraphen wo relevant.`;
       provenance: toolResult.provenance,
       suggestedAction: toolResult.suggestedAction,
       overrideOptions: toolResult.overrideOptions,
-      disclaimer: toolResult.disclaimer || getDisclaimer(context, toolResult.quality),
+      disclaimer:
+        toolResult.disclaimer || getDisclaimer(context, toolResult.quality),
       data: toolResult.data,
     };
   }

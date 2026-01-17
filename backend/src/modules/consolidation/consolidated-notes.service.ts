@@ -131,14 +131,28 @@ export class ConsolidatedNotesService {
     const parentCompanyId = financialStatement.company_id;
 
     // 2. Generiere alle Pflichtangaben
-    const consolidationMethods = await this.getConsolidationMethods(financialStatementId);
-    const consolidationScope = await this.getConsolidationScope(financialStatementId, parentCompanyId);
-    const goodwillBreakdown = await this.getGoodwillBreakdown(financialStatementId, parentCompanyId);
-    const minorityInterestsBreakdown = await this.getMinorityInterestsBreakdown(financialStatementId, parentCompanyId);
-    const intercompanyTransactions = await this.getIntercompanyTransactions(financialStatementId);
-    const relatedPartyTransactions = await this.getRelatedPartyTransactions(financialStatementId);
-    const accountingPolicies = await this.getAccountingPolicies(financialStatementId);
-    const significantEvents = await this.getSignificantEvents(financialStatementId);
+    const consolidationMethods =
+      await this.getConsolidationMethods(financialStatementId);
+    const consolidationScope = await this.getConsolidationScope(
+      financialStatementId,
+      parentCompanyId,
+    );
+    const goodwillBreakdown = await this.getGoodwillBreakdown(
+      financialStatementId,
+      parentCompanyId,
+    );
+    const minorityInterestsBreakdown = await this.getMinorityInterestsBreakdown(
+      financialStatementId,
+      parentCompanyId,
+    );
+    const intercompanyTransactions =
+      await this.getIntercompanyTransactions(financialStatementId);
+    const relatedPartyTransactions =
+      await this.getRelatedPartyTransactions(financialStatementId);
+    const accountingPolicies =
+      await this.getAccountingPolicies(financialStatementId);
+    const significantEvents =
+      await this.getSignificantEvents(financialStatementId);
 
     return {
       financialStatementId,
@@ -191,14 +205,17 @@ export class ConsolidatedNotesService {
     parentCompanyId: string,
   ): Promise<ConsolidationScope> {
     // Bestimme Konsolidierungskreis
-    const consolidationCircle = await this.dependencyService.determineConsolidationCircle(
-      parentCompanyId,
-    );
+    const consolidationCircle =
+      await this.dependencyService.determineConsolidationCircle(
+        parentCompanyId,
+      );
 
     // Lade Beteiligungen
     const { data: participations } = await this.supabase
       .from('participations')
-      .select('*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)')
+      .select(
+        '*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)',
+      )
       .eq('parent_company_id', parentCompanyId);
 
     const subsidiaries = (participations || []).map((p) => ({
@@ -215,7 +232,10 @@ export class ConsolidatedNotesService {
     const { data: obligationChecks } = await this.supabase
       .from('consolidation_obligation_checks')
       .select('company_id, exceptions')
-      .in('company_id', subsidiaries.map((s) => s.id));
+      .in(
+        'company_id',
+        subsidiaries.map((s) => s.id),
+      );
 
     const excludedCompanies = (obligationChecks || [])
       .filter((check) => check.exceptions && check.exceptions.length > 0)
@@ -266,19 +286,23 @@ export class ConsolidatedNotesService {
     // Lade Beteiligungen mit Details
     const { data: participations } = await this.supabase
       .from('participations')
-      .select('*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)')
+      .select(
+        '*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)',
+      )
       .eq('parent_company_id', parentCompanyId);
 
     // Vereinfacht: Goodwill wird aus Summary berechnet
     // In Produktion sollte dies pro Beteiligung aufgeschlüsselt werden
     const totalGoodwill = capitalResult.summary.goodwillAmount;
     const totalNegativeGoodwill = capitalResult.summary.negativeGoodwillAmount;
-    const goodwillPerParticipation = participations && participations.length > 0
-      ? totalGoodwill / participations.length
-      : 0;
-    const negativeGoodwillPerParticipation = participations && participations.length > 0
-      ? totalNegativeGoodwill / participations.length
-      : 0;
+    const goodwillPerParticipation =
+      participations && participations.length > 0
+        ? totalGoodwill / participations.length
+        : 0;
+    const negativeGoodwillPerParticipation =
+      participations && participations.length > 0
+        ? totalNegativeGoodwill / participations.length
+        : 0;
 
     const breakdown = (participations || []).map((p) => ({
       subsidiaryCompanyId: p.subsidiary_company_id,
@@ -327,17 +351,23 @@ export class ConsolidatedNotesService {
     // Lade Beteiligungen
     const { data: participations } = await this.supabase
       .from('participations')
-      .select('*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)')
+      .select(
+        '*, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)',
+      )
       .eq('parent_company_id', parentCompanyId);
 
     // Vereinfacht: Minderheitsanteile werden aus Summary berechnet
-    const totalMinorityInterests = capitalResult.summary.minorityInterestsAmount;
-    const minorityPerParticipation = participations && participations.length > 0
-      ? totalMinorityInterests / participations.length
-      : 0;
+    const totalMinorityInterests =
+      capitalResult.summary.minorityInterestsAmount;
+    const minorityPerParticipation =
+      participations && participations.length > 0
+        ? totalMinorityInterests / participations.length
+        : 0;
 
     const breakdown = (participations || []).map((p) => {
-      const participationPercentage = parseFloat(p.participation_percentage || '0');
+      const participationPercentage = parseFloat(
+        p.participation_percentage || '0',
+      );
       const minorityPercentage = 100 - participationPercentage;
 
       return {
@@ -365,9 +395,10 @@ export class ConsolidatedNotesService {
     financialStatementId: string,
   ): Promise<IntercompanyTransactionNote[]> {
     // Erkenne Zwischengesellschaftsgeschäfte
-    const detectionResult = await this.intercompanyService.detectIntercompanyTransactions(
-      financialStatementId,
-    );
+    const detectionResult =
+      await this.intercompanyService.detectIntercompanyTransactions(
+        financialStatementId,
+      );
 
     // Gruppiere nach Typ
     const transactionsByType = new Map<string, IntercompanyTransactionNote>();
@@ -405,7 +436,8 @@ export class ConsolidatedNotesService {
   ): Promise<RelatedPartyTransaction[]> {
     // Vereinfacht: Nutze Zwischengesellschaftsgeschäfte
     // In Produktion sollten hier auch andere verbundene Unternehmen berücksichtigt werden
-    const intercompanyTransactions = await this.getIntercompanyTransactions(financialStatementId);
+    const intercompanyTransactions =
+      await this.getIntercompanyTransactions(financialStatementId);
 
     return intercompanyTransactions.flatMap((t) =>
       t.companies.map((c) => ({
@@ -458,7 +490,9 @@ export class ConsolidatedNotesService {
     // Prüfe auf neue Beteiligungen
     const { data: participations } = await this.supabase
       .from('participations')
-      .select('acquisition_date, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)')
+      .select(
+        'acquisition_date, subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)',
+      )
       .gte('acquisition_date', new Date().getFullYear() - 1 + '-01-01');
 
     if (participations && participations.length > 0) {

@@ -1,4 +1,12 @@
-import { IsUUID, IsNumber, IsOptional, IsString, IsBoolean, IsDateString, IsEnum } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateParticipationDto {
   @IsUUID()
@@ -97,10 +105,23 @@ export class UpdateParticipationDto {
   disposalProceeds?: number;
 }
 
-export type OwnershipChangeType = 'initial' | 'increase' | 'decrease' | 'full_sale' | 'merger' | 'demerger';
+export type OwnershipChangeType =
+  | 'initial'
+  | 'increase'
+  | 'decrease'
+  | 'full_sale'
+  | 'merger'
+  | 'demerger';
 
 export class RecordOwnershipChangeDto {
-  @IsEnum(['initial', 'increase', 'decrease', 'full_sale', 'merger', 'demerger'])
+  @IsEnum([
+    'initial',
+    'increase',
+    'decrease',
+    'full_sale',
+    'merger',
+    'demerger',
+  ])
   changeType: OwnershipChangeType;
 
   @IsDateString()

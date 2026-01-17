@@ -1,8 +1,21 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 
-export type AdjustmentMethod = 'pro_rata' | 'interim_statement' | 'estimate' | 'none';
-export type AdjustmentStatus = 'pending' | 'in_progress' | 'completed' | 'approved' | 'rejected';
+export type AdjustmentMethod =
+  | 'pro_rata'
+  | 'interim_statement'
+  | 'estimate'
+  | 'none';
+export type AdjustmentStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'approved'
+  | 'rejected';
 
 export interface FiscalYearAdjustment {
   id: string;
@@ -85,17 +98,24 @@ export class FiscalYearAdjustmentService {
     let message = '';
 
     if (!requiresAdjustment) {
-      message = 'Keine Stichtagsverschiebung erforderlich - Stichtage sind identisch';
+      message =
+        'Keine Stichtagsverschiebung erforderlich - Stichtage sind identisch';
     } else if (hgbCompliant) {
       message = `Stichtagsverschiebung von ${diffDays} Tagen (${diffMonths} Monate) ist HGB-konform`;
-      recommendations.push('Zeitanteilige Anpassung (pro rata temporis) empfohlen');
+      recommendations.push(
+        'Zeitanteilige Anpassung (pro rata temporis) empfohlen',
+      );
       if (diffMonths <= 1) {
-        recommendations.push('Bei geringer Abweichung kann auf Anpassung verzichtet werden, wenn keine wesentlichen Ereignisse vorliegen');
+        recommendations.push(
+          'Bei geringer Abweichung kann auf Anpassung verzichtet werden, wenn keine wesentlichen Ereignisse vorliegen',
+        );
       }
     } else {
       message = `Stichtagsverschiebung von ${diffMonths} Monaten überschreitet die 3-Monate-Grenze nach § 299 Abs. 2 HGB`;
       recommendations.push('Zwischenabschluss erforderlich');
-      recommendations.push('Alternativ: Anpassung des Geschäftsjahres der Tochtergesellschaft');
+      recommendations.push(
+        'Alternativ: Anpassung des Geschäftsjahres der Tochtergesellschaft',
+      );
     }
 
     return {
@@ -117,10 +137,14 @@ export class FiscalYearAdjustmentService {
     const groupDate = new Date(dto.groupReportingDate);
 
     // Validate first
-    const validation = await this.validateDateDifference(subsidiaryDate, groupDate);
+    const validation = await this.validateDateDifference(
+      subsidiaryDate,
+      groupDate,
+    );
 
     const diffMonths = Math.round(
-      Math.abs(groupDate.getTime() - subsidiaryDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+      Math.abs(groupDate.getTime() - subsidiaryDate.getTime()) /
+        (1000 * 60 * 60 * 24 * 30.44),
     );
 
     const { data, error } = await this.supabase
@@ -142,7 +166,9 @@ export class FiscalYearAdjustmentService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Stichtagsverschiebung konnte nicht erstellt werden: ${error.message}`);
+      throw new BadRequestException(
+        `Stichtagsverschiebung konnte nicht erstellt werden: ${error.message}`,
+      );
     }
 
     return this.mapToAdjustment(data);
@@ -159,7 +185,9 @@ export class FiscalYearAdjustmentService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Stichtagsverschiebungen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Stichtagsverschiebungen: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapToAdjustment);
@@ -168,15 +196,21 @@ export class FiscalYearAdjustmentService {
   /**
    * Get all adjustments for a financial statement
    */
-  async getByFinancialStatement(financialStatementId: string): Promise<FiscalYearAdjustment[]> {
+  async getByFinancialStatement(
+    financialStatementId: string,
+  ): Promise<FiscalYearAdjustment[]> {
     const { data, error } = await this.supabase
       .from('fiscal_year_adjustments')
       .select('*, companies(name)')
-      .or(`financial_statement_id.eq.${financialStatementId},group_financial_statement_id.eq.${financialStatementId}`)
+      .or(
+        `financial_statement_id.eq.${financialStatementId},group_financial_statement_id.eq.${financialStatementId}`,
+      )
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Stichtagsverschiebungen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Stichtagsverschiebungen: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapToAdjustment);
@@ -193,7 +227,9 @@ export class FiscalYearAdjustmentService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException(`Stichtagsverschiebung mit ID ${id} nicht gefunden`);
+      throw new NotFoundException(
+        `Stichtagsverschiebung mit ID ${id} nicht gefunden`,
+      );
     }
 
     return this.mapToAdjustment(data);
@@ -202,15 +238,22 @@ export class FiscalYearAdjustmentService {
   /**
    * Update an adjustment
    */
-  async update(id: string, dto: UpdateAdjustmentDto): Promise<FiscalYearAdjustment> {
+  async update(
+    id: string,
+    dto: UpdateAdjustmentDto,
+  ): Promise<FiscalYearAdjustment> {
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
 
-    if (dto.adjustmentMethod !== undefined) updateData.adjustment_method = dto.adjustmentMethod;
-    if (dto.justification !== undefined) updateData.justification = dto.justification;
-    if (dto.adjustmentEntries !== undefined) updateData.adjustment_entries = dto.adjustmentEntries;
-    if (dto.significantEvents !== undefined) updateData.significant_events = dto.significantEvents;
+    if (dto.adjustmentMethod !== undefined)
+      updateData.adjustment_method = dto.adjustmentMethod;
+    if (dto.justification !== undefined)
+      updateData.justification = dto.justification;
+    if (dto.adjustmentEntries !== undefined)
+      updateData.adjustment_entries = dto.adjustmentEntries;
+    if (dto.significantEvents !== undefined)
+      updateData.significant_events = dto.significantEvents;
     if (dto.status !== undefined) updateData.status = dto.status;
 
     const { data, error } = await this.supabase
@@ -221,7 +264,9 @@ export class FiscalYearAdjustmentService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Stichtagsverschiebung konnte nicht aktualisiert werden: ${error.message}`);
+      throw new BadRequestException(
+        `Stichtagsverschiebung konnte nicht aktualisiert werden: ${error.message}`,
+      );
     }
 
     return this.mapToAdjustment(data);
@@ -230,7 +275,10 @@ export class FiscalYearAdjustmentService {
   /**
    * Approve an adjustment
    */
-  async approve(id: string, approvedByUserId: string): Promise<FiscalYearAdjustment> {
+  async approve(
+    id: string,
+    approvedByUserId: string,
+  ): Promise<FiscalYearAdjustment> {
     const { data, error } = await this.supabase
       .from('fiscal_year_adjustments')
       .update({
@@ -244,7 +292,9 @@ export class FiscalYearAdjustmentService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Stichtagsverschiebung konnte nicht freigegeben werden: ${error.message}`);
+      throw new BadRequestException(
+        `Stichtagsverschiebung konnte nicht freigegeben werden: ${error.message}`,
+      );
     }
 
     return this.mapToAdjustment(data);
@@ -258,7 +308,7 @@ export class FiscalYearAdjustmentService {
     financialStatementId: string,
   ): Promise<any[]> {
     const adjustment = await this.getById(adjustmentId);
-    
+
     // Get account balances for the subsidiary
     const { data: balances, error } = await this.supabase
       .from('account_balances')
@@ -266,7 +316,9 @@ export class FiscalYearAdjustmentService {
       .eq('financial_statement_id', financialStatementId);
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Kontostände: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Kontostände: ${error.message}`,
+      );
     }
 
     const diffDays = adjustment.differenceDays;
@@ -277,9 +329,12 @@ export class FiscalYearAdjustmentService {
 
     for (const balance of balances || []) {
       const account = balance.accounts;
-      
+
       // Only adjust income statement accounts (revenue/expense)
-      if (account?.account_type === 'revenue' || account?.account_type === 'expense') {
+      if (
+        account?.account_type === 'revenue' ||
+        account?.account_type === 'expense'
+      ) {
         const originalAmount = parseFloat(balance.balance || '0');
         const adjustedAmount = originalAmount * proRataFactor;
 
@@ -320,7 +375,9 @@ export class FiscalYearAdjustmentService {
       .eq('is_consolidated', true);
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Laden der Unternehmen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Laden der Unternehmen: ${error.message}`,
+      );
     }
 
     const results: { company: any; validation: ValidationResult }[] = [];
@@ -329,10 +386,16 @@ export class FiscalYearAdjustmentService {
     for (const company of companies || []) {
       // Calculate subsidiary fiscal year end based on fiscal_year_end_month
       const fiscalYearEndMonth = company.fiscal_year_end_month || 12;
-      const subsidiaryDate = new Date(groupDate.getFullYear(), fiscalYearEndMonth - 1, 
-        new Date(groupDate.getFullYear(), fiscalYearEndMonth, 0).getDate());
+      const subsidiaryDate = new Date(
+        groupDate.getFullYear(),
+        fiscalYearEndMonth - 1,
+        new Date(groupDate.getFullYear(), fiscalYearEndMonth, 0).getDate(),
+      );
 
-      const validation = await this.validateDateDifference(subsidiaryDate, groupDate);
+      const validation = await this.validateDateDifference(
+        subsidiaryDate,
+        groupDate,
+      );
 
       results.push({
         company: {
@@ -358,7 +421,9 @@ export class FiscalYearAdjustmentService {
       .eq('id', id);
 
     if (error) {
-      throw new BadRequestException(`Stichtagsverschiebung konnte nicht gelöscht werden: ${error.message}`);
+      throw new BadRequestException(
+        `Stichtagsverschiebung konnte nicht gelöscht werden: ${error.message}`,
+      );
     }
   }
 

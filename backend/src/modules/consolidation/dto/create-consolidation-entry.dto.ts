@@ -1,9 +1,16 @@
-import { IsUUID, IsEnum, IsNumber, IsOptional, IsString, IsArray } from 'class-validator';
-import { 
-  AdjustmentType, 
-  EntryStatus, 
-  EntrySource, 
-  HgbReference 
+import {
+  IsUUID,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsArray,
+} from 'class-validator';
+import {
+  AdjustmentType,
+  EntryStatus,
+  EntrySource,
+  HgbReference,
 } from '../../../entities/consolidation-entry.entity';
 
 export class CreateConsolidationEntryDto {

@@ -54,7 +54,12 @@ export class AccountingPolicy {
   category: PolicyCategory;
 
   // HGB Reference
-  @Column({ type: 'varchar', length: 100, name: 'hgb_reference', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'hgb_reference',
+    nullable: true,
+  })
   hgbReference: string | null;
 
   @Column({ type: 'text', name: 'hgb_section', nullable: true })
@@ -103,10 +108,18 @@ export class AccountingPolicy {
   @Column({ type: 'uuid', name: 'created_by_user_id', nullable: true })
   createdByUserId: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
 
@@ -138,7 +151,11 @@ export class PolicyVersion {
   @Column({ type: 'uuid', name: 'changed_by_user_id', nullable: true })
   changedByUserId: string | null;
 
-  @Column({ type: 'timestamp', name: 'changed_at', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamp',
+    name: 'changed_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   changedAt: Date;
 
   @Column({ type: 'uuid', name: 'approved_by_user_id', nullable: true })

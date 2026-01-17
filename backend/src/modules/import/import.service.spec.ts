@@ -79,9 +79,9 @@ describe('ImportService', () => {
 
       mockFinancialStatementRepo.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.importExcel(mockFile, importDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.importExcel(mockFile, importDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should process Excel file successfully', async () => {
@@ -100,7 +100,9 @@ describe('ImportService', () => {
         companyId: 'company-id',
       };
 
-      mockFinancialStatementRepo.findOne.mockResolvedValue(mockFinancialStatement);
+      mockFinancialStatementRepo.findOne.mockResolvedValue(
+        mockFinancialStatement,
+      );
       mockAccountRepo.findOne.mockResolvedValue({
         id: 'account-id',
         accountNumber: '1000',

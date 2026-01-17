@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { IntercompanyTransactionService, TransactionType } from './intercompany-transaction.service';
-import { ConsolidationEntry, AdjustmentType } from '../../entities/consolidation-entry.entity';
+import {
+  IntercompanyTransactionService,
+  TransactionType,
+} from './intercompany-transaction.service';
+import {
+  ConsolidationEntry,
+  AdjustmentType,
+} from '../../entities/consolidation-entry.entity';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 
 export interface DebtConsolidationResult {
@@ -40,19 +46,21 @@ export class DebtConsolidationService {
     const missingInfo: string[] = [];
 
     // 1. Erkenne alle Zwischengesellschaftsgeschäfte
-    const detectionResult = await this.intercompanyService.detectIntercompanyTransactions(
-      financialStatementId,
-    );
+    const detectionResult =
+      await this.intercompanyService.detectIntercompanyTransactions(
+        financialStatementId,
+      );
 
     if (detectionResult.missingInfo.length > 0) {
       missingInfo.push(...detectionResult.missingInfo);
     }
 
     // 2. Forderungen und Verbindlichkeiten verrechnen
-    const receivablesPayablesResult = await this.consolidateReceivablesAndPayables(
-      financialStatementId,
-      detectionResult.transactions,
-    );
+    const receivablesPayablesResult =
+      await this.consolidateReceivablesAndPayables(
+        financialStatementId,
+        detectionResult.transactions,
+      );
     entries.push(...receivablesPayablesResult.entries);
     if (receivablesPayablesResult.missingInfo.length > 0) {
       missingInfo.push(...receivablesPayablesResult.missingInfo);
@@ -84,13 +92,19 @@ export class DebtConsolidationService {
 
     // Zusammenfassung
     const summary = {
-      totalEliminated: entries.reduce((sum, e) => sum + Math.abs(Number(e.amount)), 0),
-      receivablesEliminated: receivablesPayablesResult.summary.receivablesEliminated,
+      totalEliminated: entries.reduce(
+        (sum, e) => sum + Math.abs(Number(e.amount)),
+        0,
+      ),
+      receivablesEliminated:
+        receivablesPayablesResult.summary.receivablesEliminated,
       payablesEliminated: receivablesPayablesResult.summary.payablesEliminated,
       loansEliminated: loansResult.summary.loansEliminated,
       interestEliminated: interestResult.summary.interestEliminated,
-      otherLiabilitiesEliminated: otherLiabilitiesResult.summary.otherLiabilitiesEliminated,
-      unmatchedTransactions: receivablesPayablesResult.summary.unmatchedTransactions,
+      otherLiabilitiesEliminated:
+        otherLiabilitiesResult.summary.otherLiabilitiesEliminated,
+      unmatchedTransactions:
+        receivablesPayablesResult.summary.unmatchedTransactions,
       missingInfo,
     };
 
@@ -117,9 +131,8 @@ export class DebtConsolidationService {
     const missingInfo: string[] = [];
 
     // Führe Matching durch
-    const matchingResult = await this.intercompanyService.matchReceivablesAndPayables(
-      transactions,
-    );
+    const matchingResult =
+      await this.intercompanyService.matchReceivablesAndPayables(transactions);
 
     let receivablesEliminated = 0;
     let payablesEliminated = 0;
@@ -267,10 +280,14 @@ export class DebtConsolidationService {
       )
       .eq('is_intercompany', true)
       .in('financial_statements.company_id', companyIds)
-      .or('accounts.name.ilike.%zins%,accounts.name.ilike.%interest%,accounts.account_number.like.7%');
+      .or(
+        'accounts.name.ilike.%zins%,accounts.name.ilike.%interest%,accounts.account_number.like.7%',
+      );
 
     if (error) {
-      missingInfo.push(`Fehler beim Abrufen der Zins-Positionen: ${error.message}`);
+      missingInfo.push(
+        `Fehler beim Abrufen der Zins-Positionen: ${error.message}`,
+      );
       return { entries, summary: { interestEliminated }, missingInfo };
     }
 
@@ -309,7 +326,12 @@ export class DebtConsolidationService {
             interestMap.set(reverseKey, { receivable: null, payable: null });
           }
           const pair = interestMap.get(reverseKey)!;
-          pair.payable = { balance, account, fs, amount: Math.abs(balanceValue) };
+          pair.payable = {
+            balance,
+            account,
+            fs,
+            amount: Math.abs(balanceValue),
+          };
         }
       }
     }
@@ -317,7 +339,10 @@ export class DebtConsolidationService {
     // Eliminiere gematchte Zinsforderungen und -verbindlichkeiten
     for (const [key, pair] of interestMap.entries()) {
       if (pair.receivable && pair.payable) {
-        const matchedAmount = Math.min(pair.receivable.amount, pair.payable.amount);
+        const matchedAmount = Math.min(
+          pair.receivable.amount,
+          pair.payable.amount,
+        );
 
         // Eliminiere Zinsforderung
         const { data: recEntry, error: recError } = await this.supabase

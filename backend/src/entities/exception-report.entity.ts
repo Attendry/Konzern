@@ -115,7 +115,13 @@ export class ExceptionReport {
   status: ExceptionStatus;
 
   // Impact
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'impact_amount', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    name: 'impact_amount',
+    nullable: true,
+  })
   impactAmount: number | null;
 
   @Column({ type: 'text', name: 'impact_description', nullable: true })
@@ -141,7 +147,12 @@ export class ExceptionReport {
   @Column({ type: 'text', nullable: true })
   resolution: string | null;
 
-  @Column({ type: 'varchar', length: 50, name: 'resolution_type', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    name: 'resolution_type',
+    nullable: true,
+  })
   resolutionType: string | null;
 
   @Column({ type: 'timestamp', name: 'resolved_at', nullable: true })
@@ -169,12 +180,25 @@ export class ExceptionReport {
   dueDate: Date | null;
 
   // HGB Reference
-  @Column({ type: 'varchar', length: 100, name: 'hgb_reference', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'hgb_reference',
+    nullable: true,
+  })
   hgbReference: string | null;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }

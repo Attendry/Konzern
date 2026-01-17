@@ -35,7 +35,7 @@ export class PlausibilityCheckTool implements AgentTool {
 
   name = 'explain_plausibility_check';
   description = 'Erklärt Plausibilitätsprüfungen und schlägt Korrekturen vor';
-  
+
   parameters: ToolParameter[] = [
     {
       name: 'check_id',
@@ -87,7 +87,9 @@ export class PlausibilityCheckTool implements AgentTool {
     }
 
     if (!checkId) {
-      return this.createErrorResult('Keine Prüfungs-ID oder Abschluss-ID angegeben');
+      return this.createErrorResult(
+        'Keine Prüfungs-ID oder Abschluss-ID angegeben',
+      );
     }
 
     try {
@@ -112,8 +114,11 @@ export class PlausibilityCheckTool implements AgentTool {
       const quality = this.buildQualityIndicators(data, analysis);
 
       // 5. Get provenance
-      const provenanceInfo = await this.provenance.buildPlausibilityCheckProvenance(checkId);
-      provenanceInfo.push(this.provenance.createAIProvenance('Gemini', 'AI-gestützte Analyse'));
+      const provenanceInfo =
+        await this.provenance.buildPlausibilityCheckProvenance(checkId);
+      provenanceInfo.push(
+        this.provenance.createAIProvenance('Gemini', 'AI-gestützte Analyse'),
+      );
 
       // 6. Format message
       const message = this.formatCheckMessage(data, analysis);
@@ -136,7 +141,6 @@ export class PlausibilityCheckTool implements AgentTool {
         disclaimer: DISCLAIMERS.general,
         suggestedAction: this.getSuggestedAction(data, analysis, context),
       };
-
     } catch (error: any) {
       this.logger.error(`Check analysis failed: ${error.message}`);
       return this.createErrorResult(`Analyse fehlgeschlagen: ${error.message}`);
@@ -212,9 +216,9 @@ export class PlausibilityCheckTool implements AgentTool {
       return this.createErrorResult('Keine Prüfungen gefunden');
     }
 
-    const passed = checks.filter(c => c.result === 'PASS');
-    const failed = checks.filter(c => c.result === 'FAIL');
-    const warnings = checks.filter(c => c.result === 'WARNING');
+    const passed = checks.filter((c) => c.result === 'PASS');
+    const failed = checks.filter((c) => c.result === 'FAIL');
+    const warnings = checks.filter((c) => c.result === 'WARNING');
 
     const message = this.formatSummaryMessage(checks, passed, failed, warnings);
 
@@ -225,7 +229,11 @@ export class PlausibilityCheckTool implements AgentTool {
         passed: passed.length,
         failed: failed.length,
         warnings: warnings.length,
-        failedChecks: failed.map(c => ({ id: c.id, type: c.check_type, message: c.message })),
+        failedChecks: failed.map((c) => ({
+          id: c.id,
+          type: c.check_type,
+          message: c.message,
+        })),
       },
       message,
       reasoning: {
@@ -234,19 +242,24 @@ export class PlausibilityCheckTool implements AgentTool {
             observation: `${checks.length} Plausibilitätsprüfungen analysiert`,
             inference: `${passed.length} bestanden, ${failed.length} fehlgeschlagen, ${warnings.length} Warnungen`,
             confidence: 1.0,
-            dataPoints: checks.slice(0, 5).map(c => c.id),
+            dataPoints: checks.slice(0, 5).map((c) => c.id),
           },
         ],
-        conclusion: failed.length === 0 
-          ? 'Alle Prüfungen bestanden'
-          : `${failed.length} Prüfung(en) erfordern Aufmerksamkeit`,
+        conclusion:
+          failed.length === 0
+            ? 'Alle Prüfungen bestanden'
+            : `${failed.length} Prüfung(en) erfordern Aufmerksamkeit`,
         showAlternativesProminent: false,
       },
       quality: this.reasoning.buildQualityIndicators(
         { percentage: 100 },
         failed.length === 0,
-        { dataQuality: 1.0, patternMatch: 0.9, ruleMatch: passed.length / checks.length },
-        failed.map(f => f.check_type),
+        {
+          dataQuality: 1.0,
+          patternMatch: 0.9,
+          ruleMatch: passed.length / checks.length,
+        },
+        failed.map((f) => f.check_type),
         undefined,
       ),
       provenance: [
@@ -257,20 +270,23 @@ export class PlausibilityCheckTool implements AgentTool {
         ),
       ],
       disclaimer: DISCLAIMERS.general,
-      suggestedAction: failed.length > 0
-        ? {
-            type: 'view_details',
-            label: `${failed.length} fehlgeschlagene Prüfungen anzeigen`,
-            payload: { checkIds: failed.map(c => c.id) },
-          }
-        : undefined,
+      suggestedAction:
+        failed.length > 0
+          ? {
+              type: 'view_details',
+              label: `${failed.length} fehlgeschlagene Prüfungen anzeigen`,
+              payload: { checkIds: failed.map((c) => c.id) },
+            }
+          : undefined,
     };
   }
 
   /**
    * Fetch check data
    */
-  private async fetchCheckData(checkId: string): Promise<PlausibilityCheckData> {
+  private async fetchCheckData(
+    checkId: string,
+  ): Promise<PlausibilityCheckData> {
     const client = this.supabase.getClient();
 
     const { data: check } = await client
@@ -335,7 +351,7 @@ export class PlausibilityCheckTool implements AgentTool {
         explanation = aiAnalysis.explanation;
         suggestedFix = aiAnalysis.suggestedFix;
         confidence = aiAnalysis.confidence;
-        
+
         if (aiAnalysis.alternatives) {
           alternatives.push(...aiAnalysis.alternatives);
         }
@@ -359,7 +375,7 @@ export class PlausibilityCheckTool implements AgentTool {
     alternatives?: AlternativeInterpretation[];
   }> {
     const check = data.check;
-    
+
     const prompt = `Als Wirtschaftsprüfer erkläre diese fehlgeschlagene Plausibilitätsprüfung:
 
 Prüfungstyp: ${check.check_type}
@@ -378,13 +394,22 @@ KONFIDENZ: [0-100]`;
 
     const response = await this.gemini.complete(prompt);
 
-    const explanationMatch = response.match(/ERKLÄRUNG:\s*(.+?)(?=\n|LÖSUNG:)/s);
+    const explanationMatch = response.match(
+      /ERKLÄRUNG:\s*(.+?)(?=\n|LÖSUNG:)/s,
+    );
     const fixMatch = response.match(/LÖSUNG:\s*(.+?)(?=\n|KONFIDENZ:)/s);
     const confidenceMatch = response.match(/KONFIDENZ:\s*(\d+)/);
 
     return {
-      explanation: explanationMatch?.[1]?.trim() || this.getCheckTypeExplanation(check.check_type, check.result, check.message),
-      suggestedFix: fixMatch?.[1]?.trim() || this.getDefaultFix(check.check_type),
+      explanation:
+        explanationMatch?.[1]?.trim() ||
+        this.getCheckTypeExplanation(
+          check.check_type,
+          check.result,
+          check.message,
+        ),
+      suggestedFix:
+        fixMatch?.[1]?.trim() || this.getDefaultFix(check.check_type),
       confidence: confidenceMatch ? parseInt(confidenceMatch[1]) / 100 : 0.75,
     };
   }
@@ -416,7 +441,9 @@ KONFIDENZ: [0-100]`;
     }
 
     if (data.historicalChecks.length > 0) {
-      const passRate = data.historicalChecks.filter(h => h.result === 'PASS').length / data.historicalChecks.length;
+      const passRate =
+        data.historicalChecks.filter((h) => h.result === 'PASS').length /
+        data.historicalChecks.length;
       steps.push({
         observation: `${data.historicalChecks.length} historische Prüfungen des gleichen Typs`,
         inference: `Erfolgsquote: ${Math.round(passRate * 100)}%`,
@@ -436,7 +463,7 @@ KONFIDENZ: [0-100]`;
     analysis: any,
   ): QualityIndicators {
     const check = data.check;
-    
+
     return this.reasoning.buildQualityIndicators(
       { percentage: 100 },
       check.result === 'PASS',
@@ -449,7 +476,9 @@ KONFIDENZ: [0-100]`;
       data.historicalChecks.length > 0
         ? {
             similarCases: data.historicalChecks.length,
-            correctPredictions: data.historicalChecks.filter(h => h.result === 'PASS').length,
+            correctPredictions: data.historicalChecks.filter(
+              (h) => h.result === 'PASS',
+            ).length,
           }
         : undefined,
     );
@@ -458,9 +487,17 @@ KONFIDENZ: [0-100]`;
   /**
    * Format check message
    */
-  private formatCheckMessage(data: PlausibilityCheckData, analysis: any): string {
+  private formatCheckMessage(
+    data: PlausibilityCheckData,
+    analysis: any,
+  ): string {
     const check = data.check;
-    const resultLabel = check.result === 'PASS' ? '[OK]' : check.result === 'WARNING' ? '[WARNUNG]' : '[FEHLER]';
+    const resultLabel =
+      check.result === 'PASS'
+        ? '[OK]'
+        : check.result === 'WARNING'
+          ? '[WARNUNG]'
+          : '[FEHLER]';
     const confidenceLabel = this.getConfidenceLabel(analysis.confidence);
 
     return `**Plausibilitätsprüfung: ${this.getCheckTypeLabel(check.check_type)}**
@@ -516,9 +553,14 @@ ${check.result !== 'PASS' ? `**Empfohlene Lösung:** ${analysis.suggestedFix}` :
     }
 
     let summary = `**Batch-Analyse: ${total} Plausibilitätsprüfungen**\n\n`;
-    
+
     for (const [result, count] of Object.entries(byResult)) {
-      const label = result === 'PASS' ? '[OK]' : result === 'WARNING' ? '[WARNUNG]' : '[FEHLER]';
+      const label =
+        result === 'PASS'
+          ? '[OK]'
+          : result === 'WARNING'
+            ? '[WARNUNG]'
+            : '[FEHLER]';
       summary += `${label} ${this.getResultLabel(result)}: ${count}\n`;
     }
 
@@ -564,7 +606,11 @@ ${check.result !== 'PASS' ? `**Empfohlene Lösung:** ${analysis.suggestedFix}` :
     }
 
     return [
-      { id: 'accept', label: 'Als korrekt akzeptieren', requiresReasoning: true },
+      {
+        id: 'accept',
+        label: 'Als korrekt akzeptieren',
+        requiresReasoning: true,
+      },
       { id: 'materiality', label: 'Unwesentlich', requiresReasoning: true },
       { id: 'will_fix', label: 'Wird korrigiert', requiresReasoning: false },
       { id: 'other', label: 'Andere Begründung', requiresReasoning: true },
@@ -574,47 +620,63 @@ ${check.result !== 'PASS' ? `**Empfohlene Lösung:** ${analysis.suggestedFix}` :
   // Helper methods
   private getCheckTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'balance': 'Bilanzgleichung',
-      'completeness': 'Vollständigkeit',
-      'consistency': 'Konsistenz',
-      'ic_elimination': 'IC-Eliminierung',
-      'minority_interest': 'Minderheitenanteile',
-      'goodwill': 'Goodwill-Prüfung',
-      'equity_movement': 'Eigenkapitalentwicklung',
+      balance: 'Bilanzgleichung',
+      completeness: 'Vollständigkeit',
+      consistency: 'Konsistenz',
+      ic_elimination: 'IC-Eliminierung',
+      minority_interest: 'Minderheitenanteile',
+      goodwill: 'Goodwill-Prüfung',
+      equity_movement: 'Eigenkapitalentwicklung',
     };
     return labels[type] || type;
   }
 
   private getResultLabel(result: string): string {
     const labels: Record<string, string> = {
-      'PASS': 'Bestanden',
-      'FAIL': 'Fehlgeschlagen',
-      'WARNING': 'Warnung',
+      PASS: 'Bestanden',
+      FAIL: 'Fehlgeschlagen',
+      WARNING: 'Warnung',
     };
     return labels[result] || result;
   }
 
-  private getCheckTypeExplanation(type: string, result: string, message: string): string {
+  private getCheckTypeExplanation(
+    type: string,
+    result: string,
+    message: string,
+  ): string {
     if (result === 'PASS') {
       return 'Die Prüfung wurde erfolgreich bestanden. Keine Auffälligkeiten festgestellt.';
     }
 
     const explanations: Record<string, string> = {
-      'balance': 'Die Bilanzgleichung (Aktiva = Passiva) ist nicht erfüllt. Dies deutet auf unvollständige oder fehlerhafte Buchungen hin.',
-      'completeness': 'Nicht alle erforderlichen Daten wurden erfasst. Prüfen Sie, ob alle Gesellschaften vollständig konsolidiert wurden.',
-      'consistency': 'Es wurden Inkonsistenzen zwischen verschiedenen Positionen festgestellt.',
-      'ic_elimination': 'Die IC-Eliminierung ist nicht vollständig. Konzerninterne Salden müssen vollständig eliminiert werden gemäß § 303 HGB.',
+      balance:
+        'Die Bilanzgleichung (Aktiva = Passiva) ist nicht erfüllt. Dies deutet auf unvollständige oder fehlerhafte Buchungen hin.',
+      completeness:
+        'Nicht alle erforderlichen Daten wurden erfasst. Prüfen Sie, ob alle Gesellschaften vollständig konsolidiert wurden.',
+      consistency:
+        'Es wurden Inkonsistenzen zwischen verschiedenen Positionen festgestellt.',
+      ic_elimination:
+        'Die IC-Eliminierung ist nicht vollständig. Konzerninterne Salden müssen vollständig eliminiert werden gemäß § 303 HGB.',
     };
 
-    return message || explanations[type] || 'Die Prüfung hat eine Auffälligkeit ergeben, die manuell untersucht werden sollte.';
+    return (
+      message ||
+      explanations[type] ||
+      'Die Prüfung hat eine Auffälligkeit ergeben, die manuell untersucht werden sollte.'
+    );
   }
 
   private getDefaultFix(type: string): string {
     const fixes: Record<string, string> = {
-      'balance': 'Überprüfen Sie alle Buchungen auf Vollständigkeit und korrigieren Sie etwaige Fehler.',
-      'completeness': 'Ergänzen Sie die fehlenden Daten und führen Sie die Prüfung erneut durch.',
-      'consistency': 'Gleichen Sie die inkonsistenten Positionen ab und korrigieren Sie die Buchungen.',
-      'ic_elimination': 'Vervollständigen Sie die IC-Eliminierungsbuchungen gemäß § 303 HGB.',
+      balance:
+        'Überprüfen Sie alle Buchungen auf Vollständigkeit und korrigieren Sie etwaige Fehler.',
+      completeness:
+        'Ergänzen Sie die fehlenden Daten und führen Sie die Prüfung erneut durch.',
+      consistency:
+        'Gleichen Sie die inkonsistenten Positionen ab und korrigieren Sie die Buchungen.',
+      ic_elimination:
+        'Vervollständigen Sie die IC-Eliminierungsbuchungen gemäß § 303 HGB.',
     };
     return fixes[type] || 'Manuelle Prüfung und Korrektur erforderlich.';
   }
@@ -622,9 +684,12 @@ ${check.result !== 'PASS' ? `**Empfohlene Lösung:** ${analysis.suggestedFix}` :
   private getConfidenceLabel(confidence: number): string {
     const level = getConfidenceLevel(confidence);
     switch (level) {
-      case 'high': return 'HOCH';
-      case 'medium': return 'MITTEL';
-      case 'low': return 'NIEDRIG';
+      case 'high':
+        return 'HOCH';
+      case 'medium':
+        return 'MITTEL';
+      case 'low':
+        return 'NIEDRIG';
     }
   }
 

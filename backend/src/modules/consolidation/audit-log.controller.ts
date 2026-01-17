@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { AuditLogService } from './audit-log.service';
 import { AuditAction, AuditEntityType } from '../../entities/audit-log.entity';
 
@@ -60,7 +55,10 @@ export class AuditLogController {
     @Param('userId') userId: string,
     @Query('limit') limit?: string,
   ) {
-    return this.auditLogService.getUserActivity(userId, limit ? parseInt(limit) : undefined);
+    return this.auditLogService.getUserActivity(
+      userId,
+      limit ? parseInt(limit) : undefined,
+    );
   }
 
   /**

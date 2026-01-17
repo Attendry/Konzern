@@ -65,7 +65,8 @@ export interface MappingSummary {
 export class GaapHgbMappingService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService: AuditLogService,
   ) {}
 
@@ -83,10 +84,12 @@ export class GaapHgbMappingService {
 
     let query = supabase
       .from('gaap_hgb_mappings')
-      .select(`
+      .select(
+        `
         *,
         policy:accounting_policies(*)
-      `)
+      `,
+      )
       .order('source_gaap', { ascending: true })
       .order('code', { ascending: true });
 
@@ -139,10 +142,12 @@ export class GaapHgbMappingService {
 
     const { data, error } = await supabase
       .from('gaap_hgb_mappings')
-      .select(`
+      .select(
+        `
         *,
         policy:accounting_policies(*)
-      `)
+      `,
+      )
       .eq('id', mappingId)
       .single();
 
@@ -263,15 +268,19 @@ export class GaapHgbMappingService {
       typeMap.set(mapping.adjustmentType, typeCount + 1);
     }
 
-    summary.bySourceGaap = Array.from(gaapMap.entries()).map(([gaap, count]) => ({
-      gaap,
-      count,
-    }));
+    summary.bySourceGaap = Array.from(gaapMap.entries()).map(
+      ([gaap, count]) => ({
+        gaap,
+        count,
+      }),
+    );
 
-    summary.byAdjustmentType = Array.from(typeMap.entries()).map(([type, count]) => ({
-      type,
-      count,
-    }));
+    summary.byAdjustmentType = Array.from(typeMap.entries()).map(
+      ([type, count]) => ({
+        type,
+        count,
+      }),
+    );
 
     return summary;
   }
@@ -290,10 +299,12 @@ export class GaapHgbMappingService {
 
     let query = supabase
       .from('gaap_adjustments')
-      .select(`
+      .select(
+        `
         *,
         mapping:gaap_hgb_mappings(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId)
       .order('created_at', { ascending: false });
 
@@ -322,10 +333,12 @@ export class GaapHgbMappingService {
 
     const { data, error } = await supabase
       .from('gaap_adjustments')
-      .select(`
+      .select(
+        `
         *,
         mapping:gaap_hgb_mappings(*)
-      `)
+      `,
+      )
       .eq('id', adjustmentId)
       .single();
 
@@ -411,7 +424,8 @@ export class GaapHgbMappingService {
     // Simple adjustment logic - can be extended based on config.type
     switch (config.type) {
       case 'percentage':
-        adjustmentAmount = sourceAmount * (Number(config.parameters?.percentage) || 0) / 100;
+        adjustmentAmount =
+          (sourceAmount * (Number(config.parameters?.percentage) || 0)) / 100;
         targetAmount = sourceAmount + adjustmentAmount;
         break;
       case 'fixed':
@@ -435,22 +449,25 @@ export class GaapHgbMappingService {
     let deferredTaxImpact = 0;
     if (mapping.affectsDeferredTax && adjustmentAmount !== 0) {
       const taxRate = Number(config.deferredTaxRate) || 30;
-      deferredTaxImpact = adjustmentAmount * taxRate / 100;
+      deferredTaxImpact = (adjustmentAmount * taxRate) / 100;
     }
 
-    return this.createAdjustment({
-      financialStatementId,
-      companyId,
-      mappingId,
-      sourceGaap: mapping.sourceGaap,
-      sourceAmount,
-      sourceAccount,
-      adjustmentAmount,
-      adjustmentDescription: `${mapping.name}: ${mapping.description}`,
-      targetAmount,
-      targetAccount: mapping.targetAccounts?.[0],
-      deferredTaxImpact,
-    }, userId);
+    return this.createAdjustment(
+      {
+        financialStatementId,
+        companyId,
+        mappingId,
+        sourceGaap: mapping.sourceGaap,
+        sourceAmount,
+        sourceAccount,
+        adjustmentAmount,
+        adjustmentDescription: `${mapping.name}: ${mapping.description}`,
+        targetAmount,
+        targetAccount: mapping.targetAccounts?.[0],
+        deferredTaxImpact,
+      },
+      userId,
+    );
   }
 
   /**
@@ -518,7 +535,9 @@ export class GaapHgbMappingService {
   /**
    * Get adjustment summary for a financial statement
    */
-  async getAdjustmentSummary(financialStatementId: string): Promise<AdjustmentSummary> {
+  async getAdjustmentSummary(
+    financialStatementId: string,
+  ): Promise<AdjustmentSummary> {
     const adjustments = await this.getAdjustments(financialStatementId);
 
     const summary: AdjustmentSummary = {
@@ -531,8 +550,14 @@ export class GaapHgbMappingService {
       byAdjustmentType: [],
     };
 
-    const gaapMap = new Map<GaapStandard, { count: number; totalAmount: number }>();
-    const typeMap = new Map<GaapAdjustmentType, { count: number; totalAmount: number }>();
+    const gaapMap = new Map<
+      GaapStandard,
+      { count: number; totalAmount: number }
+    >();
+    const typeMap = new Map<
+      GaapAdjustmentType,
+      { count: number; totalAmount: number }
+    >();
 
     for (const adjustment of adjustments) {
       if (adjustment.isReviewed) {
@@ -544,17 +569,22 @@ export class GaapHgbMappingService {
       summary.totalAdjustmentAmount += Math.abs(adjustment.adjustmentAmount);
       summary.totalDeferredTaxImpact += Math.abs(adjustment.deferredTaxImpact);
 
-      const gaapStats = gaapMap.get(adjustment.sourceGaap) || { count: 0, totalAmount: 0 };
+      const gaapStats = gaapMap.get(adjustment.sourceGaap) || {
+        count: 0,
+        totalAmount: 0,
+      };
       gaapStats.count++;
       gaapStats.totalAmount += Math.abs(adjustment.adjustmentAmount);
       gaapMap.set(adjustment.sourceGaap, gaapStats);
     }
 
-    summary.bySourceGaap = Array.from(gaapMap.entries()).map(([gaap, stats]) => ({
-      gaap,
-      count: stats.count,
-      totalAmount: stats.totalAmount,
-    }));
+    summary.bySourceGaap = Array.from(gaapMap.entries()).map(
+      ([gaap, stats]) => ({
+        gaap,
+        count: stats.count,
+        totalAmount: stats.totalAmount,
+      }),
+    );
 
     return summary;
   }

@@ -58,7 +58,7 @@ export class AuditService {
   async logInteraction(entry: AuditLogEntry): Promise<string | null> {
     try {
       const client = this.supabase.getClient();
-      
+
       const { data, error } = await client
         .from('ai_audit_log')
         .insert({
@@ -104,7 +104,7 @@ export class AuditService {
   ): Promise<boolean> {
     try {
       const client = this.supabase.getClient();
-      
+
       const { error } = await client
         .from('ai_audit_log')
         .update({
@@ -143,7 +143,7 @@ export class AuditService {
   ): Promise<void> {
     try {
       const client = this.supabase.getClient();
-      
+
       // Get the original audit log entry
       const { data: auditEntry } = await client
         .from('ai_audit_log')
@@ -153,16 +153,14 @@ export class AuditService {
 
       if (!auditEntry) return;
 
-      await client
-        .from('ai_override_log')
-        .insert({
-          ai_audit_log_id: auditLogId,
-          ai_recommendation: auditEntry.ai_recommendation,
-          ai_confidence: auditEntry.ai_confidence,
-          wp_decision: decision,
-          wp_reasoning: reasoning || 'Keine Begründung angegeben',
-          wp_user_id: auditEntry.user_id,
-        });
+      await client.from('ai_override_log').insert({
+        ai_audit_log_id: auditLogId,
+        ai_recommendation: auditEntry.ai_recommendation,
+        ai_confidence: auditEntry.ai_confidence,
+        wp_decision: decision,
+        wp_reasoning: reasoning || 'Keine Begründung angegeben',
+        wp_user_id: auditEntry.user_id,
+      });
     } catch (err: any) {
       this.logger.error(`Exception logging override: ${err.message}`);
     }
@@ -174,7 +172,7 @@ export class AuditService {
   async getAuditLog(filter: AuditLogFilter): Promise<AuditLogEntry[]> {
     try {
       const client = this.supabase.getClient();
-      
+
       let query = client
         .from('ai_audit_log')
         .select('*')
@@ -209,10 +207,13 @@ export class AuditService {
   /**
    * Get override log entries
    */
-  async getOverrideLog(filter: { startDate: Date; endDate: Date }): Promise<OverrideRecord[]> {
+  async getOverrideLog(filter: {
+    startDate: Date;
+    endDate: Date;
+  }): Promise<OverrideRecord[]> {
     try {
       const client = this.supabase.getClient();
-      
+
       const { data, error } = await client
         .from('ai_override_log')
         .select('*')
@@ -225,7 +226,7 @@ export class AuditService {
         return [];
       }
 
-      return (data || []).map(row => ({
+      return (data || []).map((row) => ({
         id: row.id,
         aiRecommendationId: row.ai_audit_log_id,
         originalRecommendation: row.ai_recommendation,
@@ -246,10 +247,13 @@ export class AuditService {
   /**
    * Calculate audit statistics
    */
-  async calculateStatistics(filter: { startDate: Date; endDate: Date }): Promise<AuditStatistics> {
+  async calculateStatistics(filter: {
+    startDate: Date;
+    endDate: Date;
+  }): Promise<AuditStatistics> {
     try {
       const client = this.supabase.getClient();
-      
+
       const { data: entries, error } = await client
         .from('ai_audit_log')
         .select('*')
@@ -261,27 +265,35 @@ export class AuditService {
       }
 
       const totalInteractions = entries.length;
-      
+
       // Count by decision
       const byDecision = {
-        accept: entries.filter(e => e.user_decision === 'accept').length,
-        reject: entries.filter(e => e.user_decision === 'reject').length,
-        modify: entries.filter(e => e.user_decision === 'modify').length,
-        ignore: entries.filter(e => e.user_decision === 'ignore' || !e.user_decision).length,
+        accept: entries.filter((e) => e.user_decision === 'accept').length,
+        reject: entries.filter((e) => e.user_decision === 'reject').length,
+        modify: entries.filter((e) => e.user_decision === 'modify').length,
+        ignore: entries.filter(
+          (e) => e.user_decision === 'ignore' || !e.user_decision,
+        ).length,
       };
 
       // Count by tool
       const byTool: Record<string, number> = {};
-      entries.forEach(e => {
+      entries.forEach((e) => {
         if (e.tool_name) {
           byTool[e.tool_name] = (byTool[e.tool_name] || 0) + 1;
         }
       });
 
       // Group by user
-      const userMap = new Map<string, { interactions: number; accepts: number }>();
-      entries.forEach(e => {
-        const existing = userMap.get(e.user_id) || { interactions: 0, accepts: 0 };
+      const userMap = new Map<
+        string,
+        { interactions: number; accepts: number }
+      >();
+      entries.forEach((e) => {
+        const existing = userMap.get(e.user_id) || {
+          interactions: 0,
+          accepts: 0,
+        };
         existing.interactions++;
         if (e.user_decision === 'accept') existing.accepts++;
         userMap.set(e.user_id, existing);
@@ -291,25 +303,28 @@ export class AuditService {
         userId,
         userName: userId, // Would need to join with users table for name
         interactions: data.interactions,
-        acceptRate: data.interactions > 0 ? data.accepts / data.interactions : 0,
+        acceptRate:
+          data.interactions > 0 ? data.accepts / data.interactions : 0,
       }));
 
       // Calculate averages
       const confidences = entries
-        .filter(e => e.ai_confidence != null)
-        .map(e => e.ai_confidence);
-      const averageConfidence = confidences.length > 0
-        ? confidences.reduce((a, b) => a + b, 0) / confidences.length
-        : 0;
+        .filter((e) => e.ai_confidence != null)
+        .map((e) => e.ai_confidence);
+      const averageConfidence =
+        confidences.length > 0
+          ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+          : 0;
 
       // Override rate
-      const overrideRate = totalInteractions > 0
-        ? (byDecision.reject + byDecision.modify) / totalInteractions
-        : 0;
+      const overrideRate =
+        totalInteractions > 0
+          ? (byDecision.reject + byDecision.modify) / totalInteractions
+          : 0;
 
       // Low confidence interactions
       const lowConfidenceInteractions = entries.filter(
-        e => e.ai_confidence != null && e.ai_confidence < 0.65
+        (e) => e.ai_confidence != null && e.ai_confidence < 0.65,
       ).length;
 
       // Missing reasoning count (overrides without reasoning)
@@ -320,7 +335,8 @@ export class AuditService {
         .lte('created_at', filter.endDate.toISOString());
 
       const missingReasoningCount = (overrides || []).filter(
-        o => !o.wp_reasoning || o.wp_reasoning === 'Keine Begründung angegeben'
+        (o) =>
+          !o.wp_reasoning || o.wp_reasoning === 'Keine Begründung angegeben',
       ).length;
 
       return {
@@ -346,7 +362,10 @@ export class AuditService {
   /**
    * Get empty statistics object
    */
-  private getEmptyStatistics(filter: { startDate: Date; endDate: Date }): AuditStatistics {
+  private getEmptyStatistics(filter: {
+    startDate: Date;
+    endDate: Date;
+  }): AuditStatistics {
     return {
       period: {
         startDate: filter.startDate,
@@ -382,7 +401,9 @@ export class AuditService {
       provenance: row.provenance,
       userDecision: row.user_decision,
       userReasoning: row.user_reasoning,
-      decisionTimestamp: row.decision_timestamp ? new Date(row.decision_timestamp) : undefined,
+      decisionTimestamp: row.decision_timestamp
+        ? new Date(row.decision_timestamp)
+        : undefined,
       actionTaken: row.action_taken,
       actionResult: row.action_result,
       sessionId: row.session_id,

@@ -10,11 +10,17 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { FiscalYearAdjustmentService, CreateAdjustmentDto, UpdateAdjustmentDto } from './fiscal-year-adjustment.service';
+import {
+  FiscalYearAdjustmentService,
+  CreateAdjustmentDto,
+  UpdateAdjustmentDto,
+} from './fiscal-year-adjustment.service';
 
 @Controller('fiscal-year-adjustments')
 export class FiscalYearAdjustmentController {
-  constructor(private fiscalYearAdjustmentService: FiscalYearAdjustmentService) {}
+  constructor(
+    private fiscalYearAdjustmentService: FiscalYearAdjustmentService,
+  ) {}
 
   /**
    * Validate date difference
@@ -24,10 +30,11 @@ export class FiscalYearAdjustmentController {
     @Body('subsidiaryDate') subsidiaryDate: string,
     @Body('groupDate') groupDate: string,
   ) {
-    const validation = await this.fiscalYearAdjustmentService.validateDateDifference(
-      new Date(subsidiaryDate),
-      new Date(groupDate),
-    );
+    const validation =
+      await this.fiscalYearAdjustmentService.validateDateDifference(
+        new Date(subsidiaryDate),
+        new Date(groupDate),
+      );
     return { success: true, validation };
   }
 
@@ -39,10 +46,11 @@ export class FiscalYearAdjustmentController {
     @Query('parentCompanyId') parentCompanyId: string,
     @Query('groupReportingDate') groupReportingDate: string,
   ) {
-    const results = await this.fiscalYearAdjustmentService.getCompaniesWithDifferentFiscalYears(
-      parentCompanyId,
-      groupReportingDate,
-    );
+    const results =
+      await this.fiscalYearAdjustmentService.getCompaniesWithDifferentFiscalYears(
+        parentCompanyId,
+        groupReportingDate,
+      );
     return { success: true, results };
   }
 
@@ -61,7 +69,8 @@ export class FiscalYearAdjustmentController {
    */
   @Get('company/:companyId')
   async getByCompany(@Param('companyId') companyId: string) {
-    const adjustments = await this.fiscalYearAdjustmentService.getByCompany(companyId);
+    const adjustments =
+      await this.fiscalYearAdjustmentService.getByCompany(companyId);
     return { success: true, adjustments };
   }
 
@@ -69,8 +78,13 @@ export class FiscalYearAdjustmentController {
    * Get adjustments by financial statement
    */
   @Get('financial-statement/:financialStatementId')
-  async getByFinancialStatement(@Param('financialStatementId') financialStatementId: string) {
-    const adjustments = await this.fiscalYearAdjustmentService.getByFinancialStatement(financialStatementId);
+  async getByFinancialStatement(
+    @Param('financialStatementId') financialStatementId: string,
+  ) {
+    const adjustments =
+      await this.fiscalYearAdjustmentService.getByFinancialStatement(
+        financialStatementId,
+      );
     return { success: true, adjustments };
   }
 
@@ -100,7 +114,11 @@ export class FiscalYearAdjustmentController {
     @Param('id') id: string,
     @Body('financialStatementId') financialStatementId: string,
   ) {
-    const entries = await this.fiscalYearAdjustmentService.calculateProRataAdjustments(id, financialStatementId);
+    const entries =
+      await this.fiscalYearAdjustmentService.calculateProRataAdjustments(
+        id,
+        financialStatementId,
+      );
     return { success: true, entries };
   }
 
@@ -109,7 +127,10 @@ export class FiscalYearAdjustmentController {
    */
   @Post(':id/approve')
   async approve(@Param('id') id: string, @Req() req: Request) {
-    const adjustment = await this.fiscalYearAdjustmentService.approve(id, req.user?.id || 'system');
+    const adjustment = await this.fiscalYearAdjustmentService.approve(
+      id,
+      req.user?.id || 'system',
+    );
     return { success: true, adjustment };
   }
 
@@ -119,6 +140,9 @@ export class FiscalYearAdjustmentController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     await this.fiscalYearAdjustmentService.delete(id);
-    return { success: true, message: 'Stichtagsverschiebung erfolgreich gelöscht' };
+    return {
+      success: true,
+      message: 'Stichtagsverschiebung erfolgreich gelöscht',
+    };
   }
 }

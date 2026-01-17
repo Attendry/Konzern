@@ -33,7 +33,7 @@ export class RootController {
       documentation: 'All API endpoints are prefixed with /api',
     };
   }
-  
+
   @Get('health')
   health() {
     return {

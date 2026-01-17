@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
-import { 
-  ComplianceChecklist, 
-  ChecklistItemStatus, 
+import {
+  ComplianceChecklist,
+  ChecklistItemStatus,
   ComplianceCategory,
-  DEFAULT_CHECKLIST_ITEMS 
+  DEFAULT_CHECKLIST_ITEMS,
 } from '../../entities/compliance-checklist.entity';
 
 interface UpdateChecklistItemDto {
@@ -52,8 +52,12 @@ export class ComplianceChecklistService {
   /**
    * Initialize checklist for a financial statement
    */
-  async initializeChecklist(financialStatementId: string): Promise<ComplianceChecklist[]> {
-    console.log(`[ComplianceChecklistService] Initializing checklist for: ${financialStatementId}`);
+  async initializeChecklist(
+    financialStatementId: string,
+  ): Promise<ComplianceChecklist[]> {
+    console.log(
+      `[ComplianceChecklistService] Initializing checklist for: ${financialStatementId}`,
+    );
 
     // Check if checklist already exists
     const { data: existing } = await this.supabase
@@ -68,7 +72,7 @@ export class ComplianceChecklistService {
     }
 
     // Create default checklist items
-    const items = DEFAULT_CHECKLIST_ITEMS.map(item => ({
+    const items = DEFAULT_CHECKLIST_ITEMS.map((item) => ({
       ...item,
       financial_statement_id: financialStatementId,
       status: ChecklistItemStatus.NOT_STARTED,
@@ -91,7 +95,9 @@ export class ComplianceChecklistService {
   /**
    * Get checklist for a financial statement
    */
-  async getChecklist(financialStatementId: string): Promise<ComplianceChecklist[]> {
+  async getChecklist(
+    financialStatementId: string,
+  ): Promise<ComplianceChecklist[]> {
     const { data, error } = await this.supabase
       .from('compliance_checklists')
       .select('*')
@@ -140,7 +146,7 @@ export class ComplianceChecklistService {
 
     if (dto.status !== undefined) {
       updateData.status = dto.status;
-      
+
       if (dto.status === ChecklistItemStatus.COMPLETED) {
         updateData.completed_at = SupabaseMapper.getCurrentTimestamp();
         if (dto.completedByUserId) {
@@ -151,7 +157,8 @@ export class ComplianceChecklistService {
 
     if (dto.notes !== undefined) updateData.notes = dto.notes;
     if (dto.evidence !== undefined) updateData.evidence = dto.evidence;
-    if (dto.relatedEntityIds !== undefined) updateData.related_entity_ids = dto.relatedEntityIds;
+    if (dto.relatedEntityIds !== undefined)
+      updateData.related_entity_ids = dto.relatedEntityIds;
     if (dto.dueDate !== undefined) updateData.due_date = dto.dueDate;
 
     const { data, error } = await this.supabase
@@ -213,29 +220,44 @@ export class ComplianceChecklistService {
   /**
    * Get compliance summary for a financial statement
    */
-  async getComplianceSummary(financialStatementId: string): Promise<ComplianceSummary> {
+  async getComplianceSummary(
+    financialStatementId: string,
+  ): Promise<ComplianceSummary> {
     const checklist = await this.getChecklist(financialStatementId);
-    
+
     const today = new Date();
-    const overdue = checklist.filter(item => 
-      item.dueDate && 
-      new Date(item.dueDate) < today && 
-      item.status !== ChecklistItemStatus.COMPLETED &&
-      item.status !== ChecklistItemStatus.NOT_APPLICABLE
+    const overdue = checklist.filter(
+      (item) =>
+        item.dueDate &&
+        new Date(item.dueDate) < today &&
+        item.status !== ChecklistItemStatus.COMPLETED &&
+        item.status !== ChecklistItemStatus.NOT_APPLICABLE,
     );
 
     const byCategory: ComplianceProgress[] = [];
     const categories = Object.values(ComplianceCategory);
 
     for (const category of categories) {
-      const categoryItems = checklist.filter(item => item.category === category);
+      const categoryItems = checklist.filter(
+        (item) => item.category === category,
+      );
       if (categoryItems.length === 0) continue;
 
-      const completed = categoryItems.filter(i => i.status === ChecklistItemStatus.COMPLETED).length;
-      const inProgress = categoryItems.filter(i => i.status === ChecklistItemStatus.IN_PROGRESS).length;
-      const notStarted = categoryItems.filter(i => i.status === ChecklistItemStatus.NOT_STARTED).length;
-      const notApplicable = categoryItems.filter(i => i.status === ChecklistItemStatus.NOT_APPLICABLE).length;
-      const requiresReview = categoryItems.filter(i => i.status === ChecklistItemStatus.REQUIRES_REVIEW).length;
+      const completed = categoryItems.filter(
+        (i) => i.status === ChecklistItemStatus.COMPLETED,
+      ).length;
+      const inProgress = categoryItems.filter(
+        (i) => i.status === ChecklistItemStatus.IN_PROGRESS,
+      ).length;
+      const notStarted = categoryItems.filter(
+        (i) => i.status === ChecklistItemStatus.NOT_STARTED,
+      ).length;
+      const notApplicable = categoryItems.filter(
+        (i) => i.status === ChecklistItemStatus.NOT_APPLICABLE,
+      ).length;
+      const requiresReview = categoryItems.filter(
+        (i) => i.status === ChecklistItemStatus.REQUIRES_REVIEW,
+      ).length;
 
       byCategory.push({
         category,
@@ -245,31 +267,51 @@ export class ComplianceChecklistService {
         notStarted,
         notApplicable,
         requiresReview,
-        percentComplete: Math.round((completed / (categoryItems.length - notApplicable)) * 100) || 0,
+        percentComplete:
+          Math.round(
+            (completed / (categoryItems.length - notApplicable)) * 100,
+          ) || 0,
       });
     }
 
-    const applicableItems = checklist.filter(i => i.status !== ChecklistItemStatus.NOT_APPLICABLE);
-    const completedItems = checklist.filter(i => i.status === ChecklistItemStatus.COMPLETED);
-    const mandatoryItems = checklist.filter(i => i.isMandatory && i.status !== ChecklistItemStatus.NOT_APPLICABLE);
-    const mandatoryCompleted = mandatoryItems.filter(i => i.status === ChecklistItemStatus.COMPLETED);
+    const applicableItems = checklist.filter(
+      (i) => i.status !== ChecklistItemStatus.NOT_APPLICABLE,
+    );
+    const completedItems = checklist.filter(
+      (i) => i.status === ChecklistItemStatus.COMPLETED,
+    );
+    const mandatoryItems = checklist.filter(
+      (i) => i.isMandatory && i.status !== ChecklistItemStatus.NOT_APPLICABLE,
+    );
+    const mandatoryCompleted = mandatoryItems.filter(
+      (i) => i.status === ChecklistItemStatus.COMPLETED,
+    );
 
     // Find next due item
     const nextDueItem = checklist
-      .filter(i => 
-        i.dueDate && 
-        i.status !== ChecklistItemStatus.COMPLETED &&
-        i.status !== ChecklistItemStatus.NOT_APPLICABLE
+      .filter(
+        (i) =>
+          i.dueDate &&
+          i.status !== ChecklistItemStatus.COMPLETED &&
+          i.status !== ChecklistItemStatus.NOT_APPLICABLE,
       )
-      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0];
+      .sort(
+        (a, b) =>
+          new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime(),
+      )[0];
 
     return {
       totalItems: checklist.length,
       completed: completedItems.length,
-      inProgress: checklist.filter(i => i.status === ChecklistItemStatus.IN_PROGRESS).length,
-      notStarted: checklist.filter(i => i.status === ChecklistItemStatus.NOT_STARTED).length,
+      inProgress: checklist.filter(
+        (i) => i.status === ChecklistItemStatus.IN_PROGRESS,
+      ).length,
+      notStarted: checklist.filter(
+        (i) => i.status === ChecklistItemStatus.NOT_STARTED,
+      ).length,
       overdue: overdue.length,
-      percentComplete: Math.round((completedItems.length / applicableItems.length) * 100) || 0,
+      percentComplete:
+        Math.round((completedItems.length / applicableItems.length) * 100) || 0,
       byCategory,
       mandatoryComplete: mandatoryCompleted.length === mandatoryItems.length,
       nextDueItem,
@@ -279,7 +321,9 @@ export class ComplianceChecklistService {
   /**
    * Auto-update checklist based on consolidation entries
    */
-  async autoUpdateFromConsolidation(financialStatementId: string): Promise<void> {
+  async autoUpdateFromConsolidation(
+    financialStatementId: string,
+  ): Promise<void> {
     const { data: entries } = await this.supabase
       .from('consolidation_entries')
       .select('*')
@@ -290,13 +334,13 @@ export class ComplianceChecklistService {
 
     // Map adjustment types to checklist categories
     const typeToCategory: Record<string, ComplianceCategory> = {
-      'capital_consolidation': ComplianceCategory.CAPITAL_CONSOLIDATION,
-      'debt_consolidation': ComplianceCategory.DEBT_CONSOLIDATION,
-      'intercompany_profit': ComplianceCategory.INTERCOMPANY_PROFIT,
-      'income_expense': ComplianceCategory.INCOME_EXPENSE,
-      'deferred_tax': ComplianceCategory.DEFERRED_TAX,
-      'minority_interest': ComplianceCategory.MINORITY_INTEREST,
-      'currency_translation': ComplianceCategory.CURRENCY_TRANSLATION,
+      capital_consolidation: ComplianceCategory.CAPITAL_CONSOLIDATION,
+      debt_consolidation: ComplianceCategory.DEBT_CONSOLIDATION,
+      intercompany_profit: ComplianceCategory.INTERCOMPANY_PROFIT,
+      income_expense: ComplianceCategory.INCOME_EXPENSE,
+      deferred_tax: ComplianceCategory.DEFERRED_TAX,
+      minority_interest: ComplianceCategory.MINORITY_INTEREST,
+      currency_translation: ComplianceCategory.CURRENCY_TRANSLATION,
     };
 
     for (const entry of entries) {

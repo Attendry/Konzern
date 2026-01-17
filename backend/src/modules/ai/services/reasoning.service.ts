@@ -34,11 +34,13 @@ export class ReasoningService {
     // Handle new signature: (steps, conclusion, showAlternativesProminent?)
     if (Array.isArray(stepsOrType)) {
       const steps = stepsOrType;
-      const conclusion = conclusionOrSteps as string || this.synthesizeConclusion(steps);
+      const conclusion =
+        (conclusionOrSteps as string) || this.synthesizeConclusion(steps);
       const avgConfidence = this.calculateAverageConfidence(steps);
-      const showAlternativesProminent = typeof showAlternativesOrAlternatives === 'boolean' 
-        ? showAlternativesOrAlternatives 
-        : avgConfidence < 0.8;
+      const showAlternativesProminent =
+        typeof showAlternativesOrAlternatives === 'boolean'
+          ? showAlternativesOrAlternatives
+          : avgConfidence < 0.8;
 
       return {
         steps,
@@ -49,11 +51,12 @@ export class ReasoningService {
     }
 
     // Handle legacy signature: (analysisType, steps, alternatives)
-    const steps = conclusionOrSteps as ReasoningStep[] || [];
-    const alternatives = showAlternativesOrAlternatives as AlternativeInterpretation[] || [];
+    const steps = (conclusionOrSteps as ReasoningStep[]) || [];
+    const alternatives =
+      (showAlternativesOrAlternatives as AlternativeInterpretation[]) || [];
     const conclusion = this.synthesizeConclusion(steps);
     const avgConfidence = this.calculateAverageConfidence(steps);
-    
+
     // Show alternatives prominently if confidence < 80%
     const showAlternativesProminent = avgConfidence < 0.8;
 
@@ -118,12 +121,12 @@ export class ReasoningService {
     }
 
     const avgConfidence = this.calculateAverageConfidence(steps);
-    
+
     // Find the step with highest confidence
     const mainStep = [...steps].sort((a, b) => b.confidence - a.confidence)[0];
-    
+
     const confidencePercent = Math.round(avgConfidence * 100);
-    
+
     return `Mit ${confidencePercent}% Wahrscheinlichkeit: ${mainStep.inference}`;
   }
 
@@ -132,7 +135,7 @@ export class ReasoningService {
    */
   calculateAverageConfidence(steps: ReasoningStep[]): number {
     if (steps.length === 0) return 0;
-    
+
     const sum = steps.reduce((acc, step) => acc + step.confidence, 0);
     return sum / steps.length;
   }
@@ -143,16 +146,19 @@ export class ReasoningService {
   buildQualityIndicators(
     dataCompleteness: { percentage: number; missingData?: string[] },
     hgbConformity: boolean,
-    confidenceBreakdown: { dataQuality: number; patternMatch: number; ruleMatch: number },
+    confidenceBreakdown: {
+      dataQuality: number;
+      patternMatch: number;
+      ruleMatch: number;
+    },
     deviations: string[] = [],
     historicalAccuracy?: { similarCases: number; correctPredictions: number },
   ): QualityIndicators {
     // Calculate overall confidence
-    const overall = (
+    const overall =
       confidenceBreakdown.dataQuality * 0.4 +
       confidenceBreakdown.patternMatch * 0.3 +
-      confidenceBreakdown.ruleMatch * 0.3
-    );
+      confidenceBreakdown.ruleMatch * 0.3;
 
     return {
       dataCompleteness,
@@ -160,13 +166,17 @@ export class ReasoningService {
         hgbConformity,
         deviations: deviations.length > 0 ? deviations : undefined,
       },
-      historicalAccuracy: historicalAccuracy ? {
-        similarCases: historicalAccuracy.similarCases,
-        correctPredictions: historicalAccuracy.correctPredictions,
-        accuracy: historicalAccuracy.similarCases > 0
-          ? historicalAccuracy.correctPredictions / historicalAccuracy.similarCases
-          : 0,
-      } : undefined,
+      historicalAccuracy: historicalAccuracy
+        ? {
+            similarCases: historicalAccuracy.similarCases,
+            correctPredictions: historicalAccuracy.correctPredictions,
+            accuracy:
+              historicalAccuracy.similarCases > 0
+                ? historicalAccuracy.correctPredictions /
+                  historicalAccuracy.similarCases
+                : 0,
+          }
+        : undefined,
       confidenceBreakdown: {
         ...confidenceBreakdown,
         overall,
@@ -210,25 +220,27 @@ export class ReasoningService {
     }
 
     // Average the numeric values
-    const avgDataCompleteness = indicators.reduce(
-      (sum, i) => sum + i.dataCompleteness.percentage, 0
-    ) / indicators.length;
+    const avgDataCompleteness =
+      indicators.reduce((sum, i) => sum + i.dataCompleteness.percentage, 0) /
+      indicators.length;
 
-    const avgOverall = indicators.reduce(
-      (sum, i) => sum + i.confidenceBreakdown.overall, 0
-    ) / indicators.length;
+    const avgOverall =
+      indicators.reduce((sum, i) => sum + i.confidenceBreakdown.overall, 0) /
+      indicators.length;
 
     // Collect all missing data
     const allMissingData = indicators
-      .flatMap(i => i.dataCompleteness.missingData || [])
+      .flatMap((i) => i.dataCompleteness.missingData || [])
       .filter((v, i, a) => a.indexOf(v) === i);
 
     // Check if all are HGB conformant
-    const allConformant = indicators.every(i => i.ruleCompliance.hgbConformity);
+    const allConformant = indicators.every(
+      (i) => i.ruleCompliance.hgbConformity,
+    );
 
     // Collect all deviations
     const allDeviations = indicators
-      .flatMap(i => i.ruleCompliance.deviations || [])
+      .flatMap((i) => i.ruleCompliance.deviations || [])
       .filter((v, i, a) => a.indexOf(v) === i);
 
     return {
@@ -241,9 +253,21 @@ export class ReasoningService {
         deviations: allDeviations.length > 0 ? allDeviations : undefined,
       },
       confidenceBreakdown: {
-        dataQuality: indicators.reduce((sum, i) => sum + i.confidenceBreakdown.dataQuality, 0) / indicators.length,
-        patternMatch: indicators.reduce((sum, i) => sum + i.confidenceBreakdown.patternMatch, 0) / indicators.length,
-        ruleMatch: indicators.reduce((sum, i) => sum + i.confidenceBreakdown.ruleMatch, 0) / indicators.length,
+        dataQuality:
+          indicators.reduce(
+            (sum, i) => sum + i.confidenceBreakdown.dataQuality,
+            0,
+          ) / indicators.length,
+        patternMatch:
+          indicators.reduce(
+            (sum, i) => sum + i.confidenceBreakdown.patternMatch,
+            0,
+          ) / indicators.length,
+        ruleMatch:
+          indicators.reduce(
+            (sum, i) => sum + i.confidenceBreakdown.ruleMatch,
+            0,
+          ) / indicators.length,
         overall: avgOverall,
       },
       confidenceLevel: getConfidenceLevel(avgOverall),
@@ -266,11 +290,16 @@ export class ReasoningService {
 
     lines.push(`FAZIT: ${reasoning.conclusion}`);
 
-    if (reasoning.alternativeInterpretations && reasoning.alternativeInterpretations.length > 0) {
+    if (
+      reasoning.alternativeInterpretations &&
+      reasoning.alternativeInterpretations.length > 0
+    ) {
       lines.push('');
       lines.push('Alternative Interpretationen:');
-      reasoning.alternativeInterpretations.forEach(alt => {
-        lines.push(`  - ${alt.interpretation} (${Math.round(alt.probability * 100)}%)`);
+      reasoning.alternativeInterpretations.forEach((alt) => {
+        lines.push(
+          `  - ${alt.interpretation} (${Math.round(alt.probability * 100)}%)`,
+        );
         lines.push(`    > ${alt.checkQuestion}`);
       });
     }
@@ -290,21 +319,27 @@ export class ReasoningService {
     ];
 
     if (quality.dataCompleteness.missingData?.length) {
-      lines.push(`  Fehlend: ${quality.dataCompleteness.missingData.join(', ')}`);
+      lines.push(
+        `  Fehlend: ${quality.dataCompleteness.missingData.join(', ')}`,
+      );
     }
 
     lines.push('');
-    lines.push(`HGB-Konformität: ${quality.ruleCompliance.hgbConformity ? 'eingehalten' : 'Abweichungen'}`);
-    
+    lines.push(
+      `HGB-Konformität: ${quality.ruleCompliance.hgbConformity ? 'eingehalten' : 'Abweichungen'}`,
+    );
+
     if (quality.ruleCompliance.deviations?.length) {
-      quality.ruleCompliance.deviations.forEach(d => {
+      quality.ruleCompliance.deviations.forEach((d) => {
         lines.push(`  - ${d}`);
       });
     }
 
     if (quality.historicalAccuracy) {
       lines.push('');
-      lines.push(`Historische Trefferquote: ${Math.round(quality.historicalAccuracy.accuracy * 100)}% (${quality.historicalAccuracy.correctPredictions}/${quality.historicalAccuracy.similarCases})`);
+      lines.push(
+        `Historische Trefferquote: ${Math.round(quality.historicalAccuracy.accuracy * 100)}% (${quality.historicalAccuracy.correctPredictions}/${quality.historicalAccuracy.similarCases})`,
+      );
     }
 
     return lines.join('\n');
@@ -315,9 +350,12 @@ export class ReasoningService {
    */
   private getConfidenceLabel(level: ConfidenceLevel): string {
     switch (level) {
-      case 'high': return 'HOCH';
-      case 'medium': return 'MITTEL';
-      case 'low': return 'NIEDRIG';
+      case 'high':
+        return 'HOCH';
+      case 'medium':
+        return 'MITTEL';
+      case 'low':
+        return 'NIEDRIG';
     }
   }
 }

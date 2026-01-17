@@ -21,6 +21,11 @@
   overflow: hidden;
 }
 
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .app.sidebar-collapsed .sidebar {
   width: 64px;
 }
@@ -207,6 +212,13 @@
   background-color: var(--color-bg-sidebar-active);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-4);
 }
 
 /* Main Content Area */

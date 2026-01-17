@@ -1,19 +1,30 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseErrorHandler } from '../../common/supabase-error.util';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 import { FinancialStatement } from '../../entities/financial-statement.entity';
 import { AccountBalance } from '../../entities/account-balance.entity';
-import { 
-  ConsolidationEntry, 
-  AdjustmentType, 
-  EntryStatus, 
-  EntrySource 
+import {
+  ConsolidationEntry,
+  AdjustmentType,
+  EntryStatus,
+  EntrySource,
 } from '../../entities/consolidation-entry.entity';
 import { Company } from '../../entities/company.entity';
 import { IntercompanyTransaction } from '../../entities/intercompany-transaction.entity';
-import { CreateConsolidationEntryDto, UpdateConsolidationEntryDto } from './dto/create-consolidation-entry.dto';
-import { IntercompanyTransactionService, TransactionType } from './intercompany-transaction.service';
+import {
+  CreateConsolidationEntryDto,
+  UpdateConsolidationEntryDto,
+} from './dto/create-consolidation-entry.dto';
+import {
+  IntercompanyTransactionService,
+  TransactionType,
+} from './intercompany-transaction.service';
 import { DebtConsolidationService } from './debt-consolidation.service';
 import { CapitalConsolidationService } from './capital-consolidation.service';
 
@@ -35,8 +46,10 @@ export class ConsolidationService {
   async calculateConsolidation(
     financialStatementId: string,
   ): Promise<{ entries: ConsolidationEntry[]; summary: any }> {
-    this.logger.log(`Starting consolidation for financial statement: ${financialStatementId}`);
-    
+    this.logger.log(
+      `Starting consolidation for financial statement: ${financialStatementId}`,
+    );
+
     const { data: financialStatement, error: fsError } = await this.supabase
       .from('financial_statements')
       .select('*, company:companies(*)')
@@ -44,19 +57,28 @@ export class ConsolidationService {
       .single();
 
     if (fsError) {
-      this.logger.error(`Error fetching financial statement: ${fsError.message}`);
+      this.logger.error(
+        `Error fetching financial statement: ${fsError.message}`,
+      );
       SupabaseErrorHandler.handle(fsError, 'Financial Statement', 'fetch');
     }
-    SupabaseErrorHandler.handleNotFound(financialStatement, 'Financial Statement');
+    SupabaseErrorHandler.handleNotFound(
+      financialStatement,
+      'Financial Statement',
+    );
 
-    this.logger.debug(`Financial statement found - company_id: ${financialStatement.company_id}`);
+    this.logger.debug(
+      `Financial statement found - company_id: ${financialStatement.company_id}`,
+    );
 
     // Find all consolidated companies in the group
     const consolidatedCompanies = await this.getConsolidatedCompanies(
       financialStatement.company_id,
     );
 
-    this.logger.log(`Found ${consolidatedCompanies.length} consolidated companies`);
+    this.logger.log(
+      `Found ${consolidatedCompanies.length} consolidated companies`,
+    );
 
     if (consolidatedCompanies.length === 0) {
       this.logger.warn('No consolidated companies found');
@@ -66,24 +88,24 @@ export class ConsolidationService {
         .select('id, name, is_consolidated, parent_company_id')
         .eq('id', financialStatement.company_id)
         .single();
-      
+
       if (!parentCompany) {
         throw new BadRequestException(
-          `Das Unternehmen mit ID ${financialStatement.company_id} wurde nicht gefunden. Bitte prüfen Sie, ob das Unternehmen existiert.`
+          `Das Unternehmen mit ID ${financialStatement.company_id} wurde nicht gefunden. Bitte prüfen Sie, ob das Unternehmen existiert.`,
         );
       }
-      
+
       if (!parentCompany.is_consolidated) {
         throw new BadRequestException(
-          `Das Unternehmen "${parentCompany.name}" ist nicht für die Konsolidierung markiert. Bitte setzen Sie "Wird konsolidiert" auf "Ja" im Unternehmen.`
+          `Das Unternehmen "${parentCompany.name}" ist nicht für die Konsolidierung markiert. Bitte setzen Sie "Wird konsolidiert" auf "Ja" im Unternehmen.`,
         );
       }
-      
+
       throw new BadRequestException(
         'Keine konsolidierten Unternehmen gefunden. Bitte stellen Sie sicher, dass:\n' +
-        '1. Das Unternehmen für die Konsolidierung markiert ist (is_consolidated = true)\n' +
-        '2. Es Tochterunternehmen gibt, die ebenfalls für die Konsolidierung markiert sind\n' +
-        '3. Die Unternehmen korrekt verknüpft sind (parent_company_id)'
+          '1. Das Unternehmen für die Konsolidierung markiert ist (is_consolidated = true)\n' +
+          '2. Es Tochterunternehmen gibt, die ebenfalls für die Konsolidierung markiert sind\n' +
+          '3. Die Unternehmen korrekt verknüpft sind (parent_company_id)',
       );
     }
 
@@ -98,27 +120,33 @@ export class ConsolidationService {
 
     // 2. Schuldenkonsolidierung
     const companyIds = consolidatedCompanies.map((c) => c.id);
-    const debtConsolidationResult = await this.debtConsolidationService.consolidateDebts(
-      financialStatementId,
-      companyIds,
-    );
+    const debtConsolidationResult =
+      await this.debtConsolidationService.consolidateDebts(
+        financialStatementId,
+        companyIds,
+      );
     entries.push(...debtConsolidationResult.entries);
-    
+
     // Warnung bei fehlenden Informationen
     if (debtConsolidationResult.summary.missingInfo.length > 0) {
-      this.logger.warn(`Missing info in debt consolidation: ${JSON.stringify(debtConsolidationResult.summary.missingInfo)}`);
+      this.logger.warn(
+        `Missing info in debt consolidation: ${JSON.stringify(debtConsolidationResult.summary.missingInfo)}`,
+      );
     }
 
     // 3. Kapitalkonsolidierung
-    const capitalConsolidationResult = await this.capitalConsolidationService.consolidateCapital(
-      financialStatementId,
-      financialStatement.company_id,
-    );
+    const capitalConsolidationResult =
+      await this.capitalConsolidationService.consolidateCapital(
+        financialStatementId,
+        financialStatement.company_id,
+      );
     entries.push(...capitalConsolidationResult.entries);
-    
+
     // Warnung bei fehlenden Informationen
     if (capitalConsolidationResult.summary.missingInfo.length > 0) {
-      this.logger.warn(`Missing info in capital consolidation: ${JSON.stringify(capitalConsolidationResult.summary.missingInfo)}`);
+      this.logger.warn(
+        `Missing info in capital consolidation: ${JSON.stringify(capitalConsolidationResult.summary.missingInfo)}`,
+      );
     }
 
     // Zusammenfassung
@@ -127,7 +155,10 @@ export class ConsolidationService {
       intercompanyEliminations: intercompanyEliminations.length,
       debtConsolidations: debtConsolidationResult.entries.length,
       capitalConsolidations: capitalConsolidationResult.entries.length,
-      totalAmount: entries.reduce((sum, entry) => sum + Math.abs(Number(entry.amount)), 0),
+      totalAmount: entries.reduce(
+        (sum, entry) => sum + Math.abs(Number(entry.amount)),
+        0,
+      ),
     };
 
     return { entries, summary };
@@ -136,8 +167,10 @@ export class ConsolidationService {
   private async getConsolidatedCompanies(
     parentCompanyId: string,
   ): Promise<Company[]> {
-    this.logger.debug(`getConsolidatedCompanies - Looking for companies with parent: ${parentCompanyId}`);
-    
+    this.logger.debug(
+      `getConsolidatedCompanies - Looking for companies with parent: ${parentCompanyId}`,
+    );
+
     // Finde alle Tochterunternehmen, die konsolidiert werden sollen
     const { data: parentCompany, error: parentError } = await this.supabase
       .from('companies')
@@ -146,7 +179,9 @@ export class ConsolidationService {
       .single();
 
     if (parentError) {
-      this.logger.error(`Error fetching parent company: ${parentError.message}`);
+      this.logger.error(
+        `Error fetching parent company: ${parentError.message}`,
+      );
     }
 
     // Check if parent company is marked for consolidation (don't filter here, check later)
@@ -156,26 +191,34 @@ export class ConsolidationService {
       .eq('parent_company_id', parentCompanyId);
 
     if (childrenError) {
-      this.logger.error(`Error fetching children companies: ${childrenError.message}`);
+      this.logger.error(
+        `Error fetching children companies: ${childrenError.message}`,
+      );
     }
 
-    this.logger.debug(`Parent company found: ${parentCompany ? 'yes' : 'no'}, is_consolidated: ${parentCompany?.is_consolidated}`);
+    this.logger.debug(
+      `Parent company found: ${parentCompany ? 'yes' : 'no'}, is_consolidated: ${parentCompany?.is_consolidated}`,
+    );
     this.logger.debug(`Direct children found: ${directChildren?.length || 0}`);
 
     // Rekursiv alle Unter-Tochterunternehmen finden
     const allCompanies: any[] = [];
-    
+
     // Add parent company if it's marked for consolidation
     if (parentCompany && parentCompany.is_consolidated) {
       allCompanies.push(parentCompany);
       this.logger.debug(`Added parent company: ${parentCompany.name}`);
     }
-    
+
     // Add direct children that are marked for consolidation
-    const consolidatedChildren = (directChildren || []).filter((c: any) => c.is_consolidated);
+    const consolidatedChildren = (directChildren || []).filter(
+      (c: any) => c.is_consolidated,
+    );
     if (consolidatedChildren.length > 0) {
       allCompanies.push(...consolidatedChildren);
-      this.logger.debug(`Added ${consolidatedChildren.length} consolidated children`);
+      this.logger.debug(
+        `Added ${consolidatedChildren.length} consolidated children`,
+      );
     }
 
     // Recursively find grandchildren
@@ -184,19 +227,27 @@ export class ConsolidationService {
         .from('companies')
         .select('*')
         .eq('parent_company_id', company.id);
-      
+
       if (grandChildrenError) {
-        this.logger.error(`Error fetching grandchildren for ${company.id}: ${grandChildrenError.message}`);
+        this.logger.error(
+          `Error fetching grandchildren for ${company.id}: ${grandChildrenError.message}`,
+        );
       }
-      
-      const consolidatedGrandChildren = (children || []).filter((c: any) => c.is_consolidated);
+
+      const consolidatedGrandChildren = (children || []).filter(
+        (c: any) => c.is_consolidated,
+      );
       if (consolidatedGrandChildren.length > 0) {
         allCompanies.push(...consolidatedGrandChildren);
-        this.logger.debug(`Added ${consolidatedGrandChildren.length} consolidated grandchildren for ${company.name}`);
+        this.logger.debug(
+          `Added ${consolidatedGrandChildren.length} consolidated grandchildren for ${company.name}`,
+        );
       }
     }
 
-    this.logger.log(`Total consolidated companies found: ${allCompanies.length}`);
+    this.logger.log(
+      `Total consolidated companies found: ${allCompanies.length}`,
+    );
 
     return allCompanies.map((c: any) => ({
       id: c.id,
@@ -211,8 +262,12 @@ export class ConsolidationService {
       isConsolidated: c.is_consolidated,
       consolidationType: c.consolidation_type || 'full',
       exclusionReason: c.exclusion_reason || null,
-      firstConsolidationDate: c.first_consolidation_date ? new Date(c.first_consolidation_date) : null,
-      deconsolidationDate: c.deconsolidation_date ? new Date(c.deconsolidation_date) : null,
+      firstConsolidationDate: c.first_consolidation_date
+        ? new Date(c.first_consolidation_date)
+        : null,
+      deconsolidationDate: c.deconsolidation_date
+        ? new Date(c.deconsolidation_date)
+        : null,
       functionalCurrency: c.functional_currency || 'EUR',
       countryCode: c.country_code || null,
       industry: c.industry || null,
@@ -231,13 +286,16 @@ export class ConsolidationService {
     const entries: ConsolidationEntry[] = [];
 
     // 1. Erkenne alle Zwischengesellschaftsgeschäfte
-    const detectionResult = await this.intercompanyService.detectIntercompanyTransactions(
-      financialStatementId,
-    );
+    const detectionResult =
+      await this.intercompanyService.detectIntercompanyTransactions(
+        financialStatementId,
+      );
 
     // 2. Prüfe auf fehlende Informationen (Pizzatracker-Hinweis)
     if (detectionResult.missingInfo.length > 0) {
-      this.logger.warn(`Missing info in intercompany transactions: ${JSON.stringify(detectionResult.missingInfo)}`);
+      this.logger.warn(
+        `Missing info in intercompany transactions: ${JSON.stringify(detectionResult.missingInfo)}`,
+      );
       // Hinweis: In Produktion sollte hier der Nutzer "Pizzatracker" gefragt werden
     }
 
@@ -252,7 +310,7 @@ export class ConsolidationService {
       // Aktuell verwenden wir den Transaktionsbetrag als Verkaufspreis
       // Die Anschaffungskosten müssten aus separaten Daten kommen
       const sellingPrice = transaction.amount;
-      
+
       // TODO: Anschaffungskosten aus separaten Daten holen
       // Falls nicht verfügbar, sollte Pizzatracker gefragt werden
       const acquisitionCost = 0; // Placeholder - sollte aus Datenbank kommen
@@ -265,7 +323,8 @@ export class ConsolidationService {
 
         if (remainingInventory > 0) {
           // Anteiliger Gewinn bei noch vorhandenen Beständen
-          const inventoryProfit = (profitMargin / sellingPrice) * remainingInventory;
+          const inventoryProfit =
+            (profitMargin / sellingPrice) * remainingInventory;
 
           const { data: entry, error } = await this.supabase
             .from('consolidation_entries')
@@ -315,8 +374,6 @@ export class ConsolidationService {
     return entries;
   }
 
-
-
   async getConsolidationEntries(
     financialStatementId: string,
     filters?: {
@@ -327,12 +384,14 @@ export class ConsolidationService {
   ): Promise<ConsolidationEntry[]> {
     let query = this.supabase
       .from('consolidation_entries')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*),
         debit_account:accounts!consolidation_entries_debit_account_id_fkey(*),
         credit_account:accounts!consolidation_entries_credit_account_id_fkey(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', financialStatementId);
 
     // Apply filters
@@ -346,13 +405,19 @@ export class ConsolidationService {
       query = query.eq('source', filters.source);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order('created_at', {
+      ascending: false,
+    });
 
     if (error) {
-      throw new Error(`Failed to fetch consolidation entries: ${error.message}`);
+      throw new Error(
+        `Failed to fetch consolidation entries: ${error.message}`,
+      );
     }
 
-    return (data || []).map((item) => SupabaseMapper.toConsolidationEntry(item));
+    return (data || []).map((item) =>
+      SupabaseMapper.toConsolidationEntry(item),
+    );
   }
 
   async createConsolidationEntry(
@@ -372,7 +437,10 @@ export class ConsolidationService {
         hgb_reference: createDto.hgbReference,
         affected_company_ids: createDto.affectedCompanyIds,
         created_by_user_id: createDto.createdByUserId,
-        status: createDto.source === EntrySource.MANUAL ? EntryStatus.DRAFT : EntryStatus.APPROVED,
+        status:
+          createDto.source === EntrySource.MANUAL
+            ? EntryStatus.DRAFT
+            : EntryStatus.APPROVED,
         created_at: SupabaseMapper.getCurrentTimestamp(),
         updated_at: SupabaseMapper.getCurrentTimestamp(),
       })
@@ -399,12 +467,14 @@ export class ConsolidationService {
       .single();
 
     if (fetchError || !existing) {
-      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (existing.status !== EntryStatus.DRAFT) {
       throw new BadRequestException(
-        `Nur Buchungen im Status "Entwurf" können bearbeitet werden. Aktueller Status: ${existing.status}`
+        `Nur Buchungen im Status "Entwurf" können bearbeitet werden. Aktueller Status: ${existing.status}`,
       );
     }
 
@@ -412,13 +482,19 @@ export class ConsolidationService {
       updated_at: SupabaseMapper.getCurrentTimestamp(),
     };
 
-    if (updateDto.debitAccountId !== undefined) updateData.debit_account_id = updateDto.debitAccountId;
-    if (updateDto.creditAccountId !== undefined) updateData.credit_account_id = updateDto.creditAccountId;
-    if (updateDto.adjustmentType !== undefined) updateData.adjustment_type = updateDto.adjustmentType;
+    if (updateDto.debitAccountId !== undefined)
+      updateData.debit_account_id = updateDto.debitAccountId;
+    if (updateDto.creditAccountId !== undefined)
+      updateData.credit_account_id = updateDto.creditAccountId;
+    if (updateDto.adjustmentType !== undefined)
+      updateData.adjustment_type = updateDto.adjustmentType;
     if (updateDto.amount !== undefined) updateData.amount = updateDto.amount;
-    if (updateDto.description !== undefined) updateData.description = updateDto.description;
-    if (updateDto.hgbReference !== undefined) updateData.hgb_reference = updateDto.hgbReference;
-    if (updateDto.affectedCompanyIds !== undefined) updateData.affected_company_ids = updateDto.affectedCompanyIds;
+    if (updateDto.description !== undefined)
+      updateData.description = updateDto.description;
+    if (updateDto.hgbReference !== undefined)
+      updateData.hgb_reference = updateDto.hgbReference;
+    if (updateDto.affectedCompanyIds !== undefined)
+      updateData.affected_company_ids = updateDto.affectedCompanyIds;
 
     const { data, error } = await this.supabase
       .from('consolidation_entries')
@@ -443,12 +519,14 @@ export class ConsolidationService {
       .single();
 
     if (fetchError || !existing) {
-      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (existing.status !== EntryStatus.DRAFT) {
       throw new BadRequestException(
-        `Nur Buchungen im Status "Entwurf" können gelöscht werden. Aktueller Status: ${existing.status}`
+        `Nur Buchungen im Status "Entwurf" können gelöscht werden. Aktueller Status: ${existing.status}`,
       );
     }
 
@@ -470,12 +548,14 @@ export class ConsolidationService {
       .single();
 
     if (fetchError || !existing) {
-      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (existing.status !== EntryStatus.DRAFT) {
       throw new BadRequestException(
-        `Nur Buchungen im Status "Entwurf" können zur Freigabe eingereicht werden.`
+        `Nur Buchungen im Status "Entwurf" können zur Freigabe eingereicht werden.`,
       );
     }
 
@@ -496,7 +576,10 @@ export class ConsolidationService {
     return SupabaseMapper.toConsolidationEntry(data);
   }
 
-  async approveEntry(entryId: string, approvedByUserId: string): Promise<ConsolidationEntry> {
+  async approveEntry(
+    entryId: string,
+    approvedByUserId: string,
+  ): Promise<ConsolidationEntry> {
     const { data: existing, error: fetchError } = await this.supabase
       .from('consolidation_entries')
       .select('*')
@@ -504,19 +587,21 @@ export class ConsolidationService {
       .single();
 
     if (fetchError || !existing) {
-      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (existing.status !== EntryStatus.PENDING) {
       throw new BadRequestException(
-        `Nur Buchungen im Status "Zur Prüfung" können freigegeben werden.`
+        `Nur Buchungen im Status "Zur Prüfung" können freigegeben werden.`,
       );
     }
 
     // 4-eyes principle: approver must be different from creator
     if (existing.created_by_user_id === approvedByUserId) {
       throw new BadRequestException(
-        `Vier-Augen-Prinzip: Der Freigebende muss eine andere Person als der Ersteller sein.`
+        `Vier-Augen-Prinzip: Der Freigebende muss eine andere Person als der Ersteller sein.`,
       );
     }
 
@@ -539,7 +624,11 @@ export class ConsolidationService {
     return SupabaseMapper.toConsolidationEntry(data);
   }
 
-  async rejectEntry(entryId: string, rejectedByUserId: string, reason: string): Promise<ConsolidationEntry> {
+  async rejectEntry(
+    entryId: string,
+    rejectedByUserId: string,
+    reason: string,
+  ): Promise<ConsolidationEntry> {
     const { data: existing, error: fetchError } = await this.supabase
       .from('consolidation_entries')
       .select('*')
@@ -547,12 +636,14 @@ export class ConsolidationService {
       .single();
 
     if (fetchError || !existing) {
-      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (existing.status !== EntryStatus.PENDING) {
       throw new BadRequestException(
-        `Nur Buchungen im Status "Zur Prüfung" können abgelehnt werden.`
+        `Nur Buchungen im Status "Zur Prüfung" können abgelehnt werden.`,
       );
     }
 
@@ -574,7 +665,11 @@ export class ConsolidationService {
     return SupabaseMapper.toConsolidationEntry(data);
   }
 
-  async reverseEntry(entryId: string, reversedByUserId: string, reason: string): Promise<ConsolidationEntry> {
+  async reverseEntry(
+    entryId: string,
+    reversedByUserId: string,
+    reason: string,
+  ): Promise<ConsolidationEntry> {
     const { data: existing, error: fetchError } = await this.supabase
       .from('consolidation_entries')
       .select('*')
@@ -582,12 +677,14 @@ export class ConsolidationService {
       .single();
 
     if (fetchError || !existing) {
-      throw new NotFoundException(`Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`);
+      throw new NotFoundException(
+        `Konsolidierungsbuchung mit ID ${entryId} nicht gefunden`,
+      );
     }
 
     if (existing.status !== EntryStatus.APPROVED) {
       throw new BadRequestException(
-        `Nur freigegebene Buchungen können storniert werden.`
+        `Nur freigegebene Buchungen können storniert werden.`,
       );
     }
 
@@ -631,11 +728,19 @@ export class ConsolidationService {
     return SupabaseMapper.toConsolidationEntry(reversalEntry);
   }
 
-  async getManualEntries(financialStatementId: string): Promise<ConsolidationEntry[]> {
-    return this.getConsolidationEntries(financialStatementId, { source: EntrySource.MANUAL });
+  async getManualEntries(
+    financialStatementId: string,
+  ): Promise<ConsolidationEntry[]> {
+    return this.getConsolidationEntries(financialStatementId, {
+      source: EntrySource.MANUAL,
+    });
   }
 
-  async getPendingEntries(financialStatementId: string): Promise<ConsolidationEntry[]> {
-    return this.getConsolidationEntries(financialStatementId, { status: EntryStatus.PENDING });
+  async getPendingEntries(
+    financialStatementId: string,
+  ): Promise<ConsolidationEntry[]> {
+    return this.getConsolidationEntries(financialStatementId, {
+      status: EntryStatus.PENDING,
+    });
   }
 }

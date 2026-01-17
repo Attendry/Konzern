@@ -56,7 +56,8 @@ export interface CreateExceptionDto {
 export class ExceptionReportingService {
   constructor(
     private supabaseService: SupabaseService,
-    @Optional() @Inject(forwardRef(() => AuditLogService))
+    @Optional()
+    @Inject(forwardRef(() => AuditLogService))
     private auditLogService: AuditLogService,
   ) {}
 
@@ -65,15 +66,20 @@ export class ExceptionReportingService {
   /**
    * Create a new exception report
    */
-  async createException(dto: CreateExceptionDto, userId?: string): Promise<ExceptionReport> {
+  async createException(
+    dto: CreateExceptionDto,
+    userId?: string,
+  ): Promise<ExceptionReport> {
     const supabase = this.supabaseService.getClient();
 
-    const actionLog: ExceptionActionLog[] = [{
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'created',
-      details: 'Exception report created',
-    }];
+    const actionLog: ExceptionActionLog[] = [
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'created',
+        details: 'Exception report created',
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -132,34 +138,42 @@ export class ExceptionReportingService {
     // Get the check details
     const { data: check, error: checkError } = await supabase
       .from('plausibility_checks')
-      .select(`
+      .select(
+        `
         *,
         rule:plausibility_rules(*)
-      `)
+      `,
+      )
       .eq('id', checkId)
       .single();
 
     if (checkError) {
-      throw new Error(`Failed to fetch plausibility check: ${checkError.message}`);
+      throw new Error(
+        `Failed to fetch plausibility check: ${checkError.message}`,
+      );
     }
 
     const rule = check.rule as any;
 
-    return this.createException({
-      financialStatementId,
-      companyId: check.company_id,
-      sourceType: ExceptionSourceType.PLAUSIBILITY_CHECK,
-      sourceId: checkId,
-      exceptionCode: `CHK-${rule?.code || 'UNKNOWN'}`,
-      title: `Plausibilitätsprüfung fehlgeschlagen: ${rule?.name || 'Unbekannte Regel'}`,
-      description: check.message || check.details,
-      category: rule?.category,
-      priority: rule?.severity === 'error' 
-        ? ExceptionPriority.HIGH 
-        : ExceptionPriority.MEDIUM,
-      impactAmount: check.difference_value,
-      hgbReference: rule?.hgb_reference,
-    }, userId);
+    return this.createException(
+      {
+        financialStatementId,
+        companyId: check.company_id,
+        sourceType: ExceptionSourceType.PLAUSIBILITY_CHECK,
+        sourceId: checkId,
+        exceptionCode: `CHK-${rule?.code || 'UNKNOWN'}`,
+        title: `Plausibilitätsprüfung fehlgeschlagen: ${rule?.name || 'Unbekannte Regel'}`,
+        description: check.message || check.details,
+        category: rule?.category,
+        priority:
+          rule?.severity === 'error'
+            ? ExceptionPriority.HIGH
+            : ExceptionPriority.MEDIUM,
+        impactAmount: check.difference_value,
+        hgbReference: rule?.hgb_reference,
+      },
+      userId,
+    );
   }
 
   /**
@@ -183,20 +197,24 @@ export class ExceptionReportingService {
       throw new Error(`Failed to fetch variance analysis: ${varError.message}`);
     }
 
-    return this.createException({
-      financialStatementId,
-      companyId: variance.company_id,
-      sourceType: ExceptionSourceType.VARIANCE_ANALYSIS,
-      sourceId: varianceId,
-      exceptionCode: `VAR-${variance.account_number || 'UNKNOWN'}`,
-      title: `Wesentliche Abweichung: ${variance.account_name || variance.account_number || 'Unbekanntes Konto'}`,
-      description: `Abweichung zum Vorjahr: ${variance.absolute_variance?.toLocaleString('de-DE')} EUR (${variance.percentage_variance?.toFixed(2)}%)`,
-      category: PlausibilityRuleCategory.YEAR_OVER_YEAR,
-      priority: variance.significance === 'material' 
-        ? ExceptionPriority.HIGH 
-        : ExceptionPriority.MEDIUM,
-      impactAmount: variance.absolute_variance,
-    }, userId);
+    return this.createException(
+      {
+        financialStatementId,
+        companyId: variance.company_id,
+        sourceType: ExceptionSourceType.VARIANCE_ANALYSIS,
+        sourceId: varianceId,
+        exceptionCode: `VAR-${variance.account_number || 'UNKNOWN'}`,
+        title: `Wesentliche Abweichung: ${variance.account_name || variance.account_number || 'Unbekanntes Konto'}`,
+        description: `Abweichung zum Vorjahr: ${variance.absolute_variance?.toLocaleString('de-DE')} EUR (${variance.percentage_variance?.toFixed(2)}%)`,
+        category: PlausibilityRuleCategory.YEAR_OVER_YEAR,
+        priority:
+          variance.significance === 'material'
+            ? ExceptionPriority.HIGH
+            : ExceptionPriority.MEDIUM,
+        impactAmount: variance.absolute_variance,
+      },
+      userId,
+    );
   }
 
   /**
@@ -255,19 +273,27 @@ export class ExceptionReportingService {
   /**
    * Get open exceptions (not resolved or closed)
    */
-  async getOpenExceptions(financialStatementId: string): Promise<ExceptionReport[]> {
+  async getOpenExceptions(
+    financialStatementId: string,
+  ): Promise<ExceptionReport[]> {
     const supabase = this.supabaseService.getClient();
 
     const { data, error } = await supabase
       .from('exception_reports')
       .select('*')
       .eq('financial_statement_id', financialStatementId)
-      .in('status', [ExceptionStatus.OPEN, ExceptionStatus.IN_REVIEW, ExceptionStatus.ESCALATED])
+      .in('status', [
+        ExceptionStatus.OPEN,
+        ExceptionStatus.IN_REVIEW,
+        ExceptionStatus.ESCALATED,
+      ])
       .order('priority', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch open exception reports: ${error.message}`);
+      throw new Error(
+        `Failed to fetch open exception reports: ${error.message}`,
+      );
     }
 
     return data || [];
@@ -276,7 +302,9 @@ export class ExceptionReportingService {
   /**
    * Get exception summary
    */
-  async getExceptionSummary(financialStatementId: string): Promise<ExceptionSummary> {
+  async getExceptionSummary(
+    financialStatementId: string,
+  ): Promise<ExceptionSummary> {
     const exceptions = await this.getExceptions(financialStatementId);
 
     const summary: ExceptionSummary = {
@@ -329,8 +357,15 @@ export class ExceptionReportingService {
       categoryMap.set(exception.category, categoryCount + 1);
 
       // Count overdue
-      if (exception.dueDate && new Date(exception.dueDate) < today && 
-          ![ExceptionStatus.RESOLVED, ExceptionStatus.CLOSED, ExceptionStatus.WAIVED].includes(exception.status)) {
+      if (
+        exception.dueDate &&
+        new Date(exception.dueDate) < today &&
+        ![
+          ExceptionStatus.RESOLVED,
+          ExceptionStatus.CLOSED,
+          ExceptionStatus.WAIVED,
+        ].includes(exception.status)
+      ) {
         summary.overdueCount++;
       }
 
@@ -340,15 +375,19 @@ export class ExceptionReportingService {
       }
     }
 
-    summary.byPriority = Array.from(priorityMap.entries()).map(([priority, count]) => ({
-      priority,
-      count,
-    }));
+    summary.byPriority = Array.from(priorityMap.entries()).map(
+      ([priority, count]) => ({
+        priority,
+        count,
+      }),
+    );
 
-    summary.byCategory = Array.from(categoryMap.entries()).map(([category, count]) => ({
-      category,
-      count,
-    }));
+    summary.byCategory = Array.from(categoryMap.entries()).map(
+      ([category, count]) => ({
+        category,
+        count,
+      }),
+    );
 
     return summary;
   }
@@ -370,12 +409,15 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId: assignByUserId,
-      action: 'assigned',
-      details: `Assigned to user ${assignToUserId}`,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId: assignByUserId,
+        action: 'assigned',
+        details: `Assigned to user ${assignToUserId}`,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -413,14 +455,17 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'escalated',
-      details: reason,
-      oldStatus: exception.status,
-      newStatus: ExceptionStatus.ESCALATED,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'escalated',
+        details: reason,
+        oldStatus: exception.status,
+        newStatus: ExceptionStatus.ESCALATED,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -458,14 +503,17 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'resolved',
-      details: resolution,
-      oldStatus: exception.status,
-      newStatus: ExceptionStatus.RESOLVED,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'resolved',
+        details: resolution,
+        oldStatus: exception.status,
+        newStatus: ExceptionStatus.RESOLVED,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -517,14 +565,17 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'waived',
-      details: reason,
-      oldStatus: exception.status,
-      newStatus: ExceptionStatus.WAIVED,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'waived',
+        details: reason,
+        oldStatus: exception.status,
+        newStatus: ExceptionStatus.WAIVED,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -561,17 +612,24 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    if (![ExceptionStatus.RESOLVED, ExceptionStatus.WAIVED].includes(exception.status)) {
+    if (
+      ![ExceptionStatus.RESOLVED, ExceptionStatus.WAIVED].includes(
+        exception.status,
+      )
+    ) {
       throw new Error('Can only close resolved or waived exceptions');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'closed',
-      oldStatus: exception.status,
-      newStatus: ExceptionStatus.CLOSED,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'closed',
+        oldStatus: exception.status,
+        newStatus: ExceptionStatus.CLOSED,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -605,14 +663,17 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'reopened',
-      details: reason,
-      oldStatus: exception.status,
-      newStatus: ExceptionStatus.OPEN,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'reopened',
+        details: reason,
+        oldStatus: exception.status,
+        newStatus: ExceptionStatus.OPEN,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -650,12 +711,15 @@ export class ExceptionReportingService {
       throw new Error('Exception not found');
     }
 
-    const actionLog = [...(exception.actionLog || []), {
-      timestamp: new Date().toISOString(),
-      userId,
-      action: 'priority_changed',
-      details: `Priority changed from ${exception.priority} to ${priority}`,
-    }];
+    const actionLog = [
+      ...(exception.actionLog || []),
+      {
+        timestamp: new Date().toISOString(),
+        userId,
+        action: 'priority_changed',
+        details: `Priority changed from ${exception.priority} to ${priority}`,
+      },
+    ];
 
     const { data, error } = await supabase
       .from('exception_reports')
@@ -690,7 +754,10 @@ export class ExceptionReportingService {
       .from('plausibility_checks')
       .select('id')
       .eq('financial_statement_id', financialStatementId)
-      .in('status', [PlausibilityCheckStatus.FAILED, PlausibilityCheckStatus.WARNING]);
+      .in('status', [
+        PlausibilityCheckStatus.FAILED,
+        PlausibilityCheckStatus.WARNING,
+      ]);
 
     if (error) {
       throw new Error(`Failed to fetch failed checks: ${error.message}`);
@@ -703,7 +770,9 @@ export class ExceptionReportingService {
       .eq('financial_statement_id', financialStatementId)
       .eq('source_type', ExceptionSourceType.PLAUSIBILITY_CHECK);
 
-    const existingSourceIds = new Set((existingExceptions || []).map(e => e.source_id));
+    const existingSourceIds = new Set(
+      (existingExceptions || []).map((e) => e.source_id),
+    );
 
     const exceptions: ExceptionReport[] = [];
 
@@ -717,7 +786,10 @@ export class ExceptionReportingService {
           );
           exceptions.push(exception);
         } catch (err) {
-          console.error(`Failed to create exception for check ${check.id}:`, err);
+          console.error(
+            `Failed to create exception for check ${check.id}:`,
+            err,
+          );
         }
       }
     }
@@ -753,7 +825,9 @@ export class ExceptionReportingService {
       .eq('financial_statement_id', financialStatementId)
       .eq('source_type', ExceptionSourceType.VARIANCE_ANALYSIS);
 
-    const existingSourceIds = new Set((existingExceptions || []).map(e => e.source_id));
+    const existingSourceIds = new Set(
+      (existingExceptions || []).map((e) => e.source_id),
+    );
 
     const exceptions: ExceptionReport[] = [];
 
@@ -767,7 +841,10 @@ export class ExceptionReportingService {
           );
           exceptions.push(exception);
         } catch (err) {
-          console.error(`Failed to create exception for variance ${variance.id}:`, err);
+          console.error(
+            `Failed to create exception for variance ${variance.id}:`,
+            err,
+          );
         }
       }
     }

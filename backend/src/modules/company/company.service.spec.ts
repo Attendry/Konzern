@@ -99,7 +99,9 @@ describe('CompanyService', () => {
       const companyId = 'non-existent-id';
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne(companyId)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(companyId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

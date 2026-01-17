@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 
@@ -41,12 +45,19 @@ export class ParticipationService {
    */
   async createOrUpdate(participation: ParticipationData): Promise<any> {
     // Validierung
-    if (participation.participationPercentage < 0 || participation.participationPercentage > 100) {
-      throw new BadRequestException('Beteiligungsquote muss zwischen 0 und 100 liegen');
+    if (
+      participation.participationPercentage < 0 ||
+      participation.participationPercentage > 100
+    ) {
+      throw new BadRequestException(
+        'Beteiligungsquote muss zwischen 0 und 100 liegen',
+      );
     }
 
     if (participation.parentCompanyId === participation.subsidiaryCompanyId) {
-      throw new BadRequestException('Mutter- und Tochterunternehmen dürfen nicht identisch sein');
+      throw new BadRequestException(
+        'Mutter- und Tochterunternehmen dürfen nicht identisch sein',
+      );
     }
 
     // Prüfe, ob bereits ein Beteiligungsverhältnis existiert
@@ -78,7 +89,9 @@ export class ParticipationService {
         .single();
 
       if (error) {
-        throw new BadRequestException(`Fehler beim Aktualisieren der Beteiligung: ${error.message}`);
+        throw new BadRequestException(
+          `Fehler beim Aktualisieren der Beteiligung: ${error.message}`,
+        );
       }
 
       return data;
@@ -94,7 +107,9 @@ export class ParticipationService {
         .single();
 
       if (error) {
-        throw new BadRequestException(`Fehler beim Erstellen der Beteiligung: ${error.message}`);
+        throw new BadRequestException(
+          `Fehler beim Erstellen der Beteiligung: ${error.message}`,
+        );
       }
 
       return data;
@@ -107,11 +122,15 @@ export class ParticipationService {
   async getByParentCompany(parentCompanyId: string): Promise<any[]> {
     const { data, error } = await this.supabase
       .from('participations')
-      .select('*, parent_company:companies!parent_company_id(*), subsidiary_company:companies!subsidiary_company_id(*)')
+      .select(
+        '*, parent_company:companies!parent_company_id(*), subsidiary_company:companies!subsidiary_company_id(*)',
+      )
       .eq('parent_company_id', parentCompanyId);
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Abrufen der Beteiligungen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Abrufen der Beteiligungen: ${error.message}`,
+      );
     }
 
     return data || [];
@@ -123,11 +142,15 @@ export class ParticipationService {
   async getBySubsidiaryCompany(subsidiaryCompanyId: string): Promise<any[]> {
     const { data, error } = await this.supabase
       .from('participations')
-      .select('*, parent_company:companies!parent_company_id(*), subsidiary_company:companies!subsidiary_company_id(*)')
+      .select(
+        '*, parent_company:companies!parent_company_id(*), subsidiary_company:companies!subsidiary_company_id(*)',
+      )
       .eq('subsidiary_company_id', subsidiaryCompanyId);
 
     if (error) {
-      throw new BadRequestException(`Fehler beim Abrufen der Beteiligungen: ${error.message}`);
+      throw new BadRequestException(
+        `Fehler beim Abrufen der Beteiligungen: ${error.message}`,
+      );
     }
 
     return data || [];
@@ -151,15 +174,21 @@ export class ParticipationService {
       .single();
 
     if (partError || !participation) {
-      throw new NotFoundException(`Beteiligungsverhältnis mit ID ${participationId} nicht gefunden`);
+      throw new NotFoundException(
+        `Beteiligungsverhältnis mit ID ${participationId} nicht gefunden`,
+      );
     }
 
     if (!participation.acquisition_cost) {
-      missingInfo.push('Anschaffungskosten fehlen. Bitte ergänzen Sie diese Information.');
+      missingInfo.push(
+        'Anschaffungskosten fehlen. Bitte ergänzen Sie diese Information.',
+      );
     }
 
     if (!participation.acquisition_date) {
-      missingInfo.push('Erwerbsdatum fehlt. Bitte ergänzen Sie diese Information.');
+      missingInfo.push(
+        'Erwerbsdatum fehlt. Bitte ergänzen Sie diese Information.',
+      );
     }
 
     // 2. Hole Financial Statement für Berechnung
@@ -170,14 +199,17 @@ export class ParticipationService {
       .single();
 
     if (fsError || !financialStatement) {
-      throw new NotFoundException(`Financial Statement mit ID ${financialStatementId} nicht gefunden`);
+      throw new NotFoundException(
+        `Financial Statement mit ID ${financialStatementId} nicht gefunden`,
+      );
     }
 
     const acquisitionCost = parseFloat(participation.acquisition_cost) || 0;
     const acquisitionDate = participation.acquisition_date
       ? new Date(participation.acquisition_date)
       : null;
-    const participationPercentage = parseFloat(participation.participation_percentage) || 0;
+    const participationPercentage =
+      parseFloat(participation.participation_percentage) || 0;
 
     // 3. Berechne anteilige Gewinne seit Erwerb
     let cumulativeProfits = 0;
@@ -205,44 +237,63 @@ export class ParticipationService {
           if (equityBalances) {
             for (const balance of equityBalances) {
               const balanceValue = parseFloat(balance.balance) || 0;
-              const account = Array.isArray(balance.accounts) ? balance.accounts[0] : balance.accounts;
+              const account = Array.isArray(balance.accounts)
+                ? balance.accounts[0]
+                : balance.accounts;
               const accountNumber = account?.account_number || '';
               const accountName = account?.name || '';
 
               // Jahresüberschuss/Fehlbetrag (typischerweise Konten 8000-8999 oder spezifische Konten)
               if (
                 accountNumber.match(/^8[0-9]{3}/) ||
-                accountName.toLowerCase().match(/jahresüberschuss|jahresfehlbetrag|gewinn|verlust|profit|loss/i)
+                accountName
+                  .toLowerCase()
+                  .match(
+                    /jahresüberschuss|jahresfehlbetrag|gewinn|verlust|profit|loss/i,
+                  )
               ) {
                 if (balanceValue > 0) {
-                  cumulativeProfits += (balanceValue * participationPercentage) / 100;
+                  cumulativeProfits +=
+                    (balanceValue * participationPercentage) / 100;
                 } else {
-                  cumulativeLosses += (Math.abs(balanceValue) * participationPercentage) / 100;
+                  cumulativeLosses +=
+                    (Math.abs(balanceValue) * participationPercentage) / 100;
                 }
               }
 
               // Dividenden (typischerweise Konten 6000-6999 oder spezifische Konten)
               if (
                 accountNumber.match(/^6[0-9]{3}/) ||
-                accountName.toLowerCase().match(/dividende|ausschüttung|dividend|distribution/i)
+                accountName
+                  .toLowerCase()
+                  .match(/dividende|ausschüttung|dividend|distribution/i)
               ) {
                 if (balanceValue < 0) {
                   // Dividenden sind typischerweise negativ (Ausschüttung)
-                  cumulativeDividends += (Math.abs(balanceValue) * participationPercentage) / 100;
+                  cumulativeDividends +=
+                    (Math.abs(balanceValue) * participationPercentage) / 100;
                 }
               }
             }
           }
         }
       } else {
-        missingInfo.push('Keine historischen Financial Statements seit Erwerb gefunden. Anteilige Gewinne/Verluste können nicht berechnet werden.');
+        missingInfo.push(
+          'Keine historischen Financial Statements seit Erwerb gefunden. Anteilige Gewinne/Verluste können nicht berechnet werden.',
+        );
       }
     } else {
-      missingInfo.push('Erwerbsdatum fehlt. Historische Entwicklungen können nicht berechnet werden.');
+      missingInfo.push(
+        'Erwerbsdatum fehlt. Historische Entwicklungen können nicht berechnet werden.',
+      );
     }
 
     // 4. Berechne Beteiligungsbuchwert nach HGB § 301
-    const bookValue = acquisitionCost + cumulativeProfits - cumulativeLosses - cumulativeDividends;
+    const bookValue =
+      acquisitionCost +
+      cumulativeProfits -
+      cumulativeLosses -
+      cumulativeDividends;
 
     return {
       participationId: participation.id,

@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { 
-  CreateParticipationDto, 
-  UpdateParticipationDto, 
+import {
+  CreateParticipationDto,
+  UpdateParticipationDto,
   RecordOwnershipChangeDto,
 } from './dto/participation.dto';
 
@@ -17,16 +21,20 @@ export class ParticipationService {
   async findAll() {
     const { data, error } = await this.supabase
       .from('participations')
-      .select(`
+      .select(
+        `
         *,
         parent_company:companies!participations_parent_company_id_fkey(id, name),
         subsidiary_company:companies!participations_subsidiary_company_id_fkey(id, name)
-      `)
+      `,
+      )
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Error fetching participations: ${error.message}`);
+      throw new BadRequestException(
+        `Error fetching participations: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapParticipation);
@@ -35,11 +43,13 @@ export class ParticipationService {
   async findById(id: string) {
     const { data, error } = await this.supabase
       .from('participations')
-      .select(`
+      .select(
+        `
         *,
         parent_company:companies!participations_parent_company_id_fkey(*),
         subsidiary_company:companies!participations_subsidiary_company_id_fkey(*)
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -53,16 +63,20 @@ export class ParticipationService {
   async findByParentCompany(parentCompanyId: string) {
     const { data, error } = await this.supabase
       .from('participations')
-      .select(`
+      .select(
+        `
         *,
         subsidiary_company:companies!participations_subsidiary_company_id_fkey(id, name)
-      `)
+      `,
+      )
       .eq('parent_company_id', parentCompanyId)
       .eq('is_active', true)
       .order('participation_percentage', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Error fetching participations: ${error.message}`);
+      throw new BadRequestException(
+        `Error fetching participations: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapParticipation);
@@ -71,15 +85,19 @@ export class ParticipationService {
   async findBySubsidiaryCompany(subsidiaryCompanyId: string) {
     const { data, error } = await this.supabase
       .from('participations')
-      .select(`
+      .select(
+        `
         *,
         parent_company:companies!participations_parent_company_id_fkey(id, name)
-      `)
+      `,
+      )
       .eq('subsidiary_company_id', subsidiaryCompanyId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Error fetching participations: ${error.message}`);
+      throw new BadRequestException(
+        `Error fetching participations: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapParticipation);
@@ -96,7 +114,9 @@ export class ParticipationService {
       .single();
 
     if (existing) {
-      throw new BadRequestException('Active participation already exists for these companies');
+      throw new BadRequestException(
+        'Active participation already exists for these companies',
+      );
     }
 
     const { data, error } = await this.supabase
@@ -105,7 +125,8 @@ export class ParticipationService {
         parent_company_id: dto.parentCompanyId,
         subsidiary_company_id: dto.subsidiaryCompanyId,
         participation_percentage: dto.participationPercentage,
-        voting_rights_percentage: dto.votingRightsPercentage || dto.participationPercentage,
+        voting_rights_percentage:
+          dto.votingRightsPercentage || dto.participationPercentage,
         acquisition_cost: dto.acquisitionCost,
         acquisition_date: dto.acquisitionDate,
         goodwill: dto.goodwill || 0,
@@ -123,7 +144,9 @@ export class ParticipationService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Error creating participation: ${error.message}`);
+      throw new BadRequestException(
+        `Error creating participation: ${error.message}`,
+      );
     }
 
     return this.mapParticipation(data);
@@ -134,17 +157,26 @@ export class ParticipationService {
       updated_at: new Date().toISOString(),
     };
 
-    if (dto.participationPercentage !== undefined) updateData.participation_percentage = dto.participationPercentage;
-    if (dto.votingRightsPercentage !== undefined) updateData.voting_rights_percentage = dto.votingRightsPercentage;
-    if (dto.acquisitionCost !== undefined) updateData.acquisition_cost = dto.acquisitionCost;
+    if (dto.participationPercentage !== undefined)
+      updateData.participation_percentage = dto.participationPercentage;
+    if (dto.votingRightsPercentage !== undefined)
+      updateData.voting_rights_percentage = dto.votingRightsPercentage;
+    if (dto.acquisitionCost !== undefined)
+      updateData.acquisition_cost = dto.acquisitionCost;
     if (dto.goodwill !== undefined) updateData.goodwill = dto.goodwill;
-    if (dto.negativeGoodwill !== undefined) updateData.negative_goodwill = dto.negativeGoodwill;
-    if (dto.hiddenReserves !== undefined) updateData.hidden_reserves = dto.hiddenReserves;
-    if (dto.hiddenLiabilities !== undefined) updateData.hidden_liabilities = dto.hiddenLiabilities;
-    if (dto.equityAtAcquisition !== undefined) updateData.equity_at_acquisition = dto.equityAtAcquisition;
+    if (dto.negativeGoodwill !== undefined)
+      updateData.negative_goodwill = dto.negativeGoodwill;
+    if (dto.hiddenReserves !== undefined)
+      updateData.hidden_reserves = dto.hiddenReserves;
+    if (dto.hiddenLiabilities !== undefined)
+      updateData.hidden_liabilities = dto.hiddenLiabilities;
+    if (dto.equityAtAcquisition !== undefined)
+      updateData.equity_at_acquisition = dto.equityAtAcquisition;
     if (dto.isActive !== undefined) updateData.is_active = dto.isActive;
-    if (dto.disposalDate !== undefined) updateData.disposal_date = dto.disposalDate;
-    if (dto.disposalProceeds !== undefined) updateData.disposal_proceeds = dto.disposalProceeds;
+    if (dto.disposalDate !== undefined)
+      updateData.disposal_date = dto.disposalDate;
+    if (dto.disposalProceeds !== undefined)
+      updateData.disposal_proceeds = dto.disposalProceeds;
 
     const { data, error } = await this.supabase
       .from('participations')
@@ -154,7 +186,9 @@ export class ParticipationService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Error updating participation: ${error.message}`);
+      throw new BadRequestException(
+        `Error updating participation: ${error.message}`,
+      );
     }
 
     return this.mapParticipation(data);
@@ -164,14 +198,16 @@ export class ParticipationService {
     // Soft delete by setting is_active to false
     const { error } = await this.supabase
       .from('participations')
-      .update({ 
+      .update({
         is_active: false,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id);
 
     if (error) {
-      throw new BadRequestException(`Error deleting participation: ${error.message}`);
+      throw new BadRequestException(
+        `Error deleting participation: ${error.message}`,
+      );
     }
 
     return { success: true };
@@ -185,13 +221,18 @@ export class ParticipationService {
       .order('effective_date', { ascending: false });
 
     if (error) {
-      throw new BadRequestException(`Error fetching ownership history: ${error.message}`);
+      throw new BadRequestException(
+        `Error fetching ownership history: ${error.message}`,
+      );
     }
 
     return (data || []).map(this.mapOwnershipHistory);
   }
 
-  async recordOwnershipChange(participationId: string, dto: RecordOwnershipChangeDto) {
+  async recordOwnershipChange(
+    participationId: string,
+    dto: RecordOwnershipChangeDto,
+  ) {
     const percentageChange = dto.percentageAfter - dto.percentageBefore;
 
     const { data, error } = await this.supabase
@@ -213,7 +254,9 @@ export class ParticipationService {
       .single();
 
     if (error) {
-      throw new BadRequestException(`Error recording ownership change: ${error.message}`);
+      throw new BadRequestException(
+        `Error recording ownership change: ${error.message}`,
+      );
     }
 
     // Update participation with new percentage

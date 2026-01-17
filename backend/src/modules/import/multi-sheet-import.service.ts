@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { SupabaseMapper } from '../../common/supabase-mapper.util';
 import * as XLSX from 'xlsx';
@@ -64,14 +69,20 @@ export class MultiSheetImportService {
     const allWarnings: string[] = [];
 
     // Sheets to ignore
-    const ignoreSheets = ['anleitung', 'instruction', 'hinweise', 'hgb-bilanzstruktur', 'kontenplan-referenz'];
+    const ignoreSheets = [
+      'anleitung',
+      'instruction',
+      'hinweise',
+      'hgb-bilanzstruktur',
+      'kontenplan-referenz',
+    ];
 
     // Process each sheet
     for (const sheetName of workbook.SheetNames) {
       const sheetNameLower = sheetName.toLowerCase();
-      
+
       // Skip ignored sheets
-      if (ignoreSheets.some(ignore => sheetNameLower.includes(ignore))) {
+      if (ignoreSheets.some((ignore) => sheetNameLower.includes(ignore))) {
         console.log(`[MultiSheetImport] Skipping sheet: "${sheetName}"`);
         continue;
       }
@@ -89,8 +100,12 @@ export class MultiSheetImportService {
         allErrors.push(...result.errors);
         allWarnings.push(...result.warnings);
       } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`[MultiSheetImport] Error processing sheet "${sheetName}":`, errorMessage);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          `[MultiSheetImport] Error processing sheet "${sheetName}":`,
+          errorMessage,
+        );
         results.push({
           sheetName,
           sheetType: 'unknown',
@@ -121,7 +136,10 @@ export class MultiSheetImportService {
     options: { fiscalYear: number; periodStart?: string; periodEnd?: string },
   ): Promise<SheetImportResult> {
     const sheetNameLower = sheetName.toLowerCase();
-    const rawDataArray: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+    const rawDataArray: any[][] = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: null,
+    });
 
     if (!rawDataArray || rawDataArray.length < 2) {
       return {
@@ -134,21 +152,53 @@ export class MultiSheetImportService {
     }
 
     // Determine sheet type and route to appropriate processor
-    if (sheetNameLower.includes('bilanz') || sheetNameLower.includes('balance')) {
+    if (
+      sheetNameLower.includes('bilanz') ||
+      sheetNameLower.includes('balance')
+    ) {
       return await this.processBalanceSheet(sheetName, rawDataArray, options);
-    } else if (sheetNameLower.includes('guv') || sheetNameLower.includes('income') || sheetNameLower.includes('profit')) {
-      return await this.processIncomeStatement(sheetName, rawDataArray, options);
-    } else if (sheetNameLower.includes('unternehmen') || sheetNameLower.includes('company')) {
+    } else if (
+      sheetNameLower.includes('guv') ||
+      sheetNameLower.includes('income') ||
+      sheetNameLower.includes('profit')
+    ) {
+      return await this.processIncomeStatement(
+        sheetName,
+        rawDataArray,
+        options,
+      );
+    } else if (
+      sheetNameLower.includes('unternehmen') ||
+      sheetNameLower.includes('company')
+    ) {
       return await this.processCompanies(sheetName, rawDataArray);
-    } else if (sheetNameLower.includes('beteiligung') || sheetNameLower.includes('participation')) {
+    } else if (
+      sheetNameLower.includes('beteiligung') ||
+      sheetNameLower.includes('participation')
+    ) {
       return await this.processParticipations(sheetName, rawDataArray);
-    } else if (sheetNameLower.includes('zwischengesellschaft') || sheetNameLower.includes('intercompany')) {
-      return await this.processIntercompanyTransactions(sheetName, rawDataArray);
-    } else if (sheetNameLower.includes('eigenkapital') || sheetNameLower.includes('equity')) {
+    } else if (
+      sheetNameLower.includes('zwischengesellschaft') ||
+      sheetNameLower.includes('intercompany')
+    ) {
+      return await this.processIntercompanyTransactions(
+        sheetName,
+        rawDataArray,
+      );
+    } else if (
+      sheetNameLower.includes('eigenkapital') ||
+      sheetNameLower.includes('equity')
+    ) {
       return await this.processEquityAllocation(sheetName, rawDataArray);
-    } else if (sheetNameLower.includes('währung') || sheetNameLower.includes('currency')) {
+    } else if (
+      sheetNameLower.includes('währung') ||
+      sheetNameLower.includes('currency')
+    ) {
       return await this.processCurrencyConversion(sheetName, rawDataArray);
-    } else if (sheetNameLower.includes('latente') || sheetNameLower.includes('deferred')) {
+    } else if (
+      sheetNameLower.includes('latente') ||
+      sheetNameLower.includes('deferred')
+    ) {
       return await this.processDeferredTaxes(sheetName, rawDataArray);
     } else {
       // Try to auto-detect by checking headers
@@ -156,7 +206,7 @@ export class MultiSheetImportService {
       if (this.hasAccountColumns(headers)) {
         return await this.processBalanceSheet(sheetName, rawDataArray, options);
       }
-      
+
       return {
         sheetName,
         sheetType: 'unknown',
@@ -171,8 +221,12 @@ export class MultiSheetImportService {
    * Check if headers contain account-related columns
    */
   private hasAccountColumns(headers: any[]): boolean {
-    const headerStr = headers.map(h => String(h || '').toLowerCase()).join(' ');
-    return /konto|account|soll|debit|haben|credit|saldo|balance/.test(headerStr);
+    const headerStr = headers
+      .map((h) => String(h || '').toLowerCase())
+      .join(' ');
+    return /konto|account|soll|debit|haben|credit|saldo|balance/.test(
+      headerStr,
+    );
   }
 
   /**
@@ -183,7 +237,12 @@ export class MultiSheetImportService {
     rawDataArray: any[][],
     options: { fiscalYear: number; periodStart?: string; periodEnd?: string },
   ): Promise<SheetImportResult> {
-    return this.processAccountData(sheetName, rawDataArray, options, 'balance_sheet');
+    return this.processAccountData(
+      sheetName,
+      rawDataArray,
+      options,
+      'balance_sheet',
+    );
   }
 
   /**
@@ -194,7 +253,12 @@ export class MultiSheetImportService {
     rawDataArray: any[][],
     options: { fiscalYear: number; periodStart?: string; periodEnd?: string },
   ): Promise<SheetImportResult> {
-    return this.processAccountData(sheetName, rawDataArray, options, 'income_statement');
+    return this.processAccountData(
+      sheetName,
+      rawDataArray,
+      options,
+      'income_statement',
+    );
   }
 
   /**
@@ -225,24 +289,35 @@ export class MultiSheetImportService {
     // Map headers to indices
     const headerMap: Record<string, number> = {};
     headers.forEach((h, i) => {
-      const key = String(h || '').toLowerCase().trim();
+      const key = String(h || '')
+        .toLowerCase()
+        .trim();
       headerMap[key] = i;
     });
 
     const companyIdx = headerMap['unternehmen'] ?? headerMap['company'] ?? 0;
-    const accountNumberIdx = headerMap['kontonummer'] ?? headerMap['accountnumber'] ?? headerMap['account_number'] ?? 1;
-    const accountNameIdx = headerMap['kontoname'] ?? headerMap['accountname'] ?? headerMap['account_name'] ?? 2;
+    const accountNumberIdx =
+      headerMap['kontonummer'] ??
+      headerMap['accountnumber'] ??
+      headerMap['account_number'] ??
+      1;
+    const accountNameIdx =
+      headerMap['kontoname'] ??
+      headerMap['accountname'] ??
+      headerMap['account_name'] ??
+      2;
     const debitIdx = headerMap['soll'] ?? headerMap['debit'] ?? -1;
     const creditIdx = headerMap['haben'] ?? headerMap['credit'] ?? -1;
     const balanceIdx = headerMap['saldo'] ?? headerMap['balance'] ?? -1;
-    const isIntercompanyIdx = headerMap['zwischengesellschaft'] ?? headerMap['intercompany'] ?? -1;
+    const isIntercompanyIdx =
+      headerMap['zwischengesellschaft'] ?? headerMap['intercompany'] ?? -1;
 
     // Get all companies for name lookup
     const { data: companies } = await this.supabase
       .from('companies')
       .select('id, name');
 
-    const companyMap = new Map(companies?.map(c => [c.name, c.id]) || []);
+    const companyMap = new Map(companies?.map((c) => [c.name, c.id]) || []);
 
     // Group data by company
     const companyDataMap = new Map<string, any[]>();
@@ -258,7 +333,9 @@ export class MultiSheetImportService {
       }
 
       if (!companyMap.has(companyName)) {
-        errors.push(`Zeile ${i + 2}: Unternehmen "${companyName}" nicht gefunden. Bitte erstellen Sie das Unternehmen zuerst.`);
+        errors.push(
+          `Zeile ${i + 2}: Unternehmen "${companyName}" nicht gefunden. Bitte erstellen Sie das Unternehmen zuerst.`,
+        );
         continue;
       }
 
@@ -268,18 +345,32 @@ export class MultiSheetImportService {
 
       companyDataMap.get(companyName)!.push({
         rowIndex: i + 2,
-        accountNumber: accountNumberIdx >= 0 ? String(row[accountNumberIdx] || '').trim() : '',
-        accountName: accountNameIdx >= 0 ? String(row[accountNameIdx] || '').trim() : undefined,
+        accountNumber:
+          accountNumberIdx >= 0
+            ? String(row[accountNumberIdx] || '').trim()
+            : '',
+        accountName:
+          accountNameIdx >= 0
+            ? String(row[accountNameIdx] || '').trim()
+            : undefined,
         debit: debitIdx >= 0 ? this.parseNumber(row[debitIdx]) : undefined,
         credit: creditIdx >= 0 ? this.parseNumber(row[creditIdx]) : undefined,
-        balance: balanceIdx >= 0 ? this.parseNumber(row[balanceIdx]) : undefined,
-        isIntercompany: isIntercompanyIdx >= 0 ? this.parseBoolean(row[isIntercompanyIdx]) : false,
+        balance:
+          balanceIdx >= 0 ? this.parseNumber(row[balanceIdx]) : undefined,
+        isIntercompany:
+          isIntercompanyIdx >= 0
+            ? this.parseBoolean(row[isIntercompanyIdx])
+            : false,
       });
     }
 
     // Process each company's data
-    const periodStart = options.periodStart || new Date(options.fiscalYear, 0, 1).toISOString().split('T')[0];
-    const periodEnd = options.periodEnd || new Date(options.fiscalYear, 11, 31).toISOString().split('T')[0];
+    const periodStart =
+      options.periodStart ||
+      new Date(options.fiscalYear, 0, 1).toISOString().split('T')[0];
+    const periodEnd =
+      options.periodEnd ||
+      new Date(options.fiscalYear, 11, 31).toISOString().split('T')[0];
 
     for (const [companyName, rows] of companyDataMap.entries()) {
       const companyId = companyMap.get(companyName)!;
@@ -287,7 +378,7 @@ export class MultiSheetImportService {
       try {
         // Find or create financial statement
         let financialStatementId: string;
-        
+
         // Check if financial statement exists
         const { data: existingFs } = await this.supabase
           .from('financial_statements')
@@ -298,7 +389,9 @@ export class MultiSheetImportService {
 
         if (existingFs) {
           financialStatementId = existingFs.id;
-          warnings.push(`Jahresabschluss für "${companyName}" (${options.fiscalYear}) existiert bereits, wird verwendet`);
+          warnings.push(
+            `Jahresabschluss für "${companyName}" (${options.fiscalYear}) existiert bereits, wird verwendet`,
+          );
         } else {
           // Create new financial statement
           const newFs = await this.financialStatementService.create({
@@ -312,10 +405,15 @@ export class MultiSheetImportService {
         }
 
         // Process account balances for this company
-        const importResult = await this.importAccountBalances(rows, financialStatementId);
+        const importResult = await this.importAccountBalances(
+          rows,
+          financialStatementId,
+        );
         totalImported += importResult.imported;
-        errors.push(...importResult.errors.map(e => `${companyName}: ${e}`));
-        warnings.push(...importResult.warnings.map(w => `${companyName}: ${w}`));
+        errors.push(...importResult.errors.map((e) => `${companyName}: ${e}`));
+        warnings.push(
+          ...importResult.warnings.map((w) => `${companyName}: ${w}`),
+        );
       } catch (error: any) {
         errors.push(`${companyName}: ${error.message || String(error)}`);
       }
@@ -350,7 +448,7 @@ export class MultiSheetImportService {
     let imported = 0;
 
     // Validate rows
-    const validRows = rows.filter(row => {
+    const validRows = rows.filter((row) => {
       if (!row.accountNumber) {
         errors.push(`Zeile ${row.rowIndex}: Keine Kontonummer`);
         return false;
@@ -363,18 +461,20 @@ export class MultiSheetImportService {
     }
 
     // Get or create accounts
-    const accountNumbers = [...new Set(validRows.map(r => r.accountNumber))];
+    const accountNumbers = [...new Set(validRows.map((r) => r.accountNumber))];
     const { data: existingAccounts } = await this.supabase
       .from('accounts')
       .select('*')
       .in('account_number', accountNumbers);
 
-    const accountMap = new Map(existingAccounts?.map(acc => [acc.account_number, acc]) || []);
+    const accountMap = new Map(
+      existingAccounts?.map((acc) => [acc.account_number, acc]) || [],
+    );
 
     // Create missing accounts
     const accountsToCreate = validRows
-      .filter(row => !accountMap.has(row.accountNumber) && row.accountName)
-      .map(row => ({
+      .filter((row) => !accountMap.has(row.accountNumber) && row.accountName)
+      .map((row) => ({
         account_number: row.accountNumber,
         name: row.accountName!,
         account_type: 'asset' as const, // Default
@@ -391,17 +491,17 @@ export class MultiSheetImportService {
       if (createError) {
         errors.push(`Fehler beim Erstellen von Konten: ${createError.message}`);
       } else {
-        newAccounts?.forEach(acc => accountMap.set(acc.account_number, acc));
+        newAccounts?.forEach((acc) => accountMap.set(acc.account_number, acc));
       }
     }
 
     // Create account balances
     const balancesToCreate = validRows
-      .filter(row => accountMap.has(row.accountNumber))
-      .map(row => {
+      .filter((row) => accountMap.has(row.accountNumber))
+      .map((row) => {
         const account = accountMap.get(row.accountNumber)!;
         const balance = row.balance ?? (row.debit ?? 0) - (row.credit ?? 0);
-        
+
         return {
           financial_statement_id: financialStatementId,
           account_id: account.id,
@@ -426,7 +526,9 @@ export class MultiSheetImportService {
         .insert(balancesToCreate);
 
       if (balanceError) {
-        errors.push(`Fehler beim Erstellen von Kontoständen: ${balanceError.message}`);
+        errors.push(
+          `Fehler beim Erstellen von Kontoständen: ${balanceError.message}`,
+        );
       } else {
         imported = balancesToCreate.length;
       }
@@ -457,7 +559,10 @@ export class MultiSheetImportService {
   /**
    * Process Unternehmensinformationen (Company Information) sheet
    */
-  private async processCompanies(sheetName: string, rawDataArray: any[][]): Promise<SheetImportResult> {
+  private async processCompanies(
+    sheetName: string,
+    rawDataArray: any[][],
+  ): Promise<SheetImportResult> {
     const headers = rawDataArray[0] || [];
     const dataRows = rawDataArray.slice(1);
     const errors: string[] = [];
@@ -467,13 +572,20 @@ export class MultiSheetImportService {
     // Map headers to indices
     const headerMap: Record<string, number> = {};
     headers.forEach((h, i) => {
-      const key = String(h || '').toLowerCase().trim();
+      const key = String(h || '')
+        .toLowerCase()
+        .trim();
       headerMap[key] = i;
     });
 
-    const nameIdx = headerMap['unternehmensname'] ?? headerMap['name'] ?? headerMap['company'] ?? 0;
+    const nameIdx =
+      headerMap['unternehmensname'] ??
+      headerMap['name'] ??
+      headerMap['company'] ??
+      0;
     const typeIdx = headerMap['typ'] ?? headerMap['type'] ?? -1;
-    const participationIdx = headerMap['beteiligungs-%'] ?? headerMap['participation'] ?? -1;
+    const participationIdx =
+      headerMap['beteiligungs-%'] ?? headerMap['participation'] ?? -1;
 
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
@@ -499,17 +611,22 @@ export class MultiSheetImportService {
         }
 
         // Create company
-        const companyType = typeIdx >= 0 ? String(row[typeIdx] || '').trim() : '';
-        const isUltimateParent = companyType.toLowerCase().includes('mutter') || 
-                                 companyType.toLowerCase().includes('parent') ||
-                                 companyType.toLowerCase().includes('h)');
+        const companyType =
+          typeIdx >= 0 ? String(row[typeIdx] || '').trim() : '';
+        const isUltimateParent =
+          companyType.toLowerCase().includes('mutter') ||
+          companyType.toLowerCase().includes('parent') ||
+          companyType.toLowerCase().includes('h)');
 
         await this.companyService.create({
           name: companyName,
           legalForm: companyType || 'GmbH',
           isConsolidated: isUltimateParent, // Ultimate parent companies are consolidated
           parentCompanyId: null, // Will be set from participations sheet
-          participationPercentage: participationIdx >= 0 ? parseFloat(String(row[participationIdx] || '0')) : undefined,
+          participationPercentage:
+            participationIdx >= 0
+              ? parseFloat(String(row[participationIdx] || '0'))
+              : undefined,
         });
 
         imported++;
@@ -530,7 +647,10 @@ export class MultiSheetImportService {
   /**
    * Process Beteiligungsverhältnisse (Participations) sheet
    */
-  private async processParticipations(sheetName: string, rawDataArray: any[][]): Promise<SheetImportResult> {
+  private async processParticipations(
+    sheetName: string,
+    rawDataArray: any[][],
+  ): Promise<SheetImportResult> {
     const headers = rawDataArray[0] || [];
     const dataRows = rawDataArray.slice(1);
     const errors: string[] = [];
@@ -539,22 +659,29 @@ export class MultiSheetImportService {
 
     const headerMap: Record<string, number> = {};
     headers.forEach((h, i) => {
-      const key = String(h || '').toLowerCase().trim();
+      const key = String(h || '')
+        .toLowerCase()
+        .trim();
       headerMap[key] = i;
     });
 
-    const parentIdx = headerMap['mutterunternehmen'] ?? headerMap['parent'] ?? 0;
-    const subsidiaryIdx = headerMap['tochterunternehmen'] ?? headerMap['subsidiary'] ?? 1;
-    const percentageIdx = headerMap['beteiligungs-%'] ?? headerMap['participation'] ?? 2;
-    const costIdx = headerMap['anschaffungskosten'] ?? headerMap['acquisition'] ?? -1;
-    const dateIdx = headerMap['erwerbsdatum'] ?? headerMap['acquisition_date'] ?? -1;
+    const parentIdx =
+      headerMap['mutterunternehmen'] ?? headerMap['parent'] ?? 0;
+    const subsidiaryIdx =
+      headerMap['tochterunternehmen'] ?? headerMap['subsidiary'] ?? 1;
+    const percentageIdx =
+      headerMap['beteiligungs-%'] ?? headerMap['participation'] ?? 2;
+    const costIdx =
+      headerMap['anschaffungskosten'] ?? headerMap['acquisition'] ?? -1;
+    const dateIdx =
+      headerMap['erwerbsdatum'] ?? headerMap['acquisition_date'] ?? -1;
 
     // Get all companies for name lookup
     const { data: companies } = await this.supabase
       .from('companies')
       .select('id, name');
 
-    const companyMap = new Map(companies?.map(c => [c.name, c.id]) || []);
+    const companyMap = new Map(companies?.map((c) => [c.name, c.id]) || []);
 
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
@@ -574,7 +701,9 @@ export class MultiSheetImportService {
         const subsidiaryId = companyMap.get(subsidiaryName);
 
         if (!parentId || !subsidiaryId) {
-          errors.push(`Zeile ${i + 2}: Unternehmen nicht gefunden (${parentName} oder ${subsidiaryName})`);
+          errors.push(
+            `Zeile ${i + 2}: Unternehmen nicht gefunden (${parentName} oder ${subsidiaryName})`,
+          );
           continue;
         }
 
@@ -582,8 +711,10 @@ export class MultiSheetImportService {
           parentCompanyId: parentId,
           subsidiaryCompanyId: subsidiaryId,
           participationPercentage: percentage,
-          acquisitionCost: costIdx >= 0 ? parseFloat(String(row[costIdx] || '0')) : null,
-          acquisitionDate: dateIdx >= 0 ? String(row[dateIdx] || '').trim() || null : null,
+          acquisitionCost:
+            costIdx >= 0 ? parseFloat(String(row[costIdx] || '0')) : null,
+          acquisitionDate:
+            dateIdx >= 0 ? String(row[dateIdx] || '').trim() || null : null,
         });
 
         imported++;
@@ -604,7 +735,10 @@ export class MultiSheetImportService {
   /**
    * Process Zwischengesellschaftsgeschäfte (Intercompany Transactions) sheet
    */
-  private async processIntercompanyTransactions(sheetName: string, rawDataArray: any[][]): Promise<SheetImportResult> {
+  private async processIntercompanyTransactions(
+    sheetName: string,
+    rawDataArray: any[][],
+  ): Promise<SheetImportResult> {
     const headers = rawDataArray[0] || [];
     const dataRows = rawDataArray.slice(1);
     const errors: string[] = [];
@@ -613,7 +747,9 @@ export class MultiSheetImportService {
 
     const headerMap: Record<string, number> = {};
     headers.forEach((h, i) => {
-      const key = String(h || '').toLowerCase().trim();
+      const key = String(h || '')
+        .toLowerCase()
+        .trim();
       headerMap[key] = i;
     });
 
@@ -629,7 +765,7 @@ export class MultiSheetImportService {
       .from('companies')
       .select('id, name');
 
-    const companyMap = new Map(companies?.map(c => [c.name, c.id]) || []);
+    const companyMap = new Map(companies?.map((c) => [c.name, c.id]) || []);
 
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
@@ -660,8 +796,14 @@ export class MultiSheetImportService {
             from_company_id: fromId,
             to_company_id: toId,
             amount: amount,
-            transaction_date: dateIdx >= 0 ? String(row[dateIdx] || '').trim() || new Date().toISOString() : new Date().toISOString(),
-            description: descIdx >= 0 ? String(row[descIdx] || '').trim() : String(row[typeIdx] || '').trim(),
+            transaction_date:
+              dateIdx >= 0
+                ? String(row[dateIdx] || '').trim() || new Date().toISOString()
+                : new Date().toISOString(),
+            description:
+              descIdx >= 0
+                ? String(row[descIdx] || '').trim()
+                : String(row[typeIdx] || '').trim(),
           });
 
         if (error) {
@@ -687,7 +829,10 @@ export class MultiSheetImportService {
   /**
    * Process Eigenkapital-Aufteilung (Equity Allocation) sheet
    */
-  private async processEquityAllocation(sheetName: string, rawDataArray: any[][]): Promise<SheetImportResult> {
+  private async processEquityAllocation(
+    sheetName: string,
+    rawDataArray: any[][],
+  ): Promise<SheetImportResult> {
     // This is reference data for consolidation, can be stored for later use
     return {
       sheetName,
@@ -701,7 +846,10 @@ export class MultiSheetImportService {
   /**
    * Process Währungsumrechnung (Currency Conversion) sheet
    */
-  private async processCurrencyConversion(sheetName: string, rawDataArray: any[][]): Promise<SheetImportResult> {
+  private async processCurrencyConversion(
+    sheetName: string,
+    rawDataArray: any[][],
+  ): Promise<SheetImportResult> {
     // Store currency conversion rates for companies
     return {
       sheetName,
@@ -715,7 +863,10 @@ export class MultiSheetImportService {
   /**
    * Process Latente Steuern (Deferred Taxes) sheet
    */
-  private async processDeferredTaxes(sheetName: string, rawDataArray: any[][]): Promise<SheetImportResult> {
+  private async processDeferredTaxes(
+    sheetName: string,
+    rawDataArray: any[][],
+  ): Promise<SheetImportResult> {
     // Store deferred tax information
     return {
       sheetName,

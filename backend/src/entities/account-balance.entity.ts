@@ -27,21 +27,47 @@ export class AccountBalance {
   @JoinColumn({ name: 'account_id' })
   account: Account;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'debit' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'debit',
+  })
   debit: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'credit' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'credit',
+  })
   credit: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'balance' })
+  @Column({
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+    name: 'balance',
+  })
   balance: number;
 
   @Column({ type: 'boolean', default: false, name: 'is_intercompany' })
   isIntercompany: boolean;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'updated_at' })
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    name: 'updated_at',
+  })
   updatedAt: Date;
 }
