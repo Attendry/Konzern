@@ -384,8 +384,8 @@ function TreeView({
             </button>
           )}
           {!hasChildren && <span style={{ width: '12px' }} />}
-          <span style={{ fontSize: '0.75rem' }}>
-            {node.type === 'parent' ? '🏢' : node.type === 'subsidiary' ? '📦' : '🔵'}
+          <span style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-secondary)' }}>
+            {CompanyIcons[node.type] || CompanyIcons.standalone}
           </span>
           <span style={{ fontWeight: node.type === 'parent' ? '600' : '400' }}>{node.name}</span>
           {node.participationPercentage !== undefined && node.participationPercentage > 0 && (

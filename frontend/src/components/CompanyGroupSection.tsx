@@ -4,6 +4,18 @@ import { AdvancedTable, TableColumn } from './AdvancedTable';
 import CompanyHierarchyTree from './CompanyHierarchyTree';
 import '../App.css';
 
+// SVG Icon for parent company
+const ParentCompanyIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 21h18" />
+    <path d="M5 21V7l8-4v18" />
+    <path d="M19 21V11l-6-4" />
+    <path d="M9 9v.01" />
+    <path d="M9 12v.01" />
+    <path d="M9 15v.01" />
+  </svg>
+);
+
 interface CompanyHierarchy {
   id: string;
   name: string;
@@ -151,7 +163,9 @@ export function CompanyGroupSection({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-              <span style={{ fontSize: '1.2rem' }}>🏢</span>
+              <span style={{ display: 'flex', alignItems: 'center', color: 'var(--color-primary)' }}>
+                {ParentCompanyIcon}
+              </span>
               {parentCompany.name}
               <span className="badge badge-primary" style={{ marginLeft: 'var(--spacing-2)' }}>
                 Mutterunternehmen
@@ -178,7 +192,7 @@ export function CompanyGroupSection({
               marginBottom: 'var(--spacing-2)',
               color: 'var(--color-text-primary)'
             }}>
-              📊 Konzernstruktur
+              Konzernstruktur
             </h3>
             <div style={{ 
               padding: 'var(--spacing-3)', 
@@ -203,14 +217,14 @@ export function CompanyGroupSection({
 
         {/* Company Table Section */}
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
-          <h3 style={{ 
-            fontSize: '1rem', 
-            fontWeight: '600', 
-            marginBottom: 'var(--spacing-2)',
-            color: 'var(--color-text-primary)'
-          }}>
-            📋 Unternehmen in diesem Konzern ({companies.length})
-          </h3>
+            <h3 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: 'var(--spacing-2)',
+              color: 'var(--color-text-primary)'
+            }}>
+              Unternehmen in diesem Konzern ({companies.length})
+            </h3>
           <AdvancedTable
             data={companies}
             columns={companyColumns}
@@ -222,14 +236,14 @@ export function CompanyGroupSection({
 
         {/* Imported Data Section */}
         <div>
-          <h3 style={{ 
-            fontSize: '1rem', 
-            fontWeight: '600', 
-            marginBottom: 'var(--spacing-2)',
-            color: 'var(--color-text-primary)'
-          }}>
-            📊 Importierte Daten
-          </h3>
+            <h3 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: 'var(--spacing-2)',
+              color: 'var(--color-text-primary)'
+            }}>
+              Importierte Daten
+            </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
             {companies.map((company) => {
               const isExpanded = expandedCompanyId === company.id;

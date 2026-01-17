@@ -676,7 +676,6 @@ function CompanyManagement() {
                     padding: 'var(--spacing-4)'
                   }}>
                     <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                      <span style={{ fontSize: '1.2rem' }}>🔵</span>
                       Standalone Unternehmen ({groupedCompanies.standalone.length})
                     </h2>
                   </div>
@@ -696,7 +695,7 @@ function CompanyManagement() {
                         marginBottom: 'var(--spacing-2)',
                         color: 'var(--color-text-primary)'
                       }}>
-                        📊 Importierte Daten
+                        Importierte Daten
                       </h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
                         {groupedCompanies.standalone.map((company) => {
