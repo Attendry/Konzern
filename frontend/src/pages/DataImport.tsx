@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { importService } from '../services/importService';
 import { financialStatementService } from '../services/financialStatementService';
 import { companyService } from '../services/companyService';
@@ -13,12 +13,13 @@ type ImportMode = 'quick' | 'wizard' | 'batch';
 
 function DataImport() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { success, error: showError } = useToastContext();
   const [importMode, setImportMode] = useState<ImportMode>('quick');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'excel' | 'csv'>('excel');
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [financialStatementId, setFinancialStatementId] = useState<string>('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>(searchParams.get('companyId') || '');
+  const [financialStatementId, setFinancialStatementId] = useState<string>(searchParams.get('financialStatementId') || '');
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingStatements, setLoadingStatements] = useState(true);
@@ -42,6 +43,20 @@ function DataImport() {
     loadStatements();
     loadCompanies();
   }, []);
+
+  // Update selected company and financial statement when URL params change
+  useEffect(() => {
+    const companyIdParam = searchParams.get('companyId');
+    const fsIdParam = searchParams.get('financialStatementId');
+    
+    if (companyIdParam && companyIdParam !== selectedCompanyId) {
+      setSelectedCompanyId(companyIdParam);
+    }
+    
+    if (fsIdParam && fsIdParam !== financialStatementId) {
+      setFinancialStatementId(fsIdParam);
+    }
+  }, [searchParams, selectedCompanyId, financialStatementId]);
 
   const loadCompanies = async () => {
     try {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { companyService } from '../services/companyService';
 import { participationService } from '../services/participationService';
 import { financialStatementService } from '../services/financialStatementService';
@@ -14,6 +14,7 @@ import '../App.css';
 
 function CompanyManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -682,74 +683,53 @@ function CompanyManagement() {
                                 </div>
                               )}
                             </div>
-                            {/* Debug info */}
-                            <div style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-                              <strong>Debug Info:</strong>
-                              <div>allBalances: {data.allBalances ? `${data.allBalances.length} items` : 'undefined'}</div>
-                              <div>financialStatements: {data.financialStatements ? `${data.financialStatements.length} items` : 'undefined'}</div>
-                              {data.financialStatements && data.financialStatements.length > 0 && (
-                                <div style={{ marginTop: 'var(--spacing-2)' }}>
-                                  <div>Financial Statement IDs: {data.financialStatements.map(fs => fs.id).join(', ')}</div>
-                                  {data.financialStatements.map((fs) => (
-                                    <div key={fs.id} style={{ marginTop: 'var(--spacing-2)' }}>
-                                      <div>FS {fs.fiscalYear} ({fs.id.substring(0, 8)}...):</div>
-                                      <div style={{ marginLeft: '1rem' }}>
-                                        Balances for this FS: {data.balances && data.balances[fs.id] ? `${data.balances[fs.id].length} items` : '0 items'}
-                                      </div>
-                                      <button
-                                        className="button button-secondary button-sm"
-                                        style={{ marginTop: '0.25rem', marginLeft: '1rem' }}
-                                        onClick={async () => {
-                                          try {
-                                            const directBalances = await financialStatementService.getBalances(fs.id);
-                                            console.log(`Direct balances for FS ${fs.id}:`, directBalances);
-                                            alert(`Direkte Abfrage für FS ${fs.fiscalYear}: ${directBalances.length} Kontensalden gefunden`);
-                                            // Reload company data after direct check
-                                            loadCompanyData(company.id);
-                                          } catch (err) {
-                                            console.error('Error fetching direct balances:', err);
-                                            alert('Fehler beim Abrufen der Kontensalden');
-                                          }
-                                        }}
-                                      >
-                                        Direkt prüfen
-                                      </button>
-                                      <button
-                                        className="button button-secondary button-sm"
-                                        style={{ marginTop: '0.25rem', marginLeft: '0.5rem' }}
-                                        onClick={async () => {
-                                          try {
-                                            const diagnosis = await financialStatementService.diagnoseCompanyBalances(company.id);
-                                            console.log('Company balance diagnosis:', diagnosis);
-                                            const message = `Diagnose für ${company.name}:\n\n` +
-                                              `Jahresabschlüsse: ${diagnosis.financialStatements.length}\n` +
-                                              `Gesamt Kontensalden: ${diagnosis.totalBalances}\n` +
-                                              `Verwaiste Salden: ${diagnosis.orphanedBalances.length}\n\n` +
-                                              `Details pro Jahresabschluss:\n` +
-                                              Object.entries(diagnosis.balancesByFS).map(([fsId, count]) => {
-                                                const fs = diagnosis.financialStatements.find((f: any) => f.id === fsId);
-                                                return `  FS ${fs?.fiscal_year || '?'} (${fsId.substring(0, 8)}...): ${count} Salden`;
-                                              }).join('\n');
-                                            alert(message);
-                                          } catch (err) {
-                                            console.error('Error diagnosing company balances:', err);
-                                            alert('Fehler bei der Diagnose');
-                                          }
-                                        }}
-                                      >
-                                        Diagnose
-                                      </button>
+                            {/* Link to Data Import */}
+                            <div style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                              {data.allBalances && Array.isArray(data.allBalances) && data.allBalances.length === 0 ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: '500', marginBottom: 'var(--spacing-1)' }}>
+                                      Keine Daten vorhanden
                                     </div>
-                                  ))}
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                      Für dieses Unternehmen wurden noch keine Kontensalden importiert.
+                                    </div>
+                                  </div>
+                                  <button
+                                    className="button button-primary"
+                                    onClick={() => {
+                                      const params = new URLSearchParams({ companyId: company.id });
+                                      if (data.financialStatements && data.financialStatements.length > 0) {
+                                        params.set('financialStatementId', data.financialStatements[0].id);
+                                      }
+                                      navigate(`/import?${params.toString()}`);
+                                    }}
+                                  >
+                                    Daten importieren
+                                  </button>
                                 </div>
-                              )}
-                              {data.allBalances && data.allBalances.length > 0 && (
-                                <div style={{ marginTop: 'var(--spacing-2)' }}>
-                                  First balance: {JSON.stringify({
-                                    id: data.allBalances[0].id,
-                                    accountNumber: data.allBalances[0].account?.accountNumber,
-                                    hasAccount: !!data.allBalances[0].account
-                                  }, null, 2)}
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: '500', marginBottom: 'var(--spacing-1)' }}>
+                                      Daten verwalten
+                                    </div>
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                                      Weitere Daten importieren oder vorhandene Daten aktualisieren.
+                                    </div>
+                                  </div>
+                                  <button
+                                    className="button button-secondary"
+                                    onClick={() => {
+                                      const params = new URLSearchParams({ companyId: company.id });
+                                      if (data.financialStatements && data.financialStatements.length > 0) {
+                                        params.set('financialStatementId', data.financialStatements[0].id);
+                                      }
+                                      navigate(`/import?${params.toString()}`);
+                                    }}
+                                  >
+                                    Zu Datenimport
+                                  </button>
                                 </div>
                               )}
                             </div>
