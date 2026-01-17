@@ -149,6 +149,8 @@ export class FinancialStatementService {
     const financialStatementIds = financialStatements.map((fs: any) => fs.id);
     const fsMap = new Map(financialStatements.map((fs: any) => [fs.id, fs]));
 
+    console.log(`[FinancialStatementService] Looking for balances for company ${companyId} in ${financialStatementIds.length} financial statements:`, financialStatementIds);
+
     // Get all account balances for all financial statements of this company
     const { data, error } = await this.supabase
       .from('account_balances')
@@ -167,8 +169,55 @@ export class FinancialStatementService {
     }
 
     console.log(`[FinancialStatementService] Found ${data?.length || 0} balances for company ${companyId} across ${financialStatementIds.length} financial statements`);
+    
+    // Debug: If no balances found, check if they exist without the relationship
+    if (!data || data.length === 0) {
+      console.log(`[FinancialStatementService] No balances found with relationships. Checking raw balances...`);
+      const { data: rawBalances, error: rawError } = await this.supabase
+        .from('account_balances')
+        .select('id, financial_statement_id, account_id')
+        .in('financial_statement_id', financialStatementIds);
+      
+      if (rawError) {
+        console.error('[FinancialStatementService] Error checking raw balances:', rawError);
+      } else {
+        console.log(`[FinancialStatementService] Found ${rawBalances?.length || 0} raw balances (without relationships) for financial statements:`, financialStatementIds);
+        if (rawBalances && rawBalances.length > 0) {
+          // Check if accounts exist for these balances
+          const accountIds = [...new Set(rawBalances.map((b: any) => b.account_id))];
+          const { data: accounts } = await this.supabase
+            .from('accounts')
+            .select('id, account_number')
+            .in('id', accountIds);
+          console.log(`[FinancialStatementService] Found ${accounts?.length || 0} accounts for ${accountIds.length} account IDs`);
+        }
+      }
+    }
+    
+    // Debug: Check if balances exist but account relationship is missing
+    if (data && data.length > 0) {
+      const balancesWithoutAccount = data.filter((item: any) => !item.account);
+      if (balancesWithoutAccount.length > 0) {
+        console.warn(`[FinancialStatementService] Found ${balancesWithoutAccount.length} balances without account relationship`);
+      }
+      
+      // Also check raw data
+      console.log(`[FinancialStatementService] Sample balance data:`, data.slice(0, 2).map((item: any) => ({
+        id: item.id,
+        account_id: item.account_id,
+        hasAccount: !!item.account,
+        accountNumber: item.account?.account_number || item.account?.accountNumber || 'N/A'
+      })));
+    }
 
-    const mapped = (data || []).map((item) => SupabaseMapper.toAccountBalance(item));
+    const mapped = (data || []).map((item) => {
+      try {
+        return SupabaseMapper.toAccountBalance(item);
+      } catch (err) {
+        console.error('[FinancialStatementService] Error mapping balance:', err, item);
+        return null;
+      }
+    }).filter((item) => item !== null) as AccountBalance[];
     
     // Sort by account number, then by fiscal year
     mapped.sort((a, b) => {
@@ -185,6 +234,7 @@ export class FinancialStatementService {
       return yearB - yearA;
     });
 
+    console.log(`[FinancialStatementService] Returning ${mapped.length} mapped balances for company ${companyId}`);
     return mapped;
   }
 
