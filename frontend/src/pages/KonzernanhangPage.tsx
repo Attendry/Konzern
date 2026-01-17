@@ -11,6 +11,7 @@ import { financialStatementService } from '../services/financialStatementService
 import { FinancialStatement } from '../types';
 import { MetricCard } from '../components/MetricCard';
 import { Modal } from '../components/Modal';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import '../App.css';
 
 // Status labels and colors
@@ -264,6 +265,14 @@ export default function KonzernanhangPage() {
           ← Zurück zum Dashboard
         </button>
       </div>
+
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: '/' },
+          { label: 'Berichte', to: '/reports' },
+          { label: 'Konzernanhang' }
+        ]}
+      />
 
       {/* Header */}
       <div className="page-header">

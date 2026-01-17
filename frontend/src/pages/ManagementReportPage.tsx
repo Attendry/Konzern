@@ -4,6 +4,7 @@ import { managementReportService, ManagementReport } from '../services/managemen
 import { financialStatementService } from '../services/financialStatementService';
 import { FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
+import { BackButton } from '../components/BackButton';
 import '../App.css';
 
 function ManagementReportPage() {
@@ -233,6 +234,9 @@ function ManagementReportPage() {
 
   return (
     <div>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <div>
           <h1>{report.reportTitle}</h1>

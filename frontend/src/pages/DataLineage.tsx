@@ -5,6 +5,8 @@ import { financialStatementService } from '../services/financialStatementService
 import { FinancialStatement } from '../types';
 import { MetricCard } from '../components/MetricCard';
 import { Modal } from '../components/Modal';
+import { ErrorState } from '../components/ErrorState';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import '../App.css';
 
 // Node type labels in German
@@ -420,12 +422,35 @@ export default function DataLineage() {
         </div>
       </div>
 
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: '/' },
+          { label: 'Berichte', to: '/reports' },
+          { label: 'Prüfpfad' }
+        ]}
+      />
+
       {/* Error message */}
       {error && (
-        <div className="alert alert-error">
-          {error}
-          <button onClick={() => setError(null)}>&times;</button>
-        </div>
+        <ErrorState
+          error={error}
+          onRetry={() => {
+            setError(null);
+            if (selectedFsId) {
+              loadLineageData(selectedFsId);
+            }
+          }}
+          context={{
+            page: 'DataLineage',
+            financialStatementId: selectedFsId || undefined,
+          }}
+          alternativeActions={[
+            {
+              label: 'Zum Dashboard',
+              onClick: () => navigate('/')
+            }
+          ]}
+        />
       )}
 
       {/* Stats Cards */}

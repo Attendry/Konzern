@@ -22,6 +22,10 @@ import { FirstConsolidationWizard } from '../components/FirstConsolidationWizard
 import { MinorityInterestDashboard } from '../components/MinorityInterestDashboard';
 import { useToastContext } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
+import { BackButton } from '../components/BackButton';
+import { ErrorState } from '../components/ErrorState';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 import '../App.css';
 
 type EntryTab = 'all' | 'manual' | 'pending';
@@ -318,6 +322,9 @@ function Consolidation() {
 
   return (
     <div>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-6)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <h1>Konsolidierung</h1>
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
@@ -379,9 +386,24 @@ function Consolidation() {
         </div>
         
         {error && (
-          <div className="error-message">
-            <strong>Hinweis:</strong> {error}
-          </div>
+          <ErrorState
+            error={error}
+            onRetry={loadStatements}
+            context={{
+              page: 'Consolidation',
+            }}
+            severity={statements.length === 0 ? 'warning' : 'blocking'}
+            alternativeActions={[
+              {
+                label: 'Zum Dashboard',
+                onClick: () => navigate('/')
+              },
+              {
+                label: 'Daten importieren',
+                onClick: () => navigate('/import')
+              }
+            ]}
+          />
         )}
 
         <div className="form-group">
@@ -404,9 +426,27 @@ function Consolidation() {
                 ))}
               </select>
               {statements.length === 0 && (
-                <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
-                  Keine Jahresabschlüsse verfügbar. Bitte erstellen Sie zuerst einen Jahresabschluss oder importieren Sie Daten.
-                </p>
+                <div style={{ marginTop: 'var(--spacing-4)' }}>
+                  <EmptyState
+                    icon="📊"
+                    title="Keine Jahresabschlüsse verfügbar"
+                    description="Bitte erstellen Sie zuerst einen Jahresabschluss oder importieren Sie Daten, um mit der Konsolidierung zu beginnen."
+                    primaryAction={{
+                      label: "Daten importieren",
+                      onClick: () => navigate('/import')
+                    }}
+                    secondaryAction={{
+                      label: "Zum Dashboard",
+                      onClick: () => navigate('/')
+                    }}
+                    isComplianceRelated={true}
+                    complianceContext={{
+                      missingItem: "Jahresabschlüsse",
+                      reason: "Erforderlich für Konsolidierung nach HGB",
+                      urgency: "high"
+                    }}
+                  />
+                </div>
               )}
             </>
           )}

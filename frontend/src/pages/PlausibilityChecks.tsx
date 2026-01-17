@@ -12,6 +12,8 @@ import {
   RuleCategoryMeta,
 } from '../services/controlsService';
 import { useAIChat } from '../contexts/AIChatContext';
+import { ErrorState } from '../components/ErrorState';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import './PlausibilityChecks.css';
 
 type TabType = 'checks' | 'variances' | 'exceptions' | 'materiality';
@@ -280,6 +282,13 @@ const PlausibilityChecks = () => {
           ← Zurück zum Dashboard
         </button>
       </div>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: '/' },
+          { label: 'Kontrollen', to: '/controls' },
+          { label: 'Plausibilitätsprüfungen' }
+        ]}
+      />
       <div className="page-header">
         <h1>Plausibilitätsprüfungen & Kontrollen</h1>
         <p className="page-subtitle">
@@ -288,11 +297,21 @@ const PlausibilityChecks = () => {
       </div>
 
       {error && (
-        <div className="error-banner">
-          <span>[Warnung]</span>
-          <span>{error}</span>
-          <button onClick={() => setError(null)}>×</button>
-        </div>
+        <ErrorState
+          error={error}
+          onRetry={loadData}
+          context={{
+            page: 'PlausibilityChecks',
+            financialStatementId: financialStatementId || undefined,
+          }}
+          severity="warning"
+          alternativeActions={[
+            {
+              label: 'Zum Dashboard',
+              onClick: () => navigate('/')
+            }
+          ]}
+        />
       )}
 
       {/* Tab Navigation */}

@@ -5,6 +5,7 @@ import { financialStatementService } from '../services/financialStatementService
 import { FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
 import { useAIChat } from '../contexts/AIChatContext';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import '../App.css';
 
 type ReportTab = 'balance-sheet' | 'income-statement' | 'overview' | 'comparison';
@@ -697,6 +698,13 @@ function ConsolidatedReportPage() {
 
   return (
     <div className="consolidated-report-page">
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: '/' },
+          { label: 'Konsolidierung', to: '/consolidation' },
+          { label: 'Konzernabschluss' }
+        ]}
+      />
       <div className="page-header">
         <div className="header-left">
           <button className="button button-tertiary" onClick={() => navigate('/consolidation')}>

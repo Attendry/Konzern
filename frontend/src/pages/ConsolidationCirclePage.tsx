@@ -1,5 +1,6 @@
 import { ConsolidationCircle } from '../components/ConsolidationCircle';
 import { ExchangeRateManager } from '../components/ExchangeRateManager';
+import { BackButton } from '../components/BackButton';
 import { useState } from 'react';
 import '../App.css';
 
@@ -10,6 +11,9 @@ function ConsolidationCirclePage() {
 
   return (
     <div>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 

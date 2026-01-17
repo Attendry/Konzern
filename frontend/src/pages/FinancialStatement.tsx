@@ -5,6 +5,10 @@ import { FinancialStatement as FinancialStatementType, AccountBalance } from '..
 import BalanceSheetVisualization from '../components/BalanceSheetVisualization';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { useAIChat } from '../contexts/AIChatContext';
+import { Breadcrumbs } from '../components/Breadcrumbs';
+import { ErrorState } from '../components/ErrorState';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 import '../App.css';
 
 function FinancialStatement() {
@@ -56,49 +60,79 @@ function FinancialStatement() {
 
   if (loading) {
     return (
-      <div className="loading">
-        <div className="loading-spinner"></div>
-        <span>Lade Jahresabschluss...</span>
+      <div>
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', to: '/' },
+            { label: 'Jahresabschlüsse', to: '/financial-statements' },
+            { label: 'Lade...' }
+          ]}
+        />
+        <LoadingState type="card" count={3} message="Lade Jahresabschluss..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="card">
-        <div className="card-header">
-          <h2>Fehler</h2>
-        </div>
-        <div className="error-message">
-          {error}
-        </div>
-        <button onClick={loadData} className="button button-primary" style={{ marginTop: 'var(--spacing-4)' }}>
-          Erneut versuchen
-        </button>
+      <div>
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', to: '/' },
+            { label: 'Jahresabschlüsse', to: '/financial-statements' },
+            { label: 'Fehler' }
+          ]}
+        />
+        <ErrorState
+          error={error}
+          onRetry={loadData}
+          context={{
+            page: 'FinancialStatement',
+            financialStatementId: id || undefined,
+          }}
+          alternativeActions={[
+            {
+              label: 'Zum Dashboard',
+              onClick: () => navigate('/')
+            }
+          ]}
+        />
       </div>
     );
   }
 
   if (!statement) {
     return (
-      <div className="card">
-        <div className="empty-state">
-          <div className="empty-state-title">Jahresabschluss nicht gefunden</div>
-        </div>
+      <div>
+        <Breadcrumbs
+          items={[
+            { label: 'Dashboard', to: '/' },
+            { label: 'Jahresabschlüsse', to: '/financial-statements' },
+            { label: 'Nicht gefunden' }
+          ]}
+        />
+        <EmptyState
+          icon="📄"
+          title="Jahresabschluss nicht gefunden"
+          description="Der angeforderte Jahresabschluss konnte nicht gefunden werden."
+          primaryAction={{
+            label: "Zum Dashboard",
+            onClick: () => navigate('/')
+          }}
+        />
       </div>
     );
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)' }}>
-        <button 
-          className="button button-tertiary" 
-          onClick={() => navigate('/')}
-        >
-          ← Zurück zum Dashboard
-        </button>
-      </div>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: '/' },
+          { label: 'Jahresabschlüsse', to: '/financial-statements' },
+          { label: `${statement.company?.name || 'Unbekannt'} - ${statement.fiscalYear}` }
+        ]}
+      />
       <h1>Jahresabschluss</h1>
 
       <div className="card">

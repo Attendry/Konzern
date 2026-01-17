@@ -4,6 +4,7 @@ import { fiscalYearAdjustmentService, FiscalYearAdjustment, ValidationResult } f
 import { companyService } from '../services/companyService';
 import { Company } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
+import { BackButton } from '../components/BackButton';
 import '../App.css';
 
 function FiscalYearAdjustments() {
@@ -186,6 +187,9 @@ function FiscalYearAdjustments() {
 
   return (
     <div>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <h1>Stichtagsverschiebungen (§ 299 HGB)</h1>
         <button

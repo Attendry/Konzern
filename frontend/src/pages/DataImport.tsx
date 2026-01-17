@@ -7,6 +7,10 @@ import { AccountBalance, FinancialStatement } from '../types';
 import { useToastContext } from '../contexts/ToastContext';
 import { ExcelMappingWizard } from '../components/ExcelMappingWizard';
 import { BatchImportWizard } from '../components/BatchImportWizard';
+import { BackButton } from '../components/BackButton';
+import { ErrorState } from '../components/ErrorState';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 import '../App.css';
 
 type ImportMode = 'quick' | 'wizard' | 'batch';
@@ -252,6 +256,9 @@ function DataImport() {
 
   return (
     <div>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <h1>Datenimport</h1>
 
       {/* Import Mode Toggle */}
@@ -401,19 +408,20 @@ function DataImport() {
         </div>
         
         {error && (
-          <div className="error-message">
-            <strong>Hinweis:</strong> {error}
-            {statements.length === 0 && (
-              <div style={{ marginTop: 'var(--spacing-3)' }}>
-                <button 
-                  className="button button-primary button-sm" 
-                  onClick={() => setShowCreateForm(!showCreateForm)}
-                >
-                  {showCreateForm ? 'Abbrechen' : 'Jahresabschluss erstellen'}
-                </button>
-              </div>
-            )}
-          </div>
+          <ErrorState
+            error={error}
+            onRetry={loadStatements}
+            context={{
+              page: 'DataImport',
+            }}
+            severity={statements.length === 0 ? 'warning' : 'blocking'}
+            alternativeActions={statements.length === 0 ? [
+              {
+                label: 'Jahresabschluss erstellen',
+                onClick: () => setShowCreateForm(!showCreateForm)
+              }
+            ] : []}
+          />
         )}
 
         {showCreateForm && (

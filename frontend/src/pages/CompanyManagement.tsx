@@ -11,6 +11,10 @@ import { Modal } from '../components/Modal';
 import { Tooltip } from '../components/Tooltip';
 import { useContextMenu, ContextMenuItem, ContextMenu } from '../components/ContextMenu';
 import { CompanyGroupSection } from '../components/CompanyGroupSection';
+import { BackButton } from '../components/BackButton';
+import { ErrorState } from '../components/ErrorState';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 import '../App.css';
 
 interface CompanyHierarchy {
@@ -483,6 +487,13 @@ function CompanyManagement() {
 
   return (
     <div>
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton 
+          checkUnsaved={showForm}
+          formKey={`company-form-${editingCompany?.id || 'new'}`}
+          formData={showForm ? formData : null}
+        />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <h1>Unternehmensverwaltung</h1>
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'center' }}>
@@ -525,16 +536,19 @@ function CompanyManagement() {
       </div>
 
       {error && !loading && (
-        <div className="error-message">
-          <strong>Fehler:</strong> {error}
-          <button
-            onClick={loadCompanies}
-            className="button button-tertiary button-sm"
-            style={{ marginLeft: 'var(--spacing-3)' }}
-          >
-            Erneut versuchen
-          </button>
-        </div>
+        <ErrorState
+          error={error}
+          onRetry={loadCompanies}
+          context={{
+            page: 'CompanyManagement',
+          }}
+          alternativeActions={[
+            {
+              label: 'Zum Dashboard',
+              onClick: () => navigate('/')
+            }
+          ]}
+        />
       )}
 
       {showForm && editingCompany && (
@@ -668,12 +682,27 @@ function CompanyManagement() {
         <>
           {Object.keys(groupedCompanies.groups).length === 0 && groupedCompanies.standalone.length === 0 ? (
             <div className="card">
-              <div className="empty-state">
-                <div className="empty-state-title">Keine Unternehmen vorhanden</div>
-                <div className="empty-state-description">
-                  Erstellen Sie ein Unternehmen, um zu beginnen.
-                </div>
-              </div>
+              <EmptyState
+                icon="🏢"
+                title="Keine Unternehmen vorhanden"
+                description="Erstellen Sie Ihr erstes Unternehmen, um zu beginnen."
+                primaryAction={{
+                  label: "Unternehmen erstellen",
+                  onClick: () => {
+                    setShowForm(true);
+                    setEditingCompany(null);
+                    setFormData({
+                      name: '',
+                      taxId: '',
+                      address: '',
+                      legalForm: '',
+                      parentCompanyId: null,
+                      participationPercentage: 100,
+                      isConsolidated: true,
+                    });
+                  }
+                }}
+              />
             </div>
           ) : (
             <>
@@ -940,12 +969,27 @@ function CompanyManagement() {
               <h2>Importierte Daten</h2>
             </div>
             {companies.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-title">Keine Unternehmen vorhanden</div>
-                <div className="empty-state-description">
-                  Erstellen Sie ein Unternehmen, um importierte Daten anzuzeigen.
-                </div>
-              </div>
+              <EmptyState
+                icon="📊"
+                title="Keine Unternehmen vorhanden"
+                description="Erstellen Sie ein Unternehmen, um importierte Daten anzuzeigen."
+                primaryAction={{
+                  label: "Unternehmen erstellen",
+                  onClick: () => {
+                    setShowForm(true);
+                    setEditingCompany(null);
+                    setFormData({
+                      name: '',
+                      taxId: '',
+                      address: '',
+                      legalForm: '',
+                      parentCompanyId: null,
+                      participationPercentage: 100,
+                      isConsolidated: true,
+                    });
+                  }
+                }}
+              />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
                 {companies.map((company) => {

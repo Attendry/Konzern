@@ -9,6 +9,7 @@ import { ProgressIndicator } from '../components/ProgressIndicator';
 import { RelatedContent } from '../components/RelatedContent';
 import { Callout } from '../components/Callout';
 import { GoodwillCalculator } from '../components/GoodwillCalculator';
+import { BackButton } from '../components/BackButton';
 
 const documentation: DocumentationSection[] = documentationContent;
 
@@ -151,6 +152,9 @@ export default function Documentation() {
 
   return (
     <div className="documentation-page">
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <div className="documentation-container">
         <div className="documentation-sidebar">
           <div className="documentation-header">

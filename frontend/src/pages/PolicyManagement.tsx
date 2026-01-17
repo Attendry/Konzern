@@ -11,6 +11,7 @@ import {
   WahlrechtSummary,
   CategoryMeta,
 } from '../services/policyService';
+import { BackButton } from '../components/BackButton';
 import './PolicyManagement.css';
 
 // SVG Icons for tabs
@@ -204,6 +205,9 @@ const PolicyManagement = () => {
 
   return (
     <div className="policy-page">
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <div className="page-header">
         <h1>Bilanzierungsrichtlinien & Konsolidierungsregeln</h1>
         <p className="page-subtitle">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { consolidatedNotesService, ConsolidatedNotes } from '../services/consolidatedNotesService';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import '../App.css';
 
 function ConsolidatedNotesPage() {
@@ -102,6 +103,13 @@ function ConsolidatedNotesPage() {
           ← Zurück zur Konsolidierung
         </button>
       </div>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: '/' },
+          { label: 'Konsolidierung', to: '/consolidation' },
+          { label: 'Konzernanhang' }
+        ]}
+      />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1>Konzernanhang</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>

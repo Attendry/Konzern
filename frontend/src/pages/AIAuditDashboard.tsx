@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import aiAuditService, { TrendDataPoint, ToolUsageData } from '../services/aiAuditService';
 import type { AuditStatistics } from '../types/agent.types';
 import { getConfidenceLevel } from '../types/agent.types';
+import { BackButton } from '../components/BackButton';
 import './AIAuditDashboard.css';
 
 interface DateRange {
@@ -129,6 +130,9 @@ export const AIAuditDashboard: React.FC = () => {
 
   return (
     <div className="audit-dashboard">
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+        <BackButton />
+      </div>
       <header className="audit-header">
         <h1>AI-Nutzungsprotokoll</h1>
         <p className="audit-subtitle">Übersicht der AI-Agent Interaktionen und Entscheidungen</p>
