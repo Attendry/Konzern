@@ -23,8 +23,12 @@ export class FinancialStatementService {
       .insert({
         company_id: createFinancialStatementDto.companyId,
         fiscal_year: createFinancialStatementDto.fiscalYear,
-        period_start: SupabaseMapper.formatDateForSupabase(createFinancialStatementDto.periodStart),
-        period_end: SupabaseMapper.formatDateForSupabase(createFinancialStatementDto.periodEnd),
+        period_start: SupabaseMapper.formatDateForSupabase(
+          createFinancialStatementDto.periodStart,
+        ),
+        period_end: SupabaseMapper.formatDateForSupabase(
+          createFinancialStatementDto.periodEnd,
+        ),
         status: createFinancialStatementDto.status || 'draft',
         created_at: SupabaseMapper.getCurrentTimestamp(),
         updated_at: SupabaseMapper.getCurrentTimestamp(),
@@ -43,10 +47,12 @@ export class FinancialStatementService {
   async findAll(): Promise<FinancialStatement[]> {
     const { data, error } = await this.supabase
       .from('financial_statements')
-      .select(`
+      .select(
+        `
         *,
         company:companies(*)
-      `)
+      `,
+      )
       .order('fiscal_year', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -54,20 +60,46 @@ export class FinancialStatementService {
       SupabaseErrorHandler.handle(error, 'Financial Statements', 'fetch');
     }
 
-    return (data || []).map((item) => SupabaseMapper.toFinancialStatement(item));
+    return (data || []).map((item) =>
+      SupabaseMapper.toFinancialStatement(item),
+    );
+  }
+
+  async findByCompanyId(companyId: string): Promise<FinancialStatement[]> {
+    const { data, error } = await this.supabase
+      .from('financial_statements')
+      .select(
+        `
+        *,
+        company:companies(*)
+      `,
+      )
+      .eq('company_id', companyId)
+      .order('fiscal_year', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      SupabaseErrorHandler.handle(error, 'Financial Statements', 'fetch');
+    }
+
+    return (data || []).map((item) =>
+      SupabaseMapper.toFinancialStatement(item),
+    );
   }
 
   async findOne(id: string): Promise<FinancialStatement> {
     const { data, error } = await this.supabase
       .from('financial_statements')
-      .select(`
+      .select(
+        `
         *,
         company:companies(*),
         account_balances:account_balances(
           *,
           account:accounts(*)
         )
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -82,10 +114,12 @@ export class FinancialStatementService {
   async findBalances(id: string): Promise<AccountBalance[]> {
     const { data, error } = await this.supabase
       .from('account_balances')
-      .select(`
+      .select(
+        `
         *,
         account:accounts(*)
-      `)
+      `,
+      )
       .eq('financial_statement_id', id)
       .order('account(account_number)', { ascending: true });
 
@@ -108,10 +142,14 @@ export class FinancialStatementService {
       updateData.fiscal_year = updateFinancialStatementDto.fiscalYear;
     }
     if (updateFinancialStatementDto.periodStart) {
-      updateData.period_start = SupabaseMapper.formatDateForSupabase(updateFinancialStatementDto.periodStart);
+      updateData.period_start = SupabaseMapper.formatDateForSupabase(
+        updateFinancialStatementDto.periodStart,
+      );
     }
     if (updateFinancialStatementDto.periodEnd) {
-      updateData.period_end = SupabaseMapper.formatDateForSupabase(updateFinancialStatementDto.periodEnd);
+      updateData.period_end = SupabaseMapper.formatDateForSupabase(
+        updateFinancialStatementDto.periodEnd,
+      );
     }
     if (updateFinancialStatementDto.status) {
       updateData.status = updateFinancialStatementDto.status;

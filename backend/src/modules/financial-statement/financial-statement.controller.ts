@@ -28,6 +28,11 @@ export class FinancialStatementController {
     return this.financialStatementService.findAll();
   }
 
+  @Get('company/:companyId')
+  findByCompanyId(@Param('companyId', ParseUUIDPipe) companyId: string) {
+    return this.financialStatementService.findByCompanyId(companyId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.financialStatementService.findOne(id);
@@ -43,7 +48,10 @@ export class FinancialStatementController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateFinancialStatementDto: UpdateFinancialStatementDto,
   ) {
-    return this.financialStatementService.update(id, updateFinancialStatementDto);
+    return this.financialStatementService.update(
+      id,
+      updateFinancialStatementDto,
+    );
   }
 
   @Delete(':id')

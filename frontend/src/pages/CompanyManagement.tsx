@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { companyService } from '../services/companyService';
 import { participationService } from '../services/participationService';
-import { Company } from '../types';
+import { financialStatementService } from '../services/financialStatementService';
+import { Company, FinancialStatement, AccountBalance } from '../types';
 import ConsolidationObligationCheck from '../components/ConsolidationObligationCheck';
 import { useToastContext } from '../contexts/ToastContext';
 import { AdvancedTable, TableColumn } from '../components/AdvancedTable';
@@ -31,6 +32,12 @@ function CompanyManagement() {
     participationPercentage: 100,
     isConsolidated: true,
   });
+  const [expandedCompanyId, setExpandedCompanyId] = useState<string | null>(null);
+  const [companyData, setCompanyData] = useState<Record<string, {
+    financialStatements: FinancialStatement[];
+    balances: Record<string, AccountBalance[]>;
+    loading: boolean;
+  }>>({});
 
   useEffect(() => {
     loadCompanies();
@@ -272,6 +279,61 @@ function CompanyManagement() {
     showContextMenu(items, e.clientX, e.clientY);
   };
 
+  const loadCompanyData = async (companyId: string) => {
+    if (companyData[companyId]?.loading) return;
+    
+    setCompanyData(prev => ({
+      ...prev,
+      [companyId]: { ...prev[companyId], loading: true }
+    }));
+
+    try {
+      const financialStatements = await financialStatementService.getByCompanyId(companyId);
+      const balances: Record<string, AccountBalance[]> = {};
+      
+      // Load balances for each financial statement
+      for (const fs of financialStatements) {
+        try {
+          const fsBalances = await financialStatementService.getBalances(fs.id);
+          balances[fs.id] = fsBalances;
+        } catch (err) {
+          console.error(`Error loading balances for financial statement ${fs.id}:`, err);
+          balances[fs.id] = [];
+        }
+      }
+
+      setCompanyData(prev => ({
+        ...prev,
+        [companyId]: {
+          financialStatements,
+          balances,
+          loading: false
+        }
+      }));
+    } catch (err: any) {
+      console.error('Error loading company data:', err);
+      setCompanyData(prev => ({
+        ...prev,
+        [companyId]: {
+          financialStatements: [],
+          balances: {},
+          loading: false
+        }
+      }));
+    }
+  };
+
+  const handleToggleCompanyData = (companyId: string) => {
+    if (expandedCompanyId === companyId) {
+      setExpandedCompanyId(null);
+    } else {
+      setExpandedCompanyId(companyId);
+      if (!companyData[companyId]) {
+        loadCompanyData(companyId);
+      }
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
@@ -452,6 +514,138 @@ function CompanyManagement() {
           onRowClick={(row) => handleEdit(row)}
           onRowContextMenu={handleRowContextMenu}
         />
+      </div>
+
+      {/* Company Data Section */}
+      <div className="card">
+        <div className="card-header">
+          <h2>Importierte Daten</h2>
+        </div>
+        {companies.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-title">Keine Unternehmen vorhanden</div>
+            <div className="empty-state-description">
+              Erstellen Sie ein Unternehmen, um importierte Daten anzuzeigen.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+            {companies.map((company) => {
+              const isExpanded = expandedCompanyId === company.id;
+              const data = companyData[company.id];
+              const totalBalances = data
+                ? Object.values(data.balances).reduce((sum, balances) => sum + balances.length, 0)
+                : 0;
+
+              return (
+                <div key={company.id} className="card" style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      padding: 'var(--spacing-3)',
+                    }}
+                    onClick={() => handleToggleCompanyData(company.id)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                      <div>
+                        <strong>{company.name}</strong>
+                        {data && (
+                          <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
+                            {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''}, {totalBalances} Kontensalden
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div style={{ padding: 'var(--spacing-4)', borderTop: '1px solid var(--color-border)' }}>
+                      {data?.loading ? (
+                        <div className="loading">
+                          <div className="loading-spinner"></div>
+                          <span>Lade Daten...</span>
+                        </div>
+                      ) : data && data.financialStatements.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+                          {data.financialStatements.map((fs) => {
+                            const balances = data.balances[fs.id] || [];
+                            return (
+                              <div key={fs.id} style={{ marginBottom: 'var(--spacing-4)' }}>
+                                <h3 style={{ marginBottom: 'var(--spacing-3)', fontSize: '1.1rem' }}>
+                                  Geschäftsjahr {fs.fiscalYear}
+                                  <span style={{ marginLeft: 'var(--spacing-2)', fontSize: '0.875rem', fontWeight: 'normal', color: 'var(--color-text-secondary)' }}>
+                                    ({new Date(fs.periodStart).toLocaleDateString('de-DE')} - {new Date(fs.periodEnd).toLocaleDateString('de-DE')})
+                                  </span>
+                                </h3>
+                                {balances.length > 0 ? (
+                                  <div style={{ overflowX: 'auto' }}>
+                                    <table className="table" style={{ fontSize: '0.875rem' }}>
+                                      <thead>
+                                        <tr>
+                                          <th>Kontonummer</th>
+                                          <th>Kontoname</th>
+                                          <th>Soll</th>
+                                          <th>Haben</th>
+                                          <th>Saldo</th>
+                                          <th>Zwischengesellschaft</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {balances.map((balance) => (
+                                          <tr key={balance.id}>
+                                            <td>{balance.account?.accountNumber || '-'}</td>
+                                            <td>{balance.account?.name || '-'}</td>
+                                            <td>{Number(balance.debit).toLocaleString('de-DE', {
+                                              style: 'currency',
+                                              currency: 'EUR'
+                                            })}</td>
+                                            <td>{Number(balance.credit).toLocaleString('de-DE', {
+                                              style: 'currency',
+                                              currency: 'EUR'
+                                            })}</td>
+                                            <td style={{ fontWeight: 'bold' }}>
+                                              {Number(balance.balance).toLocaleString('de-DE', {
+                                                style: 'currency',
+                                                currency: 'EUR'
+                                              })}
+                                            </td>
+                                            <td>{balance.isIntercompany ? 'Ja' : 'Nein'}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
+                                    <div className="empty-state-title">Keine Kontensalden vorhanden</div>
+                                    <div className="empty-state-description">
+                                      Für diesen Jahresabschluss wurden noch keine Daten importiert.
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
+                          <div className="empty-state-title">Keine Daten vorhanden</div>
+                          <div className="empty-state-description">
+                            Für dieses Unternehmen wurden noch keine Jahresabschlüsse oder Kontensalden importiert.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {showModal && editingCompany && (
