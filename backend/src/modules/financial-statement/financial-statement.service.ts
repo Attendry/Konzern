@@ -212,12 +212,20 @@ export class FinancialStatementService {
 
     const mapped = (data || []).map((item) => {
       try {
-        return SupabaseMapper.toAccountBalance(item);
+        const mapped = SupabaseMapper.toAccountBalance(item);
+        // Log if account is missing
+        if (!mapped.account && item.account_id) {
+          console.warn(`[FinancialStatementService] Balance ${item.id} has account_id ${item.account_id} but account relationship is missing`);
+        }
+        return mapped;
       } catch (err) {
         console.error('[FinancialStatementService] Error mapping balance:', err, item);
         return null;
       }
     }).filter((item) => item !== null) as AccountBalance[];
+    
+    // Don't filter out balances without accounts - they should still be shown
+    // The frontend can handle missing account data
     
     // Sort by account number, then by fiscal year
     mapped.sort((a, b) => {

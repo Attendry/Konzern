@@ -303,11 +303,14 @@ function CompanyManagement() {
       console.log(`[CompanyManagement] Loaded data for company ${companyId}:`, {
         financialStatements: financialStatements.length,
         allBalances: allBalances.length,
+        allBalancesType: typeof allBalances,
+        allBalancesIsArray: Array.isArray(allBalances),
         balanceDetails: allBalances.slice(0, 3).map(b => ({
           id: b.id,
           accountNumber: b.account?.accountNumber,
           accountName: b.account?.name,
-          balance: b.balance
+          balance: b.balance,
+          hasAccount: !!b.account
         }))
       });
       
@@ -632,8 +635,8 @@ function CompanyManagement() {
                                   const fs = data.financialStatements?.find(f => f.id === balance.financialStatementId);
                                   return (
                                     <tr key={balance.id}>
-                                      <td>{balance.account?.accountNumber || '-'}</td>
-                                      <td>{balance.account?.name || '-'}</td>
+                                      <td>{balance.account?.accountNumber || balance.accountId?.substring(0, 8) || '-'}</td>
+                                      <td>{balance.account?.name || 'Konto nicht gefunden'}</td>
                                       <td>
                                         {fs ? (
                                           <span>
@@ -684,6 +687,37 @@ function CompanyManagement() {
                               <strong>Debug Info:</strong>
                               <div>allBalances: {data.allBalances ? `${data.allBalances.length} items` : 'undefined'}</div>
                               <div>financialStatements: {data.financialStatements ? `${data.financialStatements.length} items` : 'undefined'}</div>
+                              {data.financialStatements && data.financialStatements.length > 0 && (
+                                <div style={{ marginTop: 'var(--spacing-2)' }}>
+                                  <div>Financial Statement IDs: {data.financialStatements.map(fs => fs.id).join(', ')}</div>
+                                  {data.financialStatements.map((fs) => (
+                                    <div key={fs.id} style={{ marginTop: 'var(--spacing-2)' }}>
+                                      <div>FS {fs.fiscalYear} ({fs.id.substring(0, 8)}...):</div>
+                                      <div style={{ marginLeft: '1rem' }}>
+                                        Balances for this FS: {data.balances && data.balances[fs.id] ? `${data.balances[fs.id].length} items` : '0 items'}
+                                      </div>
+                                      <button
+                                        className="button button-secondary button-sm"
+                                        style={{ marginTop: '0.25rem', marginLeft: '1rem' }}
+                                        onClick={async () => {
+                                          try {
+                                            const directBalances = await financialStatementService.getBalances(fs.id);
+                                            console.log(`Direct balances for FS ${fs.id}:`, directBalances);
+                                            alert(`Direkte Abfrage für FS ${fs.fiscalYear}: ${directBalances.length} Kontensalden gefunden`);
+                                            // Reload company data after direct check
+                                            loadCompanyData(company.id);
+                                          } catch (err) {
+                                            console.error('Error fetching direct balances:', err);
+                                            alert('Fehler beim Abrufen der Kontensalden');
+                                          }
+                                        }}
+                                      >
+                                        Direkt prüfen
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                               {data.allBalances && data.allBalances.length > 0 && (
                                 <div style={{ marginTop: 'var(--spacing-2)' }}>
                                   First balance: {JSON.stringify({

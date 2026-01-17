@@ -24,6 +24,13 @@ export const financialStatementService = {
 
   getBalancesByCompanyId: async (companyId: string): Promise<AccountBalance[]> => {
     const response = await api.get<AccountBalance[]>(`/financial-statements/company/${companyId}/balances`);
+    console.log(`[financialStatementService] getBalancesByCompanyId response for ${companyId}:`, {
+      status: response.status,
+      dataType: typeof response.data,
+      isArray: Array.isArray(response.data),
+      length: Array.isArray(response.data) ? response.data.length : 'N/A',
+      sample: Array.isArray(response.data) && response.data.length > 0 ? response.data[0] : null
+    });
     return Array.isArray(response.data) ? response.data : [];
   },
 
