@@ -98,12 +98,6 @@ function CompanyManagement() {
     }
   }, [pinnedGroupId]);
 
-  // Auto-expand pinned group on load
-  useEffect(() => {
-    if (pinnedGroupId && Object.keys(groupedCompanies.groups).includes(pinnedGroupId)) {
-      setExpandedGroupId(pinnedGroupId);
-    }
-  }, [pinnedGroupId, groupedCompanies.groups]);
 
   const handleToggleGroup = (groupId: string) => {
     // Don't collapse if it's pinned
@@ -205,8 +199,15 @@ function CompanyManagement() {
       }
     });
     
-    return { groups, standalone };
-  }, [hierarchyData, companies]);
+  return { groups, standalone };
+}, [hierarchyData, companies]);
+
+  // Auto-expand pinned group on load
+  useEffect(() => {
+    if (pinnedGroupId && Object.keys(groupedCompanies.groups).includes(pinnedGroupId)) {
+      setExpandedGroupId(pinnedGroupId);
+    }
+  }, [pinnedGroupId, groupedCompanies.groups]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
