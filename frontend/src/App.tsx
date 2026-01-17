@@ -59,8 +59,16 @@ function AppContent() {
                     } />
                     <Route path="/consolidation-circle" element={<ConsolidationCirclePage />} />
                     <Route path="/consolidation" element={<Consolidation />} />
-                    <Route path="/konzernabschluss" element={<ConsolidatedReportPage />} />
-                    <Route path="/konzernabschluss/:id" element={<ConsolidatedReportPage />} />
+                    <Route path="/konzernabschluss" element={
+                      <ErrorBoundary>
+                        <ConsolidatedReportPage />
+                      </ErrorBoundary>
+                    } />
+                    <Route path="/konzernabschluss/:id" element={
+                      <ErrorBoundary>
+                        <ConsolidatedReportPage />
+                      </ErrorBoundary>
+                    } />
                     <Route path="/konsolidierung-assistent" element={<ConsolidationWizardPage />} />
                     <Route path="/financial-statements/:id" element={<FinancialStatement />} />
                     <Route path="/consolidated-notes/:id" element={<ConsolidatedNotes />} />

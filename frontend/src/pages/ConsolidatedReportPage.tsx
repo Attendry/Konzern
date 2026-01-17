@@ -13,7 +13,16 @@ function ConsolidatedReportPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
-  const { setFinancialStatementId } = useAIChat();
+  
+  // Get AI chat context - wrap in try-catch to handle gracefully if context is missing
+  let setFinancialStatementId: ((id: string | null) => void) | undefined;
+  try {
+    const aiChat = useAIChat();
+    setFinancialStatementId = aiChat.setFinancialStatementId;
+  } catch (err) {
+    console.warn('AIChat context not available, continuing without it:', err);
+    // Continue without AI chat functionality
+  }
   
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [selectedStatementId, setSelectedStatementId] = useState<string>(id || '');
@@ -27,10 +36,22 @@ function ConsolidatedReportPage() {
 
   // Set AI chatbot context when viewing a consolidated report
   useEffect(() => {
-    if (selectedStatementId) {
-      setFinancialStatementId(selectedStatementId);
+    if (!setFinancialStatementId) return;
+    
+    try {
+      if (selectedStatementId) {
+        setFinancialStatementId(selectedStatementId);
+      }
+      return () => {
+        try {
+          setFinancialStatementId(null); // Cleanup on unmount
+        } catch (err) {
+          console.warn('Error cleaning up AI chat context:', err);
+        }
+      };
+    } catch (err) {
+      console.warn('Error setting AI chat context:', err);
     }
-    return () => setFinancialStatementId(null); // Cleanup on unmount
   }, [selectedStatementId, setFinancialStatementId]);
 
   useEffect(() => {
@@ -58,14 +79,23 @@ function ConsolidatedReportPage() {
     setLoading(true);
     try {
       const [reportData, incomeData] = await Promise.all([
-        reportService.getConsolidationReport(selectedStatementId, showComparison),
-        reportService.getConsolidatedIncomeStatement(selectedStatementId).catch(() => null),
+        reportService.getConsolidationReport(selectedStatementId, showComparison).catch((err) => {
+          console.error('Error loading consolidation report:', err);
+          throw err;
+        }),
+        reportService.getConsolidatedIncomeStatement(selectedStatementId).catch((err) => {
+          console.warn('Error loading income statement (non-critical):', err);
+          return null;
+        }),
       ]);
       setReport(reportData);
       setIncomeStatement(incomeData);
     } catch (error: any) {
       console.error('Error loading report:', error);
-      showError(`Fehler beim Laden des Berichts: ${error.message || 'Unbekannter Fehler'}`);
+      setReport(null);
+      setIncomeStatement(null);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Unbekannter Fehler';
+      showError(`Fehler beim Laden des Berichts: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -625,6 +655,28 @@ function ConsolidatedReportPage() {
       </div>
     );
   };
+
+  // Error boundary - if there's a critical error, show error state
+  if (loadingStatements && statements.length === 0) {
+    return (
+      <div className="consolidated-report-page">
+        <div className="page-header">
+          <div className="header-left">
+            <button className="button button-tertiary" onClick={() => navigate('/consolidation')}>
+              ← Zurück zur Konsolidierung
+            </button>
+            <h1>Konzernabschluss</h1>
+          </div>
+        </div>
+        <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Lade Jahresabschlüsse...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="consolidated-report-page">
