@@ -470,6 +470,18 @@ function ConsolidatedReportPage() {
     if (!report?.overview) return null;
     const ov = report.overview;
 
+    // Safety checks for overview structure
+    if (!ov.parentCompany || !ov.consolidatedCompanies) {
+      return (
+        <div className="consolidated-report-section">
+          <h2>Konsolidierungsübersicht</h2>
+          <div className="empty-state">
+            <p>Übersichtsdaten sind unvollständig. Bitte führen Sie die Konsolidierung erneut durch.</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="consolidated-report-section">
         <h2>Konsolidierungsübersicht</h2>
@@ -479,7 +491,7 @@ function ConsolidatedReportPage() {
           <div className="overview-card">
             <h4>Mutterunternehmen</h4>
             <div className="company-info">
-              <span className="company-name">{ov.parentCompany.name}</span>
+              <span className="company-name">{ov.parentCompany?.name || 'Unbekannt'}</span>
             </div>
           </div>
 
@@ -488,15 +500,15 @@ function ConsolidatedReportPage() {
             <h4>Konsolidierung</h4>
             <div className="stats-grid">
               <div className="stat-item">
-                <span className="stat-value">{ov.consolidatedCompanies.length + 1}</span>
+                <span className="stat-value">{(ov.consolidatedCompanies?.length || 0) + 1}</span>
                 <span className="stat-label">Unternehmen im Konzern</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">{ov.entriesCount}</span>
+                <span className="stat-value">{ov.entriesCount || 0}</span>
                 <span className="stat-label">Konsolidierungsbuchungen</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">{formatCurrency(ov.eliminationsTotal)}</span>
+                <span className="stat-value">{formatCurrency(ov.eliminationsTotal || 0)}</span>
                 <span className="stat-label">Eliminierungen gesamt</span>
               </div>
             </div>
@@ -515,20 +527,20 @@ function ConsolidatedReportPage() {
               </tr>
             </thead>
             <tbody>
-              {ov.consolidatedCompanies.map((company, idx) => (
+              {(ov.consolidatedCompanies || []).map((company, idx) => (
                 <tr key={idx}>
-                  <td>{company.name}</td>
-                  <td className="number-col">{formatPercent(company.ownershipPercentage)}</td>
+                  <td>{company?.name || 'Unbekannt'}</td>
+                  <td className="number-col">{formatPercent(company?.ownershipPercentage || 0)}</td>
                   <td>
                     <span className="badge badge-info">
-                      {company.consolidationType === 'full' ? 'Vollkonsolidierung' : 
-                       company.consolidationType === 'proportional' ? 'Quotenkonsolidierung' :
-                       company.consolidationType === 'equity' ? 'At-Equity' : company.consolidationType}
+                      {company?.consolidationType === 'full' ? 'Vollkonsolidierung' : 
+                       company?.consolidationType === 'proportional' ? 'Quotenkonsolidierung' :
+                       company?.consolidationType === 'equity' ? 'At-Equity' : (company?.consolidationType || 'Unbekannt')}
                     </span>
                   </td>
                 </tr>
               ))}
-              {ov.consolidatedCompanies.length === 0 && (
+              {(!ov.consolidatedCompanies || ov.consolidatedCompanies.length === 0) && (
                 <tr>
                   <td colSpan={3} className="empty-row">Keine Tochterunternehmen konsolidiert</td>
                 </tr>

@@ -235,7 +235,7 @@ export function ConsolidationCircle({ onRefresh }: ConsolidationCircleProps) {
       {/* Parent Company */}
       {parentCompany && (
         <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
-          <div className="card-header" style={{ background: 'var(--color-accent-blue)', color: 'white' }}>
+          <div className="card-header">
             <h3 style={{ margin: 0 }}>Mutterunternehmen</h3>
           </div>
           <div style={{ padding: 'var(--spacing-4)' }}>
