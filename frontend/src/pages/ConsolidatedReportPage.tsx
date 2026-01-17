@@ -161,6 +161,18 @@ function ConsolidatedReportPage() {
   const renderBalanceSheet = () => {
     if (!report?.balanceSheet) return null;
     const bs = report.balanceSheet;
+    
+    // Safety checks for nested properties
+    if (!bs.assets || !bs.equity || !bs.liabilities) {
+      return (
+        <div className="consolidated-report-section">
+          <h2>Konzernbilanz zum {new Date(report.periodEnd).toLocaleDateString('de-DE')}</h2>
+          <div className="empty-state">
+            <p>Bilanzdaten sind unvollständig. Bitte führen Sie die Konsolidierung erneut durch.</p>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="consolidated-report-section">
@@ -173,7 +185,7 @@ function ConsolidatedReportPage() {
             
             <div className="account-group">
               <h4>A. Anlagevermögen</h4>
-              {bs.assets.fixedAssets.map((pos, idx) => (
+              {(bs.assets.fixedAssets || []).map((pos, idx) => (
                 <div key={idx} className="account-row">
                   <span className="account-name">{pos.accountName}</span>
                   <span className="account-value">{formatCurrency(pos.balance)}</span>
@@ -181,13 +193,13 @@ function ConsolidatedReportPage() {
               ))}
               <div className="account-row subtotal">
                 <span>Summe Anlagevermögen</span>
-                <span>{formatCurrency(bs.assets.fixedAssets.reduce((sum, a) => sum + a.balance, 0))}</span>
+                <span>{formatCurrency((bs.assets.fixedAssets || []).reduce((sum, a) => sum + a.balance, 0))}</span>
               </div>
             </div>
 
             <div className="account-group">
               <h4>B. Umlaufvermögen</h4>
-              {bs.assets.currentAssets.map((pos, idx) => (
+              {(bs.assets.currentAssets || []).map((pos, idx) => (
                 <div key={idx} className="account-row">
                   <span className="account-name">{pos.accountName}</span>
                   <span className="account-value">{formatCurrency(pos.balance)}</span>
@@ -195,7 +207,7 @@ function ConsolidatedReportPage() {
               ))}
               <div className="account-row subtotal">
                 <span>Summe Umlaufvermögen</span>
-                <span>{formatCurrency(bs.assets.currentAssets.reduce((sum, a) => sum + a.balance, 0))}</span>
+                <span>{formatCurrency((bs.assets.currentAssets || []).reduce((sum, a) => sum + a.balance, 0))}</span>
               </div>
             </div>
 
@@ -221,7 +233,7 @@ function ConsolidatedReportPage() {
             
             <div className="account-group">
               <h4>A. Eigenkapital</h4>
-              {bs.equity.positions.map((pos, idx) => (
+              {(bs.equity.positions || []).map((pos, idx) => (
                 <div key={idx} className="account-row">
                   <span className="account-name">{pos.accountName}</span>
                   <span className="account-value">{formatCurrency(pos.balance)}</span>
@@ -241,13 +253,13 @@ function ConsolidatedReportPage() {
               )}
               <div className="account-row subtotal">
                 <span>Summe Eigenkapital</span>
-                <span>{formatCurrency(bs.equity.totalEquity)}</span>
+                <span>{formatCurrency(bs.equity.totalEquity || 0)}</span>
               </div>
             </div>
 
             <div className="account-group">
               <h4>B. Rückstellungen</h4>
-              {bs.liabilities.provisions.map((pos, idx) => (
+              {(bs.liabilities.provisions || []).map((pos, idx) => (
                 <div key={idx} className="account-row">
                   <span className="account-name">{pos.accountName}</span>
                   <span className="account-value">{formatCurrency(pos.balance)}</span>
@@ -257,13 +269,13 @@ function ConsolidatedReportPage() {
 
             <div className="account-group">
               <h4>C. Verbindlichkeiten</h4>
-              {bs.liabilities.longTermLiabilities.map((pos, idx) => (
+              {(bs.liabilities.longTermLiabilities || []).map((pos, idx) => (
                 <div key={idx} className="account-row">
                   <span className="account-name">{pos.accountName}</span>
                   <span className="account-value">{formatCurrency(pos.balance)}</span>
                 </div>
               ))}
-              {bs.liabilities.shortTermLiabilities.map((pos, idx) => (
+              {(bs.liabilities.shortTermLiabilities || []).map((pos, idx) => (
                 <div key={idx} className="account-row">
                   <span className="account-name">{pos.accountName}</span>
                   <span className="account-value">{formatCurrency(pos.balance)}</span>
@@ -271,7 +283,7 @@ function ConsolidatedReportPage() {
               ))}
               <div className="account-row subtotal">
                 <span>Summe Verbindlichkeiten</span>
-                <span>{formatCurrency(bs.liabilities.totalLiabilities)}</span>
+                <span>{formatCurrency(bs.liabilities.totalLiabilities || 0)}</span>
               </div>
             </div>
 
