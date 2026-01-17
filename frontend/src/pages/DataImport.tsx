@@ -17,6 +17,7 @@ function DataImport() {
   const [importMode, setImportMode] = useState<ImportMode>('quick');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'excel' | 'csv'>('excel');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [financialStatementId, setFinancialStatementId] = useState<string>('');
   const [statements, setStatements] = useState<FinancialStatement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -215,6 +216,19 @@ function DataImport() {
   };
 
   const selectedStatement = statements.find(s => s.id === financialStatementId);
+  const filteredStatements = selectedCompanyId 
+    ? statements.filter(s => s.companyId === selectedCompanyId)
+    : statements;
+  
+  // Reset financial statement when company changes
+  useEffect(() => {
+    if (selectedCompanyId && financialStatementId) {
+      const currentStatement = statements.find(s => s.id === financialStatementId);
+      if (currentStatement && currentStatement.companyId !== selectedCompanyId) {
+        setFinancialStatementId('');
+      }
+    }
+  }, [selectedCompanyId, financialStatementId, statements]);
 
   // Safety check - ensure component doesn't crash
   if (typeof window === 'undefined') {
@@ -301,6 +315,29 @@ function DataImport() {
           </p>
           
           <div className="form-group">
+            <label>Unternehmen auswählen *</label>
+            {loadingStatements ? (
+              <p>Lade Unternehmen...</p>
+            ) : (
+              <select
+                value={selectedCompanyId}
+                onChange={(e) => {
+                  setSelectedCompanyId(e.target.value);
+                  setFinancialStatementId(''); // Reset financial statement when company changes
+                }}
+                required
+              >
+                <option value="">-- Bitte wählen --</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          
+          <div className="form-group">
             <label>Jahresabschluss auswählen *</label>
             {loadingStatements ? (
               <p>Lade Jahresabschlüsse...</p>
@@ -309,21 +346,32 @@ function DataImport() {
                 value={financialStatementId}
                 onChange={(e) => setFinancialStatementId(e.target.value)}
                 required
+                disabled={!selectedCompanyId}
               >
                 <option value="">-- Bitte wählen --</option>
-                {statements.map((statement) => (
+                {filteredStatements.map((statement) => (
                   <option key={statement.id} value={statement.id}>
-                    {statement.company?.name || 'Unbekannt'} - {statement.fiscalYear}
+                    {statement.fiscalYear} ({new Date(statement.periodStart).toLocaleDateString('de-DE')} - {new Date(statement.periodEnd).toLocaleDateString('de-DE')})
                   </option>
                 ))}
               </select>
+            )}
+            {!selectedCompanyId && (
+              <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                Bitte wählen Sie zuerst ein Unternehmen aus.
+              </p>
+            )}
+            {selectedCompanyId && filteredStatements.length === 0 && (
+              <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+                Keine Jahresabschlüsse für dieses Unternehmen verfügbar.
+              </p>
             )}
           </div>
           
           <button
             className="button button-primary"
             onClick={() => setShowWizard(true)}
-            disabled={!financialStatementId}
+            disabled={!selectedCompanyId || !financialStatementId}
           >
             Import-Assistent starten →
           </button>
@@ -409,6 +457,37 @@ function DataImport() {
         )}
 
         <div className="form-group">
+          <label>Unternehmen auswählen *</label>
+          {loadingStatements ? (
+            <p>Lade Unternehmen...</p>
+          ) : (
+            <>
+              <select
+                value={selectedCompanyId}
+                onChange={(e) => {
+                  setSelectedCompanyId(e.target.value);
+                  setFinancialStatementId(''); // Reset financial statement when company changes
+                }}
+                required
+                disabled={companies.length === 0}
+              >
+                <option value="">-- Bitte wählen --</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+              {companies.length === 0 && (
+                <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+                  Keine Unternehmen verfügbar. Bitte erstellen Sie zuerst ein Unternehmen.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="form-group">
           <label>Jahresabschluss auswählen *</label>
           {loadingStatements ? (
             <p>Lade Jahresabschlüsse...</p>
@@ -418,18 +497,23 @@ function DataImport() {
                 value={financialStatementId}
                 onChange={(e) => setFinancialStatementId(e.target.value)}
                 required
-                disabled={statements.length === 0}
+                disabled={!selectedCompanyId || filteredStatements.length === 0}
               >
                 <option value="">-- Bitte wählen --</option>
-                {statements.map((statement) => (
+                {filteredStatements.map((statement) => (
                   <option key={statement.id} value={statement.id}>
-                    {statement.company?.name || 'Unbekannt'} - {statement.fiscalYear}
+                    {statement.fiscalYear} ({new Date(statement.periodStart).toLocaleDateString('de-DE')} - {new Date(statement.periodEnd).toLocaleDateString('de-DE')})
                   </option>
                 ))}
               </select>
-              {statements.length === 0 && (
+              {!selectedCompanyId && (
+                <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                  Bitte wählen Sie zuerst ein Unternehmen aus.
+                </p>
+              )}
+              {selectedCompanyId && filteredStatements.length === 0 && (
                 <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
-                  Keine Jahresabschlüsse verfügbar. Bitte erstellen Sie zuerst einen Jahresabschluss.
+                  Keine Jahresabschlüsse für dieses Unternehmen verfügbar. Bitte erstellen Sie zuerst einen Jahresabschluss.
                 </p>
               )}
             </>
@@ -466,7 +550,7 @@ function DataImport() {
           <button
             className="button button-primary"
             onClick={handleImport}
-            disabled={loading || !selectedFile || !financialStatementId}
+            disabled={loading || !selectedFile || !selectedCompanyId || !financialStatementId}
           >
             {loading ? 'Importiere...' : 'Importieren'}
           </button>

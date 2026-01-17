@@ -284,7 +284,11 @@ function CompanyManagement() {
     
     setCompanyData(prev => ({
       ...prev,
-      [companyId]: { ...prev[companyId], loading: true }
+      [companyId]: { 
+        financialStatements: prev[companyId]?.financialStatements || [],
+        balances: prev[companyId]?.balances || {},
+        loading: true 
+      }
     }));
 
     try {
@@ -533,8 +537,8 @@ function CompanyManagement() {
             {companies.map((company) => {
               const isExpanded = expandedCompanyId === company.id;
               const data = companyData[company.id];
-              const totalBalances = data
-                ? Object.values(data.balances).reduce((sum, balances) => sum + balances.length, 0)
+              const totalBalances = data && data.balances
+                ? Object.values(data.balances).reduce((sum, balances) => sum + (balances?.length || 0), 0)
                 : 0;
 
               return (
@@ -553,7 +557,7 @@ function CompanyManagement() {
                       <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
                       <div>
                         <strong>{company.name}</strong>
-                        {data && (
+                        {data && data.financialStatements && (
                           <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
                             {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''}, {totalBalances} Kontensalden
                           </div>
@@ -569,10 +573,10 @@ function CompanyManagement() {
                           <div className="loading-spinner"></div>
                           <span>Lade Daten...</span>
                         </div>
-                      ) : data && data.financialStatements.length > 0 ? (
+                      ) : data && data.financialStatements && data.financialStatements.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
                           {data.financialStatements.map((fs) => {
-                            const balances = data.balances[fs.id] || [];
+                            const balances = (data.balances && data.balances[fs.id]) || [];
                             return (
                               <div key={fs.id} style={{ marginBottom: 'var(--spacing-4)' }}>
                                 <h3 style={{ marginBottom: 'var(--spacing-3)', fontSize: '1.1rem' }}>
