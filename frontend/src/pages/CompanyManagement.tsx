@@ -300,6 +300,17 @@ function CompanyManagement() {
         financialStatementService.getBalancesByCompanyId(companyId)
       ]);
       
+      console.log(`[CompanyManagement] Loaded data for company ${companyId}:`, {
+        financialStatements: financialStatements.length,
+        allBalances: allBalances.length,
+        balanceDetails: allBalances.slice(0, 3).map(b => ({
+          id: b.id,
+          accountNumber: b.account?.accountNumber,
+          accountName: b.account?.name,
+          balance: b.balance
+        }))
+      });
+      
       const balances: Record<string, AccountBalance[]> = {};
       
       // Load balances for each financial statement (for organized view)
@@ -324,6 +335,7 @@ function CompanyManagement() {
       }));
     } catch (err: any) {
       console.error('Error loading company data:', err);
+      console.error('Error details:', err.response?.data || err.message);
       setCompanyData(prev => ({
         ...prev,
         [companyId]: {
@@ -589,7 +601,9 @@ function CompanyManagement() {
                           <div className="loading-spinner"></div>
                           <span>Lade Daten...</span>
                         </div>
-                      ) : data && data.allBalances && data.allBalances.length > 0 ? (
+                      ) : data ? (
+                        <>
+                        {data.allBalances && data.allBalances.length > 0 ? (
                         <div>
                           <div style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
                             <strong>Audit-Ledger:</strong> Alle importierten Kontensalden für dieses Unternehmen ({data.allBalances.length} Einträge)
@@ -654,11 +668,40 @@ function CompanyManagement() {
                             </table>
                           </div>
                         </div>
+                        ) : (
+                          <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
+                            <div className="empty-state-title">Keine Kontensalden vorhanden</div>
+                            <div className="empty-state-description">
+                              Für dieses Unternehmen wurden noch keine Kontensalden importiert.
+                              {data.financialStatements && data.financialStatements.length > 0 && (
+                                <div style={{ marginTop: 'var(--spacing-2)', fontSize: '0.875rem' }}>
+                                  {data.financialStatements.length} Jahresabschluss{data.financialStatements.length !== 1 ? 'e' : ''} vorhanden, aber keine Kontensalden.
+                                </div>
+                              )}
+                            </div>
+                            {/* Debug info */}
+                            <div style={{ marginTop: 'var(--spacing-4)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                              <strong>Debug Info:</strong>
+                              <div>allBalances: {data.allBalances ? `${data.allBalances.length} items` : 'undefined'}</div>
+                              <div>financialStatements: {data.financialStatements ? `${data.financialStatements.length} items` : 'undefined'}</div>
+                              {data.allBalances && data.allBalances.length > 0 && (
+                                <div style={{ marginTop: 'var(--spacing-2)' }}>
+                                  First balance: {JSON.stringify({
+                                    id: data.allBalances[0].id,
+                                    accountNumber: data.allBalances[0].account?.accountNumber,
+                                    hasAccount: !!data.allBalances[0].account
+                                  }, null, 2)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        </>
                       ) : (
                         <div className="empty-state" style={{ padding: 'var(--spacing-4)' }}>
                           <div className="empty-state-title">Keine Daten vorhanden</div>
                           <div className="empty-state-description">
-                            Für dieses Unternehmen wurden noch keine Kontensalden importiert.
+                            Für dieses Unternehmen wurden noch keine Jahresabschlüsse oder Kontensalden importiert.
                           </div>
                         </div>
                       )}

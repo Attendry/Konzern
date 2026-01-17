@@ -131,10 +131,10 @@ export class FinancialStatementService {
   }
 
   async findBalancesByCompanyId(companyId: string): Promise<AccountBalance[]> {
-    // Get all financial statements for the company
+    // Get all financial statements for the company (with fiscal_year for sorting)
     const { data: financialStatements, error: fsError } = await this.supabase
       .from('financial_statements')
-      .select('id')
+      .select('id, fiscal_year')
       .eq('company_id', companyId);
 
     if (fsError) {
@@ -142,10 +142,12 @@ export class FinancialStatementService {
     }
 
     if (!financialStatements || financialStatements.length === 0) {
+      console.log(`[FinancialStatementService] No financial statements found for company ${companyId}`);
       return [];
     }
 
     const financialStatementIds = financialStatements.map((fs: any) => fs.id);
+    const fsMap = new Map(financialStatements.map((fs: any) => [fs.id, fs]));
 
     // Get all account balances for all financial statements of this company
     const { data, error } = await this.supabase
@@ -157,15 +159,33 @@ export class FinancialStatementService {
         financial_statement:financial_statements(*)
       `,
       )
-      .in('financial_statement_id', financialStatementIds)
-      .order('account(account_number)', { ascending: true })
-      .order('financial_statement(fiscal_year)', { ascending: false });
+      .in('financial_statement_id', financialStatementIds);
 
     if (error) {
+      console.error('[FinancialStatementService] Error fetching balances by company:', error);
       SupabaseErrorHandler.handle(error, 'Account Balances', 'fetch');
     }
 
-    return (data || []).map((item) => SupabaseMapper.toAccountBalance(item));
+    console.log(`[FinancialStatementService] Found ${data?.length || 0} balances for company ${companyId} across ${financialStatementIds.length} financial statements`);
+
+    const mapped = (data || []).map((item) => SupabaseMapper.toAccountBalance(item));
+    
+    // Sort by account number, then by fiscal year
+    mapped.sort((a, b) => {
+      const accountNumA = a.account?.accountNumber || '';
+      const accountNumB = b.account?.accountNumber || '';
+      if (accountNumA !== accountNumB) {
+        return accountNumA.localeCompare(accountNumB);
+      }
+      // If account numbers are the same, sort by fiscal year (descending)
+      const fsA = fsMap.get(a.financialStatementId);
+      const fsB = fsMap.get(b.financialStatementId);
+      const yearA = fsA?.fiscal_year || 0;
+      const yearB = fsB?.fiscal_year || 0;
+      return yearB - yearA;
+    });
+
+    return mapped;
   }
 
   async update(
