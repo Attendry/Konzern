@@ -34,6 +34,11 @@ export const financialStatementService = {
     return Array.isArray(response.data) ? response.data : [];
   },
 
+  diagnoseCompanyBalances: async (companyId: string): Promise<any> => {
+    const response = await api.get(`/financial-statements/company/${companyId}/diagnose`);
+    return response.data;
+  },
+
   create: async (statement: Partial<FinancialStatement>): Promise<FinancialStatement> => {
     const response = await api.post<FinancialStatement>('/financial-statements', statement);
     return response.data;

@@ -246,6 +246,64 @@ export class FinancialStatementService {
     return mapped;
   }
 
+  /**
+   * Diagnostic method: Check if any balances exist for a company, even if not properly linked
+   * This helps diagnose import issues
+   */
+  async diagnoseCompanyBalances(companyId: string): Promise<{
+    financialStatements: any[];
+    balancesByFS: Record<string, number>;
+    totalBalances: number;
+    orphanedBalances: any[];
+  }> {
+    // Get all financial statements for the company
+    const { data: financialStatements } = await this.supabase
+      .from('financial_statements')
+      .select('id, fiscal_year, company_id')
+      .eq('company_id', companyId);
+
+    const fsIds = (financialStatements || []).map((fs: any) => fs.id);
+    
+    // Check balances for each financial statement
+    const balancesByFS: Record<string, number> = {};
+    let totalBalances = 0;
+    
+    for (const fsId of fsIds) {
+      const { data: balances, count } = await this.supabase
+        .from('account_balances')
+        .select('id, financial_statement_id, account_id', { count: 'exact' })
+        .eq('financial_statement_id', fsId);
+      
+      const countValue = count || balances?.length || 0;
+      balancesByFS[fsId] = countValue;
+      totalBalances += countValue;
+    }
+    
+    // Check for orphaned balances (balances with financial_statement_id that doesn't belong to this company)
+    const { data: allCompanyBalances } = await this.supabase
+      .from('account_balances')
+      .select('id, financial_statement_id, account_id')
+      .in('financial_statement_id', fsIds);
+    
+    // Also check if there are balances with financial_statement_id pointing to wrong company
+    const { data: allFS } = await this.supabase
+      .from('financial_statements')
+      .select('id, company_id')
+      .in('id', fsIds);
+    
+    const validFSIds = new Set((allFS || []).map((fs: any) => fs.id));
+    const orphanedBalances = (allCompanyBalances || []).filter(
+      (b: any) => !validFSIds.has(b.financial_statement_id)
+    );
+    
+    return {
+      financialStatements: financialStatements || [],
+      balancesByFS,
+      totalBalances,
+      orphanedBalances,
+    };
+  }
+
   async update(
     id: string,
     updateFinancialStatementDto: UpdateFinancialStatementDto,

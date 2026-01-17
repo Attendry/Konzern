@@ -714,6 +714,31 @@ function CompanyManagement() {
                                       >
                                         Direkt prüfen
                                       </button>
+                                      <button
+                                        className="button button-secondary button-sm"
+                                        style={{ marginTop: '0.25rem', marginLeft: '0.5rem' }}
+                                        onClick={async () => {
+                                          try {
+                                            const diagnosis = await financialStatementService.diagnoseCompanyBalances(company.id);
+                                            console.log('Company balance diagnosis:', diagnosis);
+                                            const message = `Diagnose für ${company.name}:\n\n` +
+                                              `Jahresabschlüsse: ${diagnosis.financialStatements.length}\n` +
+                                              `Gesamt Kontensalden: ${diagnosis.totalBalances}\n` +
+                                              `Verwaiste Salden: ${diagnosis.orphanedBalances.length}\n\n` +
+                                              `Details pro Jahresabschluss:\n` +
+                                              Object.entries(diagnosis.balancesByFS).map(([fsId, count]) => {
+                                                const fs = diagnosis.financialStatements.find((f: any) => f.id === fsId);
+                                                return `  FS ${fs?.fiscal_year || '?'} (${fsId.substring(0, 8)}...): ${count} Salden`;
+                                              }).join('\n');
+                                            alert(message);
+                                          } catch (err) {
+                                            console.error('Error diagnosing company balances:', err);
+                                            alert('Fehler bei der Diagnose');
+                                          }
+                                        }}
+                                      >
+                                        Diagnose
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
