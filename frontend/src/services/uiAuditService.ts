@@ -1,5 +1,5 @@
 import api from './api';
-import { AuditLog, AuditAction, AuditEntityType } from '../types';
+import { AuditAction, AuditEntityType } from '../types';
 
 /**
  * UI-specific audit action types

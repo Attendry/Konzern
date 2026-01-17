@@ -64,7 +64,6 @@ export function ErrorState({
   const { error: showErrorToast } = useToastContext();
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [errorReport, setErrorReport] = useState<string | null>(null);
 
   // Extract error message
   const errorMessage = error instanceof Error ? error.message : error;
@@ -128,7 +127,6 @@ export function ErrorState({
 
   const handleExportErrorReport = () => {
     const report = generateErrorReport();
-    setErrorReport(report);
 
     // Create downloadable file
     const blob = new Blob([report], { type: 'application/json' });

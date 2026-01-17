@@ -39,8 +39,12 @@ export function LoadingState({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
             {Array.from({ length: count }).map((_, i) => (
               <div key={i} className="card">
-                <Skeleton height="20px" width="60%" style={{ marginBottom: 'var(--spacing-3)' }} />
-                <Skeleton height="16px" width="100%" style={{ marginBottom: 'var(--spacing-2)' }} />
+                <div style={{ marginBottom: 'var(--spacing-3)' }}>
+                  <Skeleton height="20px" width="60%" />
+                </div>
+                <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                  <Skeleton height="16px" width="100%" />
+                </div>
                 <Skeleton height="16px" width="80%" />
               </div>
             ))}
@@ -54,7 +58,9 @@ export function LoadingState({
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
                 <Skeleton height="40px" width="40px" rounded />
                 <div style={{ flex: 1 }}>
-                  <Skeleton height="16px" width="60%" style={{ marginBottom: 'var(--spacing-1)' }} />
+                  <div style={{ marginBottom: 'var(--spacing-1)' }}>
+                    <Skeleton height="16px" width="60%" />
+                  </div>
                   <Skeleton height="14px" width="40%" />
                 </div>
               </div>
@@ -68,7 +74,9 @@ export function LoadingState({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
               {Array.from({ length: count }).map((_, i) => (
                 <div key={i}>
-                  <Skeleton height="14px" width="30%" style={{ marginBottom: 'var(--spacing-2)' }} />
+                  <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                    <Skeleton height="14px" width="30%" />
+                  </div>
                   <Skeleton height="40px" width="100%" />
                 </div>
               ))}

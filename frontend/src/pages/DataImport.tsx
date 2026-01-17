@@ -9,8 +9,6 @@ import { ExcelMappingWizard } from '../components/ExcelMappingWizard';
 import { BatchImportWizard } from '../components/BatchImportWizard';
 import { BackButton } from '../components/BackButton';
 import { ErrorState } from '../components/ErrorState';
-import { EmptyState } from '../components/EmptyState';
-import { LoadingState } from '../components/LoadingState';
 import '../App.css';
 
 type ImportMode = 'quick' | 'wizard' | 'batch';

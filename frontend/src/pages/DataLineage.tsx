@@ -99,31 +99,32 @@ export default function DataLineage() {
     loadFinancialStatements();
   }, [id]);
 
+  // Load lineage data function
+  const loadLineageData = async (fsId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [fsData, graphData, statsData, docsData] = await Promise.all([
+        financialStatementService.getById(fsId),
+        lineageService.getLineageGraph(fsId),
+        lineageService.getDocumentationStats(fsId),
+        lineageService.getDocumentation({ financialStatementId: fsId }),
+      ]);
+      setFinancialStatement(fsData);
+      setGraph(graphData);
+      setStats(statsData);
+      setDocumentation(docsData);
+    } catch (err: any) {
+      setError(err.message || 'Fehler beim Laden der Daten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load lineage data when financial statement changes
   useEffect(() => {
     if (!selectedFsId) return;
-
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [fsData, graphData, statsData, docsData] = await Promise.all([
-          financialStatementService.getById(selectedFsId),
-          lineageService.getLineageGraph(selectedFsId),
-          lineageService.getDocumentationStats(selectedFsId),
-          lineageService.getDocumentation({ financialStatementId: selectedFsId }),
-        ]);
-        setFinancialStatement(fsData);
-        setGraph(graphData);
-        setStats(statsData);
-        setDocumentation(docsData);
-      } catch (err: any) {
-        setError(err.message || 'Fehler beim Laden der Daten');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+    loadLineageData(selectedFsId);
   }, [selectedFsId]);
 
   // Load node details when selected

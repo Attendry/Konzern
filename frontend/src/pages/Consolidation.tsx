@@ -25,7 +25,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { BackButton } from '../components/BackButton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
-import { LoadingState } from '../components/LoadingState';
 import '../App.css';
 
 type EntryTab = 'all' | 'manual' | 'pending';
