@@ -11,7 +11,6 @@ import { EmptyState } from '../components/EmptyState';
 import { LoadingState } from '../components/LoadingState';
 import { QuickActions } from '../components/QuickActions';
 import { RelatedLinks } from '../components/RelatedLinks';
-import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
 function FinancialStatement() {

@@ -18,7 +18,6 @@ import { LoadingState } from '../components/LoadingState';
 import { QuickActions } from '../components/QuickActions';
 import { RelatedLinks } from '../components/RelatedLinks';
 import { useFormValidation, validationHelpers } from '../hooks/useFormValidation';
-import { useAuth } from '../contexts/AuthContext';
 import '../App.css';
 
 interface CompanyHierarchy {
