@@ -62,7 +62,6 @@ export function RelatedLinks({
 
   // Filter accessible links
   const accessibleLinks = links.filter(link => hasRequiredRole(link) && hasRequiredPermission(link));
-  const hiddenLinks = links.filter(link => !hasRequiredRole(link) || !hasRequiredPermission(link));
 
   // Log access attempt for restricted links (if user tries to access)
   const handleLinkClick = async (link: RelatedLink) => {

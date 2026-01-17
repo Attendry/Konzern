@@ -34,7 +34,6 @@ function CompanyManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { success, error: showError } = useToastContext();
-  const { user } = useAuth();
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);

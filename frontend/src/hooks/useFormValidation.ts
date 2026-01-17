@@ -190,8 +190,8 @@ export const validationHelpers = {
     (value: string) => value && isNaN(Date.parse(value)) ? message : null,
 
   /** Date range validation */
-  dateRange: (startDate: string, endDate: string, message = 'Enddatum muss nach Startdatum liegen') => 
-    (value: string, formData: any) => {
+  dateRange: (startDate: string, _endDate: string, message = 'Enddatum muss nach Startdatum liegen') => 
+    (value: string, _formData: any) => {
       if (!value || !startDate) return null;
       return new Date(value) < new Date(startDate) ? message : null;
     },

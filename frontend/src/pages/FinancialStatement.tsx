@@ -18,7 +18,6 @@ function FinancialStatement() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { setFinancialStatementId } = useAIChat();
-  const { user } = useAuth();
   const [statement, setStatement] = useState<FinancialStatementType | null>(null);
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
