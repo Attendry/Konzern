@@ -97,7 +97,8 @@ function DataImport() {
     setCreating(true);
     try {
       const created = await financialStatementService.create(newStatement);
-      setStatements([...statements, created]);
+      // Reload statements to ensure we have the latest data
+      await loadStatements();
       setFinancialStatementId(created.id);
       setShowCreateForm(false);
       setError(null);
@@ -295,6 +296,72 @@ function DataImport() {
         </div>
       </div>
 
+      {/* Create Financial Statement Form - Visible in all modes */}
+      {showCreateForm && (
+        <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'var(--color-bg-tertiary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)' }}>
+            <h3 style={{ margin: 0 }}>Neuen Jahresabschluss erstellen</h3>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => setShowCreateForm(false)}
+              style={{ fontSize: 'var(--font-size-sm)' }}
+            >
+              ✕ Schließen
+            </button>
+          </div>
+          <div className="form-group">
+            <label>Unternehmen *</label>
+            <select
+              value={newStatement.companyId}
+              onChange={(e) => setNewStatement({ ...newStatement, companyId: e.target.value })}
+              required
+            >
+              <option value="">-- Bitte wählen --</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Geschäftsjahr *</label>
+            <input
+              type="number"
+              value={newStatement.fiscalYear}
+              onChange={(e) => setNewStatement({ ...newStatement, fiscalYear: parseInt(e.target.value) })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Periodenstart *</label>
+            <input
+              type="date"
+              value={newStatement.periodStart}
+              onChange={(e) => setNewStatement({ ...newStatement, periodStart: e.target.value })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Periodenende *</label>
+            <input
+              type="date"
+              value={newStatement.periodEnd}
+              onChange={(e) => setNewStatement({ ...newStatement, periodEnd: e.target.value })}
+              required
+            />
+          </div>
+          <button
+            className="button button-primary"
+            onClick={handleCreateStatement}
+            disabled={creating || !newStatement.companyId}
+          >
+            {creating ? 'Erstelle...' : 'Jahresabschluss erstellen'}
+          </button>
+        </div>
+      )}
+
       {/* Batch Import Mode */}
       {importMode === 'batch' && (
         <div className="card">
@@ -384,9 +451,25 @@ function DataImport() {
               </p>
             )}
             {selectedCompanyId && filteredStatements.length === 0 && (
-              <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
-                Keine Jahresabschlüsse für dieses Unternehmen verfügbar.
-              </p>
+              <div style={{ marginTop: 'var(--spacing-2)' }}>
+                <p style={{ marginBottom: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+                  Keine Jahresabschlüsse für dieses Unternehmen verfügbar.
+                </p>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  style={{ fontSize: 'var(--font-size-sm)' }}
+                  onClick={() => {
+                    setNewStatement({
+                      ...newStatement,
+                      companyId: selectedCompanyId,
+                    });
+                    setShowCreateForm(true);
+                  }}
+                >
+                  + Jahresabschluss erstellen
+                </button>
+              </div>
             )}
           </div>
           
@@ -422,61 +505,6 @@ function DataImport() {
               }
             ] : []}
           />
-        )}
-
-        {showCreateForm && (
-          <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'var(--color-bg-tertiary)' }}>
-            <h3>Neuen Jahresabschluss erstellen</h3>
-            <div className="form-group">
-              <label>Unternehmen *</label>
-              <select
-                value={newStatement.companyId}
-                onChange={(e) => setNewStatement({ ...newStatement, companyId: e.target.value })}
-                required
-              >
-                <option value="">-- Bitte wählen --</option>
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Geschäftsjahr *</label>
-              <input
-                type="number"
-                value={newStatement.fiscalYear}
-                onChange={(e) => setNewStatement({ ...newStatement, fiscalYear: parseInt(e.target.value) })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Periodenstart *</label>
-              <input
-                type="date"
-                value={newStatement.periodStart}
-                onChange={(e) => setNewStatement({ ...newStatement, periodStart: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Periodenende *</label>
-              <input
-                type="date"
-                value={newStatement.periodEnd}
-                onChange={(e) => setNewStatement({ ...newStatement, periodEnd: e.target.value })}
-                required
-              />
-            </div>
-            <button
-              className="button button-primary"
-              onClick={handleCreateStatement}
-              disabled={creating || !newStatement.companyId}
-            >
-              {creating ? 'Erstelle...' : 'Jahresabschluss erstellen'}
-            </button>
-          </div>
         )}
 
         <div className="form-group">
@@ -535,9 +563,25 @@ function DataImport() {
                 </p>
               )}
               {selectedCompanyId && filteredStatements.length === 0 && (
-                <p style={{ marginTop: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
-                  Keine Jahresabschlüsse für dieses Unternehmen verfügbar. Bitte erstellen Sie zuerst einen Jahresabschluss.
-                </p>
+                <div style={{ marginTop: 'var(--spacing-2)' }}>
+                  <p style={{ marginBottom: 'var(--spacing-2)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+                    Keine Jahresabschlüsse für dieses Unternehmen verfügbar.
+                  </p>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    style={{ fontSize: 'var(--font-size-sm)' }}
+                    onClick={() => {
+                      setNewStatement({
+                        ...newStatement,
+                        companyId: selectedCompanyId,
+                      });
+                      setShowCreateForm(true);
+                    }}
+                  >
+                    + Jahresabschluss erstellen
+                  </button>
+                </div>
               )}
             </>
           )}
